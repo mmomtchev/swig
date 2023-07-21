@@ -343,6 +343,7 @@ jobs:
       CSTD: ${{ matrix.CSTD }}
       CPPSTD: ${{ matrix.CPPSTD }}
       CPPFLAGS: ${{ matrix.CPPFLAGS }}
+      ASYNC: ${{ matrix.ASYNC }}
 
     steps:
     - name: Checkout
