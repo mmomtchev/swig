@@ -286,6 +286,8 @@ protected:
 
   virtual int emitNamespaces() = 0;
 
+  virtual const char *getGetterTemplate(bool);
+
 protected:
 
   JSEngine engine;
@@ -896,6 +898,10 @@ int JSEmitter::enterVariable(Node *n) {
   return SWIG_OK;
 }
 
+const char *JSEmitter::getGetterTemplate(bool) {
+  return "js_getter";
+}
+
 int JSEmitter::emitCtor(Node *n) {
 
   Wrapper *wrapper = NewWrapper();
@@ -1184,7 +1190,8 @@ int JSEmitter::emitConstant(Node *n) {
     value = Getattr(n, "cppvalue");
   }
 
-  Template t_getter(getTemplate("js_getter"));
+  bool is_member = GetFlag(n, "ismember");
+  Template t_getter(getTemplate(getGetterTemplate(is_member)));
 
   // call the variable methods as a constants are
   // registered in same way
