@@ -3058,8 +3058,8 @@ int NAPIEmitter::emitFunction(Node *n, bool is_member, bool is_static) {
   // We reuse the same node twice
   String *async = Getattr(n, "feature:async");
   String *sync = Getattr(n, "feature:sync");
-  String *name = Copy(state.function(NAME));
-  String *symbol = Copy(Getattr(n, "sym:name"));
+  String *name = state.function(NAME);
+  String *symbol = Getattr(n, "sym:name");
 
   // By default async is off ("0") unless default is async
   // also ctors, getters, setters cannot be async
@@ -3071,7 +3071,7 @@ int NAPIEmitter::emitFunction(Node *n, bool is_member, bool is_static) {
       Append(nameAsync, async);
     }
     state.function(NAME, nameAsync);
-    Setattr(n, "sym:name:async", nameAsync);
+    Setattr(n, "sym:name:async", symAsync);
     rc = emitFunctionDefinition(n, is_member, is_static, true);
     if (rc != SWIG_OK)
       return rc;
@@ -3089,7 +3089,7 @@ int NAPIEmitter::emitFunction(Node *n, bool is_member, bool is_static) {
       Append(nameSync, sync);
     }
     state.function(NAME, nameSync);
-    Setattr(n, "sym:name:sync", nameSync);
+    Setattr(n, "sym:name:sync", symSync);
     rc = emitFunctionDefinition(n, is_member, is_static, false);
     if (rc != SWIG_OK)
       return rc;
