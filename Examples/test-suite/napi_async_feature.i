@@ -10,6 +10,9 @@
 %feature("async", "1") Template;
 %feature("sync", "0") Template;
 
+%feature("async", "0") Template::MethodAlwaysSync;
+%feature("sync", "1") Template::MethodAlwaysSync;
+
 %inline %{
 
 int Global(int a) {
@@ -26,6 +29,10 @@ template <typename T>
 struct Template {
   T Method(T a) {
     return a + 6;
+  }
+
+  T MethodAlwaysSync(T a) {
+    return a + 8;
   }
 };
 

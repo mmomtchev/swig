@@ -22,3 +22,8 @@ if (/* await */(objT.Method(2)) !== 8)
   throw new Error;
 if (objT.MethodSync !== undefined || objT.MethodAsync !== undefined)
   throw new Error;
+
+if (objT.MethodAlwaysSync(2) !== 10)
+  throw new Error;
+if (objT.MethodAlwaysSyncSync !== undefined || objT.MethodAlwaysSyncAsync !== undefined)
+  throw new Error;

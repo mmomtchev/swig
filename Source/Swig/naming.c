@@ -782,14 +782,14 @@ void Swig_features_get(Hash *features, String *prefix, String *name, SwigType *d
 	/* A template-based class lookup */
 	String *tprefix = SwigType_istemplate_templateprefix(prefix);
 	if (tprefix) {
-	  Clear(tname);
-	  Printf(tname, "%s::%s", tprefix, name);
-	  features_get(features, tname, decl, ncdecl, node);
-
           /* A template-generic feature */
           Clear(tname);
           Printf(tname, "%s", tprefix);
           features_get(features, tname, decl, ncdecl, node);
+
+          Clear(tname);
+	  Printf(tname, "%s::%s", tprefix, name);
+	  features_get(features, tname, decl, ncdecl, node);
         }
         Clear(tname);
 	Printf(tname, "%s::%s", prefix, name);
