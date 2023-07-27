@@ -64,6 +64,7 @@ ifeq (napi, $(ENGINE))
 ifneq (, $(ASYNC))
 # async-specific tests
 CPP_TEST_CASES += \
+	napi_async_feature \
 	napi_async_locking \
 	napi_async_overloading \
 	napi_async_reject
