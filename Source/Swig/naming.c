@@ -785,8 +785,13 @@ void Swig_features_get(Hash *features, String *prefix, String *name, SwigType *d
 	  Clear(tname);
 	  Printf(tname, "%s::%s", tprefix, name);
 	  features_get(features, tname, decl, ncdecl, node);
-	}
-	Clear(tname);
+
+          /* A template-generic feature */
+          Clear(tname);
+          Printf(tname, "%s", tprefix);
+          features_get(features, tname, decl, ncdecl, node);
+        }
+        Clear(tname);
 	Printf(tname, "%s::%s", prefix, name);
 	features_get(features, tname, decl, ncdecl, node);
 	Delete(tprefix);

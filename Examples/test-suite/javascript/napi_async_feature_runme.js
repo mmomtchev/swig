@@ -14,3 +14,11 @@ if (/* await */(obj.Method(2)) !== 6)
   throw new Error;
 if (obj.MethodSync !== undefined || obj.MethodAsync !== undefined)
   throw new Error;
+
+
+const objT = new napi_async_feature.TemplateInt;
+
+if (/* await */(objT.Method(2)) !== 8)
+  throw new Error;
+if (objT.MethodSync !== undefined || objT.MethodAsync !== undefined)
+  throw new Error;

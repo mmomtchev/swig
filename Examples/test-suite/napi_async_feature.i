@@ -3,8 +3,12 @@
 // This test is specific to Node-API
 %feature("async", "Async");
 %feature("sync", "Sync");
+
 %feature("async", "1") Klass;
 %feature("sync", "0") Klass;
+
+%feature("async", "1") Template;
+%feature("sync", "0") Template;
 
 %inline %{
 
@@ -18,4 +22,13 @@ struct Klass {
   }
 };
 
+template <typename T>
+struct Template {
+  T Method(T a) {
+    return a + 6;
+  }
+};
+
 %}
+
+%template(TemplateInt) Template<int>;
