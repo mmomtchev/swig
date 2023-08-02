@@ -290,7 +290,7 @@ protected:
 
   virtual int createNamespace(String *scope);
 
-  virtual Hash *createNamespaceEntry(const char *name, const char *parent, const char *parent_mangled);
+  virtual Hash *createNamespaceEntry(Hash *, const char *name, const char *parent, const char *parent_mangled);
 
   virtual int emitNamespaces() = 0;
 
@@ -327,17 +327,15 @@ JSEmitter *swig_javascript_create_NAPIEmitter();
 class TYPESCRIPT {
 
 public:
-  TYPESCRIPT(JSEmitter *_parent) : f_declarations(NewString("")), f_typescript(NULL), parent(_parent) {}
-  virtual ~TYPESCRIPT() {
-    Delete(f_declarations);
-    Delete(f_typescript);
-  }
+  TYPESCRIPT(JSEmitter *_parent) : f_declarations(NULL), parent(_parent) {}
+  virtual ~TYPESCRIPT() {}
 
   virtual int functionHandler(Node *);
   virtual int variableHandler(Node *);
   virtual int constructorHandler(Node *);
   virtual int enterClass(Node *);
   virtual int exitClass(Node *);
+  virtual int switchNamespace(Node *);
   virtual int top(Node *);
 
 protected:
@@ -345,7 +343,6 @@ protected:
 
 private:
   String *f_declarations;
-  File *f_typescript;
   JSEmitter *parent;
 };
 
@@ -360,9 +357,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
     String *tm = Getattr(p, "tmap:ts");
 
     if (tm != nullptr) {
-      if (p != params)
-        Append(args, ", ");
-      Printf(args, "%s: %s", Getattr(p, NAME), tm);
+      Printf(args, "%s%s: %s", p != params ? ", " : "", Getattr(p, NAME), tm);
       p = Getattr(p, "tmap:ts:next");
     } else {
       p = nextSibling(p);
@@ -385,7 +380,7 @@ int TYPESCRIPT::top(Node *n) {
   String *typescript_filename = NewString("");
   Printf(typescript_filename, "%s.d.ts", basename);
 
-  f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
+  File *f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
   if (!f_typescript) {
     FileErrorDisplay(f_typescript);
     Exit(EXIT_FAILURE);
@@ -395,11 +390,64 @@ int TYPESCRIPT::top(Node *n) {
 
   String *module = Getattr(n, NAME);
   Template t_header(parent->getTemplate("ts_header"));
-  t_header.replace("$jsmodule", module).pretty_print(f_typescript);
-  Printv(f_typescript, f_declarations, "\n", 0);
-  Template t_footer(parent->getTemplate("ts_footer"));
-  t_footer.replace("$jsmodule", module).pretty_print(f_typescript);
+  t_header.replace("$jsmodule", module).print(f_typescript);
 
+  Iterator it;
+  // Emit all namespaces
+  for (it = First(parent->namespaces); it.item; it = Next(it)) {
+    Hash *nspace = it.item;
+
+    // Emit successive begin namespace statements for
+    // each level
+    String *namespace_stmts = NewString("");
+    while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
+      Template t_nspace(parent->getTemplate("ts_nspace_header"));
+      String *stmt = NewString("");
+      t_nspace.replace("$jsname", Getattr(nspace, NAME)).print(stmt);
+      Insert(namespace_stmts, 0, stmt);
+      nspace = Getattr(nspace, "parent:nspace");
+    }
+    Printf(f_typescript, "%s", namespace_stmts);
+
+    // Emit the namespace declarations
+    nspace = it.item;
+    String *f_namespace = Getattr(nspace, "typescript");
+    Printv(f_typescript, f_namespace, "\n", 0);
+
+    // Emit successive end namespace statements for
+    // each level
+    namespace_stmts = NewString("");
+    while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
+      Template t_nspace(parent->getTemplate("ts_nspace_footer"));
+      String *stmt = NewString("");
+      t_nspace.replace("$jsname", Getattr(nspace, NAME)).print(f_typescript);
+      Insert(namespace_stmts, 0, stmt);
+      nspace = Getattr(nspace, "parent:nspace");
+    }
+    Printf(f_typescript, "%s", namespace_stmts);
+  }
+
+  Template t_footer(parent->getTemplate("ts_footer"));
+  t_footer.replace("$jsmodule", module).print(f_typescript);
+
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * switchNamespace()
+ *
+ * Every namespace has its own f_declarations that is
+ * stored in the namespaces hash
+ * this->f_declarations is always the current namespace
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::switchNamespace(Node *) {
+  Hash *nspace = parent->state.clazz("nspace");
+  if (!nspace)
+    nspace = Getattr(parent->namespaces, "::");
+  if (!Getattr(nspace, "typescript")) {
+    Setattr(nspace, "typescript", NewString(""));
+  }
+  f_declarations = Getattr(nspace, "typescript");
   return SWIG_OK;
 }
 
@@ -409,14 +457,16 @@ int TYPESCRIPT::top(Node *n) {
  * Function handler for generating wrappers for functions
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::functionHandler(Node *n) {
-  Template t_function(parent->getTemplate(
-      GetFlag(n, "memberfunction") ? "ts_function" : "ts_global_function"));
+  bool is_member = GetFlag(n, "ismember");
+  Template t_function(
+      parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
 
   String *args = emitArguments(n);
   String *ret = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
 
+  switchNamespace(n);
   t_function.replace("$jsname", parent->state.function(NAME))
       .replace("$tsargs", args)
       .replace("$tsret", ret)
@@ -435,19 +485,26 @@ int TYPESCRIPT::functionHandler(Node *n) {
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::variableHandler(Node *n) {
   const char *templ;
+  bool is_member = GetFlag(n, "ismember");
+  Swig_print_node(n);
 
-  if (GetFlag(n, "ismember")) {
+  if (is_member) {
     templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
   } else {
-    templ = GetFlag(n, "constant") ? "ts_global_constant" : "ts_global_variable";
+    templ =
+        GetFlag(n, "constant") ? "ts_global_constant" : "ts_global_variable";
   }
   Template t_variable(parent->getTemplate(templ));
-  const char *qualifier =
-      Equal(Getattr(n, "storage"), "static") ? "static" : "";
+
+  const char *qualifier = GetFlag(parent->state.variable(), IS_STATIC) ||
+                                  Equal(Getattr(n, "nodeType"), "enumitem")
+                              ? "static"
+                              : "";
 
   String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
 
-  t_variable.replace("$jsname", Getattr(n, NAME))
+  switchNamespace(n);
+  t_variable.replace("$jsname", parent->state.variable(NAME))
       .replace("$tstype", tm)
       .replace("$tsqualifier", qualifier)
       .print(f_declarations);
@@ -469,7 +526,8 @@ int TYPESCRIPT::enterClass(Node *n) {
   if (jsbase) Printf(jsparent, " extends %s", Getattr(jsbase, NAME));
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
-  t_class.replace("$jsname", Getattr(n, NAME))
+  switchNamespace(n);
+  t_class.replace("$jsname", Getattr(parent->state.clazz(), NAME))
       .replace("$jsparent", jsparent)
       .replace("$tsqualifier", qualifier)
       .print(f_declarations);
@@ -479,7 +537,7 @@ int TYPESCRIPT::enterClass(Node *n) {
 int TYPESCRIPT::exitClass(Node *n) {
   Template t_class(parent->getTemplate("ts_class_footer"));
 
-  t_class.replace("$jsname", Getattr(n, NAME)).pretty_print(f_declarations);
+  t_class.replace("$jsname", Getattr(n, NAME)).trim().pretty_print(f_declarations);
 
   return SWIG_OK;
 }
@@ -961,7 +1019,7 @@ int JSEmitter::initialize(Node * /*n */ ) {
     Delete(namespaces);
   }
   namespaces = NewHash();
-  Hash *global_namespace = createNamespaceEntry("exports", 0, 0);
+  Hash *global_namespace = createNamespaceEntry(NULL, "exports", 0, 0);
 
   Setattr(namespaces, "::", global_namespace);
   current_namespace = global_namespace;
@@ -1822,19 +1880,21 @@ int JSEmitter::createNamespace(String *scope) {
   }
   assert(parent_namespace != 0);
 
-  Hash *new_namespace = createNamespaceEntry(Char(scope), Char(Getattr(parent_namespace, "name")), Char(Getattr(parent_namespace, "name_mangled")));
+  Hash *new_namespace = createNamespaceEntry(parent_namespace, Char(scope),
+    Char(Getattr(parent_namespace, "name")), Char(Getattr(parent_namespace, "name_mangled")));
   Setattr(namespaces, scope, new_namespace);
 
   Delete(parent_scope);
   return SWIG_OK;
 }
 
-Hash *JSEmitter::createNamespaceEntry(const char *_name, const char *parent, const char *parent_mangled) {
+Hash *JSEmitter::createNamespaceEntry(Hash *parent, const char *_name, const char *parent_name, const char *parent_mangled) {
   Hash *entry = NewHash();
   String *name = NewString(_name);
+  Setattr(entry, "parent:nspace", parent);
   Setattr(entry, NAME, Swig_scopename_last(name));
   Setattr(entry, NAME_MANGLED, Swig_name_mangle_string(name));
-  Setattr(entry, PARENT, NewString(parent));
+  Setattr(entry, PARENT, NewString(parent_name));
   Setattr(entry, PARENT_MANGLED, NewString(parent_mangled));
 
   Delete(name);
@@ -1862,7 +1922,7 @@ protected:
   virtual int enterClass(Node *n);
   virtual int exitClass(Node *n);
   virtual void marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper, MarshallingMode mode, bool is_member, bool is_static);
-  virtual Hash *createNamespaceEntry(const char *name, const char *parent, const char *parent_mangled);
+  virtual Hash *createNamespaceEntry(Hash *, const char *name, const char *parent, const char *parent_mangled);
   virtual int emitNamespaces();
 
 private:
@@ -2191,8 +2251,8 @@ int JSCEmitter::exitClass(Node *n) {
   return SWIG_OK;
 }
 
-Hash *JSCEmitter::createNamespaceEntry(const char *name, const char *parent, const char *parent_mangled) {
-  Hash *entry = JSEmitter::createNamespaceEntry(name, parent, parent_mangled);
+Hash *JSCEmitter::createNamespaceEntry(Hash *parent_hash, const char *name, const char *parent, const char *parent_mangled) {
+  Hash *entry = JSEmitter::createNamespaceEntry(parent_hash, name, parent, parent_mangled);
   Setattr(entry, "functions", NewString(""));
   Setattr(entry, "values", NewString(""));
   return entry;
