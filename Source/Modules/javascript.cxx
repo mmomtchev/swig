@@ -117,6 +117,7 @@ private:
  * for different javascript engines.
  **/
 class JSEmitter {
+  friend class TYPESCRIPT;
 
 protected:
 
@@ -317,19 +318,202 @@ JSEmitter *swig_javascript_create_V8Emitter();
 JSEmitter *swig_javascript_create_NodeJSEmitter();
 JSEmitter *swig_javascript_create_NAPIEmitter();
 
+/*
+ * TYPESCRIPT handler : it is a semi-independent handler
+ * used as an option by the JAVASCRIPT language
+ * It does not inherit from Language, as there can be only one LANGUAGE
+ * but uses the same interface
+ */
+class TYPESCRIPT {
+
+public:
+  TYPESCRIPT(JSEmitter *_parent) : f_declarations(NewString("")), f_typescript(NULL), parent(_parent) {}
+  virtual ~TYPESCRIPT() {
+    Delete(f_declarations);
+    Delete(f_typescript);
+  }
+
+  virtual int functionHandler(Node *);
+  virtual int variableHandler(Node *);
+  virtual int constructorHandler(Node *);
+  virtual int enterClass(Node *);
+  virtual int exitClass(Node *);
+  virtual int top(Node *);
+
+protected:
+  virtual String *emitArguments(Node *);
+
+private:
+  String *f_declarations;
+  File *f_typescript;
+  JSEmitter *parent;
+};
+
+String *TYPESCRIPT::emitArguments(Node *n) {
+  Parm *p;
+  String *args = NewString("");
+  ParmList *params = Getattr(n, "parms");
+
+  Swig_typemap_attach_parms("ts", params, NULL);
+
+  for (p = params; p;) {
+    String *tm = Getattr(p, "tmap:ts");
+
+    if (tm != nullptr) {
+      if (p != params)
+        Append(args, ", ");
+      Printf(args, "%s: %s", Getattr(p, NAME), tm);
+      p = Getattr(p, "tmap:ts:next");
+    } else {
+      p = nextSibling(p);
+    }
+  }
+
+  return args;
+}
+
+/* ---------------------------------------------------------------------
+ * top()
+ *
+ * Function handler for processing top node of the parse tree
+ * Wrapper code generation essentially starts from here
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::top(Node *n) {
+  String *infile = Getattr(n, "infile");
+  String *infile_filename = Swig_file_filename(infile);
+  String *basename = Swig_file_basename(infile_filename);
+  String *typescript_filename = NewString("");
+  Printf(typescript_filename, "%s.d.ts", basename);
+
+  f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
+  if (!f_typescript) {
+    FileErrorDisplay(f_typescript);
+    Exit(EXIT_FAILURE);
+  }
+  Swig_register_filebyname("typescript", f_typescript);
+  Swig_banner(f_typescript);
+
+  String *module = Getattr(n, NAME);
+  Template t_header(parent->getTemplate("ts_header"));
+  t_header.replace("$jsmodule", module).pretty_print(f_typescript);
+  Printv(f_typescript, f_declarations, "\n", 0);
+  Template t_footer(parent->getTemplate("ts_footer"));
+  t_footer.replace("$jsmodule", module).pretty_print(f_typescript);
+
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * functionHandler()
+ *
+ * Function handler for generating wrappers for functions
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::functionHandler(Node *n) {
+  Template t_function(parent->getTemplate(
+      GetFlag(n, "memberfunction") ? "ts_function" : "ts_global_function"));
+
+  String *args = emitArguments(n);
+  String *ret = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+  const char *qualifier =
+      Equal(Getattr(n, "storage"), "static") ? "static" : "";
+
+  t_function.replace("$jsname", parent->state.function(NAME))
+      .replace("$tsargs", args)
+      .replace("$tsret", ret)
+      .replace("$tsqualifier", qualifier)
+      .print(f_declarations);
+
+  Delete(args);
+  Delete(ret);
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * variableHandler()
+ *
+ * Function handler for generating wrappers for functions
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::variableHandler(Node *n) {
+  const char *templ;
+
+  if (GetFlag(n, "ismember")) {
+    templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
+  } else {
+    templ = GetFlag(n, "constant") ? "ts_global_constant" : "ts_global_variable";
+  }
+  Template t_variable(parent->getTemplate(templ));
+  const char *qualifier =
+      Equal(Getattr(n, "storage"), "static") ? "static" : "";
+
+  String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+
+  t_variable.replace("$jsname", Getattr(n, NAME))
+      .replace("$tstype", tm)
+      .replace("$tsqualifier", qualifier)
+      .print(f_declarations);
+
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * enterClass()
+ * exitClass()
+ *
+ * Handlers for generating wrappers for classes
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::enterClass(Node *n) {
+  Template t_class(parent->getTemplate("ts_class_header"));
+
+  String *jsparent = NewString("");
+  Node *jsbase = parent->getBaseClass(n);
+  if (jsbase) Printf(jsparent, " extends %s", Getattr(jsbase, NAME));
+  const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
+
+  t_class.replace("$jsname", Getattr(n, NAME))
+      .replace("$jsparent", jsparent)
+      .replace("$tsqualifier", qualifier)
+      .print(f_declarations);
+
+  return SWIG_OK;
+}
+int TYPESCRIPT::exitClass(Node *n) {
+  Template t_class(parent->getTemplate("ts_class_footer"));
+
+  t_class.replace("$jsname", Getattr(n, NAME)).pretty_print(f_declarations);
+
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * constructorHandler()
+ *
+ * Function handler for generating wrappers for variables
+ * --------------------------------------------------------------------- */
+
+int TYPESCRIPT::constructorHandler(Node *n) {
+  Template t_function(parent->getTemplate("ts_ctor"));
+  String *args = emitArguments(n);
+
+  t_function.replace("$jsname", parent->state.clazz(NAME))
+      .replace("$tsargs", args)
+      .print(f_declarations);
+
+  Delete(args);
+  return SWIG_OK;
+}
+
 /**********************************************************************
  * JAVASCRIPT: SWIG module implementation
  **********************************************************************/
 
 class JAVASCRIPT:public Language {
 
-public:
-
-  JAVASCRIPT():emitter(NULL) {
-  }
-  ~JAVASCRIPT() {
-    delete emitter;
-  }
+  public:
+    JAVASCRIPT() : emitter(NULL), ts_emitter(NULL) {}
+    ~JAVASCRIPT() {
+      delete emitter;
+      delete ts_emitter;
+    }
 
   virtual int functionHandler(Node *n);
   virtual int globalfunctionHandler(Node *n);
@@ -340,6 +524,7 @@ public:
   virtual int functionWrapper(Node *n);
   virtual int constantWrapper(Node *n);
   virtual int nativeWrapper(Node *n);
+  virtual int constructorHandler(Node *);
   virtual void main(int argc, char *argv[]);
   virtual int top(Node *n);
 
@@ -355,6 +540,7 @@ public:
 private:
 
   JSEmitter *emitter;
+  TYPESCRIPT *ts_emitter;
 };
 
 /* ---------------------------------------------------------------------
@@ -387,6 +573,9 @@ int JAVASCRIPT::functionHandler(Node *n) {
   Language::functionHandler(n);
   emitter->exitFunction(n);
 
+  if (ts_emitter) {
+    ts_emitter->functionHandler(n);
+  }
   return SWIG_OK;
 }
 
@@ -420,6 +609,22 @@ int JAVASCRIPT::staticmemberfunctionHandler(Node *n) {
 }
 
 /* ---------------------------------------------------------------------
+ * constructorHandler()
+ *
+ * Function handler for generating wrappers for variables
+ * --------------------------------------------------------------------- */
+
+int JAVASCRIPT::constructorHandler(Node *n) {
+  int rc = Language::constructorHandler(n);
+  if (rc != SWIG_OK) return rc;
+  if (ts_emitter) {
+    rc = ts_emitter->constructorHandler(n);
+    if (rc != SWIG_OK) return rc;
+  }
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
  * variableHandler()
  *
  * Function handler for generating wrappers for variables
@@ -431,6 +636,9 @@ int JAVASCRIPT::variableHandler(Node *n) {
   Language::variableHandler(n);
   emitter->exitVariable(n);
 
+  if (ts_emitter) {
+    ts_emitter->variableHandler(n);
+  }
   return SWIG_OK;
 }
 
@@ -467,6 +675,9 @@ int JAVASCRIPT::constantWrapper(Node *n) {
   // which could be fixed with a cleaner approach
   emitter->emitConstant(n);
 
+  if (ts_emitter) {
+    ts_emitter->variableHandler(n);
+  }
   return SWIG_OK;
 }
 
@@ -492,9 +703,16 @@ int JAVASCRIPT::classHandler(Node *n) {
   emitter->switchNamespace(n);
 
   emitter->enterClass(n);
+  if (ts_emitter) {
+    ts_emitter->enterClass(n);
+  }
+
   Language::classHandler(n);
   emitter->exitClass(n);
 
+  if (ts_emitter) {
+    ts_emitter->exitClass(n);
+  }
   return SWIG_OK;
 }
 
@@ -529,6 +747,9 @@ int JAVASCRIPT::top(Node *n) {
 
   Language::top(n);
 
+  if (ts_emitter) {
+    ts_emitter->top(n);
+  }
   emitter->dump(n);
   emitter->close();
 
@@ -544,6 +765,7 @@ Javascript Options (available with -javascript)\n\
      -sync                  - create sync wrappers by default (NAPI only, default) \n\
      -async                 - create async wrappers by default (NAPI only) \n\
      -async-locking         - add locking by default (NAPI only) \n\
+     -typescript            - generates a TypeScript ambient module (d.ts file)\n\
      -debug-codetemplates   - generates information about the origin of code templates\n";
 
 /* ---------------------------------------------------------------------
@@ -553,6 +775,8 @@ Javascript Options (available with -javascript)\n\
  * --------------------------------------------------------------------- */
 
 void JAVASCRIPT::main(int argc, char *argv[]) {
+  bool ts_enabled = false;
+
   // Set javascript subdirectory in SWIG library
   SWIG_library_directory("javascript");
 
@@ -600,6 +824,9 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
       } else if (strcmp(argv[i], "-async-locking") == 0) {
         Swig_mark_arg(i);
         js_napi_default_is_locked = true;
+      } else if (strcmp(argv[i], "-typescript") == 0) {
+        Swig_mark_arg(i);
+        ts_enabled = true;
       } else if (strcmp(argv[i], "-help") == 0) {
         fputs(usage, stdout);
 	return;
@@ -659,6 +886,8 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
   SWIG_config_file("javascript.swg");
 
   allow_overloading();
+
+  if (ts_enabled) ts_emitter = new TYPESCRIPT(emitter);
 }
 
 /* -----------------------------------------------------------------------------
