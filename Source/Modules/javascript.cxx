@@ -76,6 +76,8 @@ public:
   ~JSEmitterState();
   DOH *globals();
   DOH *globals(const char *key, DOH *initial = 0);
+  DOH *types();
+  DOH *types(DOH *key, DOH *initial = 0);
   DOH *clazz(bool reset = false);
   DOH *clazz(const char *key, DOH *initial = 0);
   DOH *function(bool reset = false);
@@ -87,6 +89,7 @@ public:
 private:
   DOH *getState(const char *key, bool reset = false);
   Hash *globalHash;
+  Hash *typesHash;
 };
 
 /**
@@ -355,6 +358,8 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   for (p = params; p;) {
     String *tm = Getattr(p, "tmap:ts");
+    SwigType *jstype = SwigType_base(Getattr(p, "type"));
+    Replace(tm, "$jstype", parent->state.types(jstype), 0);
 
     if (tm != nullptr) {
       Printf(args, "%s%s: %s", p != params ? ", " : "", Getattr(p, NAME), tm);
@@ -462,7 +467,11 @@ int TYPESCRIPT::functionHandler(Node *n) {
       parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
 
   String *args = emitArguments(n);
+  
   String *ret = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+  SwigType *jstype = SwigType_base(Getattr(n, "type"));
+  Replace(ret, "$jstype", parent->state.types(jstype), 0);
+
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
 
@@ -501,6 +510,8 @@ int TYPESCRIPT::variableHandler(Node *n) {
                               : "";
 
   String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+  SwigType *jstype = SwigType_base(Getattr(n, "type"));
+  Replace(tm, "$jstype", parent->state.types(jstype), 0);
 
   switchNamespace(n);
   t_variable.replace("$jsname", parent->state.variable(NAME))
@@ -1153,6 +1164,9 @@ int JSEmitter::enterClass(Node *n) {
   // HACK: assume that a class is abstract
   // this is resolved by emitCtor (which is only called for non abstract classes)
   SetFlag(state.clazz(), IS_ABSTRACT);
+
+  /* Remember the mapping for the TypeScript definitions */
+  state.types(Copy(state.clazz(TYPE)), Copy(state.clazz(NAME)));
 
   return SWIG_OK;
 }
@@ -3801,7 +3815,7 @@ JSEmitter *swig_javascript_create_NAPIEmitter() {
  **********************************************************************/
 
 JSEmitterState::JSEmitterState()
-:  globalHash(NewHash()) {
+:  globalHash(NewHash()), typesHash(NewHash()) {
   // initialize sub-hashes
   Setattr(globalHash, "class", NewHash());
   Setattr(globalHash, "function", NewHash());
@@ -3829,6 +3843,15 @@ DOH *JSEmitterState::globals(const char *key, DOH *initial) {
     Setattr(globalHash, key, initial);
   }
   return Getattr(globalHash, key);
+}
+
+DOH *JSEmitterState::types() { return typesHash; }
+
+DOH *JSEmitterState::types(DOH *key, DOH *initial) {
+  if (initial != 0) {
+    Setattr(typesHash, key, initial);
+  }
+  return Getattr(typesHash, key);
 }
 
 DOH *JSEmitterState::clazz(bool new_key) {
