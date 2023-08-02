@@ -486,7 +486,6 @@ int TYPESCRIPT::functionHandler(Node *n) {
 int TYPESCRIPT::variableHandler(Node *n) {
   const char *templ;
   bool is_member = GetFlag(n, "ismember");
-  Swig_print_node(n);
 
   if (is_member) {
     templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
