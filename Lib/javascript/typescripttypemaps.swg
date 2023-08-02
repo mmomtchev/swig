@@ -12,6 +12,6 @@
 
 %typemap(ts) float, double "number";
 
-%typemap(ts) SWIGTYPE, SWIGTYPE *, SWIGTYPE & "object";
+%typemap(ts) SWIGTYPE, SWIGTYPE *, SWIGTYPE & "$jstype";
 
 %typemap(ts) void "void";
