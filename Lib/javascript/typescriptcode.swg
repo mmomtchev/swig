@@ -48,7 +48,7 @@ export const $jsname: $tstype;
 
 
 /* -----------------------------------------------------------------------------
- * ts_class:  template for class header
+ * ts_class_header:  template for class header
  *   - $jsname:           JS name of the constant
  *   - $jsparent:         Optional parent JS class, must be prefixed with " extends "
  *   - $tsqualifier:      Optional TS qualifier
@@ -59,7 +59,7 @@ export $tsqualifier class $jsname$jsparent {
 %}
 
 /* -----------------------------------------------------------------------------
- * ts_class:  template for class header
+ * ts_class_footer:  template for class footer
  *   - $jsname:           JS name of the constant
  * ----------------------------------------------------------------------------- */
 %fragment("ts_class_footer", "templates")
@@ -109,4 +109,22 @@ export $tsqualifier class $jsname$jsparent {
 %fragment("ts_ctor", "templates")
 %{
   constructor($tsargs);
+%}
+
+/* -----------------------------------------------------------------------------
+ * ts_nspace_header:  template for namespace header
+ *   - $jsname:           JS name of the constant
+ * ----------------------------------------------------------------------------- */
+%fragment("ts_nspace_header", "templates")
+%{
+export namespace $jsname {
+%}
+
+/* -----------------------------------------------------------------------------
+ * ts_nspace_footer:  template for namespace footer
+ *   - $jsname:           JS name of the constant
+ * ----------------------------------------------------------------------------- */
+%fragment("ts_nspace_footer", "templates")
+%{
+}
 %}
