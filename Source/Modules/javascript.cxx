@@ -343,12 +343,31 @@ public:
 
 protected:
   virtual String *emitArguments(Node *);
+  virtual int expandTSvars(String *, DOH *);
 
 private:
   String *f_declarations;
   JSEmitter *parent;
 };
 
+/**
+ * Expand the TS-specific typemap special variables
+ * $jstype - the wrapped symbol name
+ */
+int TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
+  if (!tm) return SWIG_OK;
+  SwigType *ctype = SwigType_base(Getattr(target, "type"));
+  if (!ctype) return SWIG_OK;
+  String *jstype = parent->state.types(jstype);
+  if (!jstype) return SWIG_OK;
+  Replace(tm, "$jstype", jstype, 0);
+  return SWIG_OK;
+}
+
+/**
+ * Transform the ParmList arguments to a string
+ * of TypeScript typed arguments using the "ts" typemaps
+ */
 String *TYPESCRIPT::emitArguments(Node *n) {
   Parm *p;
   String *args = NewString("");
@@ -358,8 +377,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   for (p = params; p;) {
     String *tm = Getattr(p, "tmap:ts");
-    SwigType *jstype = SwigType_base(Getattr(p, "type"));
-    Replace(tm, "$jstype", parent->state.types(jstype), 0);
+    expandTSvars(tm, p);
 
     if (tm != nullptr) {
       Printf(args, "%s%s: %s", p != params ? ", " : "", Getattr(p, NAME), tm);
@@ -403,7 +421,7 @@ int TYPESCRIPT::top(Node *n) {
     Hash *nspace = it.item;
 
     // Emit successive begin namespace statements for
-    // each level
+    // each level, going up the chain and concatenating backwards
     String *namespace_stmts = NewString("");
     while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
       Template t_nspace(parent->getTemplate("ts_nspace_header"));
@@ -469,8 +487,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
   String *args = emitArguments(n);
   
   String *ret = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
-  SwigType *jstype = SwigType_base(Getattr(n, "type"));
-  Replace(ret, "$jstype", parent->state.types(jstype), 0);
+  expandTSvars(ret, n);
 
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
@@ -510,8 +527,7 @@ int TYPESCRIPT::variableHandler(Node *n) {
                               : "";
 
   String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
-  SwigType *jstype = SwigType_base(Getattr(n, "type"));
-  Replace(tm, "$jstype", parent->state.types(jstype), 0);
+  expandTSvars(tm, n);
 
   switchNamespace(n);
   t_variable.replace("$jsname", parent->state.variable(NAME))
