@@ -749,7 +749,8 @@ int JAVASCRIPT::variableHandler(Node *n) {
   Language::variableHandler(n);
   emitter->exitVariable(n);
 
-  if (ts_emitter) {
+  // the static const exception - it is a constant not a variable
+  if (ts_emitter && !GetFlag(n, "constant")) {
     ts_emitter->variableHandler(n);
   }
   return SWIG_OK;
