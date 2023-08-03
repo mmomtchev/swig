@@ -4,7 +4,7 @@
  * Shared for all JavaScript generators
  */
 
-%typemap(ts) char* "string";
+%typemap(ts) char*, std::string, std::string *, std::string & "string";
 %typemap(ts) boolean "bool";
 
 #define SIGNS(N) N, unsigned N, signed N
