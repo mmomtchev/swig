@@ -358,10 +358,8 @@ private:
 int TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm) return SWIG_OK;
   SwigType *ctype = SwigType_base(Getattr(target, "type"));
-  if (!ctype) return SWIG_OK;
   String *jstype = parent->state.types(ctype);
-  if (!jstype) return SWIG_OK;
-  Replace(tm, "$jstype", jstype, 0);
+  Replace(tm, "$jstype", jstype ? jstype : "any", 0);
   return SWIG_OK;
 }
 
@@ -382,15 +380,21 @@ String *TYPESCRIPT::emitArguments(Node *n) {
   Parm *p;
   String *args = NewString("");
   ParmList *params = Getattr(n, "parms");
+  int idx;
 
   Swig_typemap_attach_parms("ts", params, NULL);
 
-  for (p = params; p;) {
+  for (idx = 0, p = params; p; idx++) {
     String *tm = Getattr(p, "tmap:ts");
     expandTSvars(tm, p);
 
     if (tm != nullptr) {
-      Printf(args, "%s%s: %s", p != params ? ", " : "", Getattr(p, NAME), tm);
+      String *arg_name = Getattr(p, NAME);
+      if (!arg_name) {
+        arg_name = NewString("");
+        Printf(arg_name, "arg%d", idx);
+      }
+      Printf(args, "%s%s: %s", p != params ? ", " : "", arg_name, tm);
       p = Getattr(p, "tmap:ts:next");
     } else {
       p = nextSibling(p);
@@ -574,7 +578,7 @@ int TYPESCRIPT::enterClass(Node *n) {
 
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
-  if (jsbase) Printf(jsparent, " extends %s", Getattr(jsbase, NAME));
+  if (jsbase) Printf(jsparent, " extends %s", Getattr(jsbase, "sym:name"));
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
   switchNamespace(n);
