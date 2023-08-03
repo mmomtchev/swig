@@ -177,6 +177,10 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) ${NODEJS} $${RUNME}; \
+		else \
+			if [ -n "$(TYPESCRIPT)" ]; then \
+				$(TSC) --noEmit $(TSCOPT) $(srcdir)/$*.d.ts ; \
+			fi \
 		fi
 
 	run_testcase_async = \
