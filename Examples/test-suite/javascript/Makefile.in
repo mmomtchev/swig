@@ -5,6 +5,7 @@
 LANGUAGE     = javascript
 NODEGYP = @NODEGYP@
 NODEJS = @NODEJS@
+TSC = @TSC@
 SCRIPTSUFFIX = _runme.js
 SCRIPTASYNCSUFFIX = _async_runme.mjs
 OBJEXT = @OBJEXT@
@@ -118,9 +119,10 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		BUILD = Release
 	endif
         ifneq (, $(ASYNC))
-		SWIGASYNC = -async
-	else
-		SWIGASYNC =
+		SWIGOPT += -async
+	endif
+        ifneq (, $(TYPESCRIPT))
+		SWIGOPT += -typescript
 	endif
 
 	setup_node = \
@@ -146,20 +148,34 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build 1>>/dev/null
 
 	run_testcase = \
-		if [ -f $(srcdir)/$*$(SCRIPTSUFFIX) ]; then \
+		RUNME="$(srcdir)/$*$(SCRIPTSUFFIX)" && \
+		if [ -f "$${RUNME}" ]; then \
+			if [ -n "$(ASYNC)" ]; then \
+				sed -e \
+					's@/\* await \*/@await resolve@g; \
+					s@/\* async \*/@async@g; \
+					s@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
+					1s@^@import resolve from "./resolve.mjs"; @' \
+					$${RUNME} > $(srcdir)/$*$(SCRIPTASYNCSUFFIX) \
+				&& \
+				RUNME=$(srcdir)/$*$(SCRIPTASYNCSUFFIX); \
+			fi && \
+			if [ -n "$(TYPESCRIPT)" ]; then \
+				sed -e \
+					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
+					s/resolve.mjs/resolve/; ' \
+					$${RUNME} > $(srcdir)/$*_ts_runme.ts && \
+					cp $(srcdir)/$*.d.ts $(srcdir)/$*/index.d.ts && \
+					$(TSC) --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports $(srcdir)/$*_ts_runme.ts && \
+					mv $(srcdir)/$*_ts_runme.js $(srcdir)/$*_ts_runme.mjs && \
+					RUNME=$(srcdir)/$*_ts_runme.mjs; \
+			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
-				$(RUNTOOL) $(NODEJS) $(srcdir)/$*$(SCRIPTSUFFIX); \
+				$(RUNTOOL) ${NODEJS} $${RUNME}; \
 		fi
 
 	run_testcase_async = \
 		if [ -f $(srcdir)/$*$(SCRIPTSUFFIX) ]; then \
-			sed -e \
-				's@/\* await \*/@await resolve@g; \
-				s@/\* async \*/@async@g; \
-				s@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
-				1s@^@import resolve from "./resolve.mjs"; @' \
-				$(srcdir)/$*$(SCRIPTSUFFIX) > $(srcdir)/$*$(SCRIPTASYNCSUFFIX) \
-			&& \
 			env LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) $(NODEJS) $(srcdir)/$*$(SCRIPTASYNCSUFFIX); \
 		fi
@@ -175,11 +191,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   %.cpptest:
 		$(_setup)
 		+$(swig_and_compile_cpp)
-        	ifneq (, $(ASYNC))
-			$(run_testcase_async)
-        	else
-			$(run_testcase)
-                endif
+		$(run_testcase)
 
   %.multicpptest:
 		$(_setup)
