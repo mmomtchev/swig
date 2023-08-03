@@ -17,3 +17,5 @@
 %typemap(ts) void "void";
 
 %typemap(ts) (int ARGC, char **ARGV) "string[]"
+
+%typemap(ts) (char *STRING, size_t LENGTH) "string"
