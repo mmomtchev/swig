@@ -157,8 +157,7 @@ Examples/java/doxygen/javadocs
 # Javascript
 Examples/test-suite/javascript/*/
 Examples/test-suite/javascript/*_async_runme.mjs
-Examples/test-suite/javascript/*_ts_runme.ts
-Examples/test-suite/javascript/*_ts_runme.mjs
+Examples/test-suite/javascript/*_ts_runme.*
 Examples/test-suite/javascript/resolve.js
 *.gyp
 *.d.ts
