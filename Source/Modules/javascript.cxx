@@ -343,6 +343,7 @@ public:
 
 protected:
   virtual String *emitArguments(Node *);
+  virtual String *promisify(String *);
   virtual int expandTSvars(String *, DOH *);
 
 private:
@@ -358,10 +359,19 @@ int TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm) return SWIG_OK;
   SwigType *ctype = SwigType_base(Getattr(target, "type"));
   if (!ctype) return SWIG_OK;
-  String *jstype = parent->state.types(jstype);
+  String *jstype = parent->state.types(ctype);
   if (!jstype) return SWIG_OK;
   Replace(tm, "$jstype", jstype, 0);
   return SWIG_OK;
+}
+
+/**
+ * Return a new type that is a Promise of the given type
+ */
+String *TYPESCRIPT::promisify(String *type) {
+  String *promise = NewString("");
+  Printf(promise, "Promise<%s>", type);
+  return promise;
 }
 
 /**
@@ -481,8 +491,6 @@ int TYPESCRIPT::switchNamespace(Node *) {
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::functionHandler(Node *n) {
   bool is_member = GetFlag(n, "ismember");
-  Template t_function(
-      parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
 
   String *args = emitArguments(n);
   
@@ -492,12 +500,29 @@ int TYPESCRIPT::functionHandler(Node *n) {
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
 
+  String *sync_name = parent->state.function("name:sync");
+  if (!sync_name) sync_name = parent->state.function("name");
+  String *async_name = parent->state.function("name:async");
+
   switchNamespace(n);
-  t_function.replace("$jsname", parent->state.function(NAME))
-      .replace("$tsargs", args)
-      .replace("$tsret", ret)
-      .replace("$tsqualifier", qualifier)
-      .print(f_declarations);
+  if (sync_name) {
+    Template t_function(
+        parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
+    t_function.replace("$jsname", sync_name)
+        .replace("$tsargs", args)
+        .replace("$tsret", ret)
+        .replace("$tsqualifier", qualifier)
+        .print(f_declarations);
+  }
+  if (async_name) {
+    Template t_function(
+        parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
+    t_function.replace("$jsname", async_name)
+        .replace("$tsargs", args)
+        .replace("$tsret", promisify(ret))
+        .replace("$tsqualifier", qualifier)
+        .print(f_declarations);
+  }
 
   Delete(args);
   Delete(ret);
