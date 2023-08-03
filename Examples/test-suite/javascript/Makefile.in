@@ -84,8 +84,13 @@ _setup = \
 	if [ -n "$(ASYNC)" ]; then	                                  \
 	  echo -n " (async mode)" ;                                       \
 	fi;                                                               \
+	if [ -n "$(TYPESCRIPT)" ]; then	                                  \
+	  echo -n " (TypeScript mode)" ;                                  \
+	fi;                                                               \
         echo
 SWIGOPT += -$(JSENGINE)
+
+TSCOPT = --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
@@ -166,7 +171,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					s/resolve.mjs/resolve/; ' \
 					$${RUNME} > $(srcdir)/$*_ts_runme.ts && \
 					cp $(srcdir)/$*.d.ts $(srcdir)/$*/index.d.ts && \
-					$(TSC) --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports $(srcdir)/$*_ts_runme.ts && \
+					$(TSC) $(TSCOPT) $(srcdir)/$*_ts_runme.ts && \
 					mv $(srcdir)/$*_ts_runme.js $(srcdir)/$*_ts_runme.mjs && \
 					RUNME=$(srcdir)/$*_ts_runme.mjs; \
 			fi && \
