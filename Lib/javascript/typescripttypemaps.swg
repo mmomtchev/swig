@@ -15,3 +15,5 @@
 %typemap(ts) SWIGTYPE, SWIGTYPE *, SWIGTYPE & "$jstype";
 
 %typemap(ts) void "void";
+
+%typemap(ts) (int ARGC, char **ARGV) "string[]"
