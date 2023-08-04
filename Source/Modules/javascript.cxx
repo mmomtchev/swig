@@ -299,6 +299,11 @@ protected:
 
   virtual const char *getGetterTemplate(bool);
 
+  /**
+   * Identify if an argument is optional or not
+   */
+  bool isArgOptional(Node *, Parm *);
+
 protected:
 
   JSEngine engine;
@@ -403,7 +408,8 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         arg_name = NewString("");
         Printf(arg_name, "arg%d", idx);
       }
-      Printf(args, "%s%s: %s", p != params ? ", " : "", arg_name, tm);
+      bool opt = parent->isArgOptional(n, p);
+      Printf(args, "%s%s%s: %s", p != params ? ", " : "", arg_name, opt ? "?" : "",  tm);
       p = Getattr(p, "tmap:ts:next");
     } else {
       p = nextSibling(p);
@@ -1726,15 +1732,10 @@ int JSEmitter::emitFunctionDispatcher(Node *n, bool) {
   return SWIG_OK;
 }
 
-String *JSEmitter::emitInputTypemap(Node *n, Parm *p, Wrapper *wrapper, String *arg) {
-  String *code = NewString("");
-  // Get input typemap for current param
-  String *tm = Getattr(p, "tmap:in");
+bool JSEmitter::isArgOptional(Node *n, Parm *p) {
   String *tm_def = Getattr(p, "tmap:default");
-  SwigType *type = Getattr(p, "type");
   int argmin = -1;
   int argidx = -1;
-  bool is_optional = false;
 
   if (Getattr(n, ARGREQUIRED)) {
     argmin = GetInt(n, ARGREQUIRED);
@@ -1744,11 +1745,22 @@ String *JSEmitter::emitInputTypemap(Node *n, Parm *p, Wrapper *wrapper, String *
   }
 
   if (tm_def != NULL) {
-    is_optional = true;
+    return true;
   }
   if (argmin >= 0 && argidx >= 0 && argidx >= argmin) {
-    is_optional = true;
+    return true;
   }
+
+  return false;
+}
+
+String *JSEmitter::emitInputTypemap(Node *n, Parm *p, Wrapper *wrapper, String *arg) {
+  String *code = NewString("");
+  // Get input typemap for current param
+  String *tm = Getattr(p, "tmap:in");
+  SwigType *type = Getattr(p, "type");
+  bool is_optional = isArgOptional(n, p);
+
   if (is_optional && Getattr(p, INDEX) == NULL) {
     Printf(stderr, "Argument %s in %s cannot be a default argument\n", Getattr(p, NAME), state.function(NAME));
     return SWIG_ERROR;
