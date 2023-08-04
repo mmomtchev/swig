@@ -1,3 +1,9 @@
+#ifdef SWIGTYPESCRIPT
+
+%insert("begin") %{
+#define SWIGTYPESCRIPT
+%}
+
 /**
  * Typescript typemaps
  *
@@ -19,3 +25,5 @@
 %typemap(ts) (int ARGC, char **ARGV) "string[]"
 
 %typemap(ts) (char *STRING, size_t LENGTH) "string"
+
+#endif

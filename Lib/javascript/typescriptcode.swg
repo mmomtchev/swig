@@ -1,3 +1,4 @@
+#ifdef SWIGTYPESCRIPT
 /* -----------------------------------------------------------------------------
  * ts_header:  module header
  *   - $jsmodule:         name of the module
@@ -128,3 +129,4 @@ export namespace $jsname {
 %{
 }
 %}
+#endif
