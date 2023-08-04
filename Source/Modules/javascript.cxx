@@ -353,11 +353,12 @@ protected:
   virtual int expandTSvars(String *, DOH *);
 
 private:
-  String *f_declarations;
+  String *f_declarations, *f_current_class;
   JSEmitter *parent;
 };
 
-TYPESCRIPT::TYPESCRIPT(JSEmitter *_parent) : f_declarations(NULL), parent(_parent) {
+TYPESCRIPT::TYPESCRIPT(JSEmitter *_parent) :
+  f_declarations(NULL), f_current_class(NULL), parent(_parent) {
 }
 
 void TYPESCRIPT::main(int, char *[]) {
@@ -531,7 +532,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
         .replace("$tsargs", args)
         .replace("$tsret", ret)
         .replace("$tsqualifier", qualifier)
-        .print(f_declarations);
+        .print(is_member ? f_current_class : f_declarations);
   }
   if (async_name) {
     Template t_function(
@@ -540,7 +541,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
         .replace("$tsargs", args)
         .replace("$tsret", promisify(ret))
         .replace("$tsqualifier", qualifier)
-        .print(f_declarations);
+        .print(is_member ? f_current_class : f_declarations);
   }
 
   Delete(args);
@@ -556,12 +557,15 @@ int TYPESCRIPT::functionHandler(Node *n) {
 int TYPESCRIPT::variableHandler(Node *n) {
   const char *templ;
   bool is_member = GetFlag(n, "ismember");
+  String *target;
 
   if (is_member) {
     templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
+    target = f_current_class;
   } else {
     templ =
         GetFlag(n, "constant") ? "ts_global_constant" : "ts_global_variable";
+    target = f_declarations;
   }
   Template t_variable(parent->getTemplate(templ));
 
@@ -577,7 +581,7 @@ int TYPESCRIPT::variableHandler(Node *n) {
   t_variable.replace("$jsname", parent->state.variable(NAME))
       .replace("$tstype", tm)
       .replace("$tsqualifier", qualifier)
-      .print(f_declarations);
+      .print(target);
 
   return SWIG_OK;
 }
@@ -589,6 +593,7 @@ int TYPESCRIPT::variableHandler(Node *n) {
  * Handlers for generating wrappers for classes
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::enterClass(Node *n) {
+  f_current_class = NewString("");
   Template t_class(parent->getTemplate("ts_class_header"));
 
   String *jsparent = NewString("");
@@ -600,14 +605,16 @@ int TYPESCRIPT::enterClass(Node *n) {
   t_class.replace("$jsname", Getattr(parent->state.clazz(), NAME))
       .replace("$jsparent", jsparent)
       .replace("$tsqualifier", qualifier)
-      .print(f_declarations);
+      .print(f_current_class);
 
   return SWIG_OK;
 }
 int TYPESCRIPT::exitClass(Node *n) {
   Template t_class(parent->getTemplate("ts_class_footer"));
 
-  t_class.replace("$jsname", Getattr(n, NAME)).trim().pretty_print(f_declarations);
+  t_class.replace("$jsname", Getattr(n, NAME)).trim().pretty_print(f_current_class);
+  Append(f_declarations, f_current_class);
+  f_current_class = NULL;
 
   return SWIG_OK;
 }
@@ -624,7 +631,7 @@ int TYPESCRIPT::constructorHandler(Node *n) {
 
   t_function.replace("$jsname", parent->state.clazz(NAME))
       .replace("$tsargs", args)
-      .print(f_declarations);
+      .print(f_current_class);
 
   Delete(args);
   return SWIG_OK;
@@ -695,6 +702,13 @@ int JAVASCRIPT::functionHandler(Node *n) {
 
   if (GetFlag(n, "isextension") == 1) {
     SetFlag(n, "ismember");
+  }
+
+  if (GetFlag(n, "feature:del")) {
+    Swig_warning(WARN_IGNORE_OPERATOR_DELETE, input_file, line_number,
+                 "JavaScript does not have destructors, ignoring %s\n",
+                 Getattr(n, "sym:name"));
+    return SWIG_ERROR;
   }
 
   emitter->enterFunction(n);
