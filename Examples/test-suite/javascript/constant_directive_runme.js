@@ -1,13 +1,11 @@
 var constant_directive = require("constant_directive");
 
-/* @ts-ignore : yes it is a useless statement */
-if (!constant_directive.TYPE1_CONSTANT1 instanceof constant_directive.Type1) {
+if (!(constant_directive.TYPE1_CONSTANT1 instanceof constant_directive.Type1)) {
     throw new Error("Failure: TYPE1_CONSTANT1 type: " +
         typeof constant_directive.TYPE1_CONSTANT1);
 
 }
-/* @ts-ignore : yes it is a useless statement */
-if (!/* await */(constant_directive.getType1Instance()) instanceof constant_directive.Type1) {
+if (!(/* await */(constant_directive.getType1Instance()) instanceof constant_directive.Type1)) {
     throw new Error("Failure: getType1Instance() type: " +
         typeof constant_directive.getType1Instance());
 }
