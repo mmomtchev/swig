@@ -330,7 +330,7 @@ JSEmitter *swig_javascript_create_NAPIEmitter();
 class TYPESCRIPT {
 
 public:
-  TYPESCRIPT(JSEmitter *_parent) : f_declarations(NULL), parent(_parent) {}
+  TYPESCRIPT(JSEmitter *_parent);
   virtual ~TYPESCRIPT() {}
 
   virtual int functionHandler(Node *);
@@ -340,6 +340,7 @@ public:
   virtual int exitClass(Node *);
   virtual int switchNamespace(Node *);
   virtual int top(Node *);
+  virtual void main(int, char *[]);
 
 protected:
   virtual String *emitArguments(Node *);
@@ -350,6 +351,14 @@ private:
   String *f_declarations;
   JSEmitter *parent;
 };
+
+TYPESCRIPT::TYPESCRIPT(JSEmitter *_parent) : f_declarations(NULL), parent(_parent) {
+}
+
+void TYPESCRIPT::main(int, char *[]) {
+  // Add a symbol to the parser for conditional compilation
+  Preprocessor_define("SWIGTYPESCRIPT 1", 0);
+}
 
 /**
  * Expand the TS-specific typemap special variables
@@ -1001,7 +1010,10 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
 
   allow_overloading();
 
-  if (ts_enabled) ts_emitter = new TYPESCRIPT(emitter);
+  if (ts_enabled) {
+    ts_emitter = new TYPESCRIPT(emitter);
+    ts_emitter->main(argc, argv);
+  }
 }
 
 /* -----------------------------------------------------------------------------
