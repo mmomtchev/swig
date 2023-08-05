@@ -387,39 +387,6 @@ String *TYPESCRIPT::promisify(String *type) {
   return promise;
 }
 
-/**
- * Transform the ParmList arguments to a string
- * of TypeScript typed arguments using the "ts" typemaps
- */
-String *TYPESCRIPT::emitArguments(Node *n) {
-  Parm *p;
-  String *args = NewString("");
-  ParmList *params = Getattr(n, "parms");
-  int idx;
-
-  Swig_typemap_attach_parms("ts", params, NULL);
-
-  for (idx = 0, p = params; p; idx++) {
-    String *tm = Getattr(p, "tmap:ts");
-    expandTSvars(tm, p);
-
-    if (tm != nullptr) {
-      String *arg_name = Getattr(p, NAME);
-      if (!arg_name) {
-        arg_name = NewString("");
-        Printf(arg_name, "arg%d", idx);
-      }
-      bool opt = parent->isArgOptional(n, p);
-      Printf(args, "%s%s%s: %s", p != params ? ", " : "", arg_name, opt ? "?" : "",  tm);
-      p = Getattr(p, "tmap:ts:next");
-    } else {
-      p = nextSibling(p);
-    }
-  }
-
-  return args;
-}
-
 /* ---------------------------------------------------------------------
  * top()
  *
@@ -671,12 +638,49 @@ class JAVASCRIPT:public Language {
 public:
 
   virtual String *getNSpace() const;
+  virtual String *makeParameterName(Node *n, Parm *p, int arg_num,
+                                    bool setter) const;
 
 private:
 
   JSEmitter *emitter;
   TYPESCRIPT *ts_emitter;
 };
+
+/**
+ * Transform the ParmList arguments to a string
+ * of TypeScript typed arguments using the "ts" typemaps
+ */
+String *TYPESCRIPT::emitArguments(Node *n) {
+  Parm *p;
+  String *args = NewString("");
+  ParmList *params = Getattr(n, "parms");
+  int idx;
+
+  Swig_typemap_attach_parms("ts", params, NULL);
+
+  for (idx = 0, p = params; p; idx++) {
+      String *tm = Getattr(p, "tmap:ts");
+      expandTSvars(tm, p);
+
+      if (tm != nullptr) {
+      JAVASCRIPT *lang = static_cast<JAVASCRIPT *>(Language::instance());
+      String *arg_name = lang->makeParameterName(n, p, idx, false);
+      if (!arg_name) {
+        arg_name = NewString("");
+        Printf(arg_name, "arg%d", idx);
+      }
+      bool opt = parent->isArgOptional(n, p);
+      Printf(args, "%s%s%s: %s", p != params ? ", " : "", arg_name,
+             opt ? "?" : "", tm);
+      p = Getattr(p, "tmap:ts:next");
+      } else {
+      p = nextSibling(p);
+      }
+  }
+
+  return args;
+}
 
 /* ---------------------------------------------------------------------
  * functionWrapper()
@@ -876,6 +880,11 @@ int JAVASCRIPT::fragmentDirective(Node *n) {
 
 String *JAVASCRIPT::getNSpace() const {
   return Language::getNSpace();
+}
+
+String *JAVASCRIPT::makeParameterName(Node *n, Parm *p, int arg_num,
+                                      bool setter) const {
+  return Language::makeParameterName(n, p, arg_num, setter);
 }
 
 /* ---------------------------------------------------------------------
