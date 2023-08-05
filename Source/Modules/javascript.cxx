@@ -407,6 +407,7 @@ int TYPESCRIPT::top(Node *n) {
   }
   Swig_register_filebyname("typescript", f_typescript);
   Swig_banner(f_typescript);
+  int banner_length = Len(f_typescript);
 
   String *module = Getattr(n, NAME);
   Template t_header(parent->getTemplate("ts_header"));
@@ -445,6 +446,11 @@ int TYPESCRIPT::top(Node *n) {
       nspace = Getattr(nspace, "parent:nspace");
     }
     Printf(f_typescript, "%s", namespace_stmts);
+  }
+  if (Len(f_typescript) == banner_length) {
+    // They do this in the TypeScript project as well
+    // https://github.com/microsoft/TypeScript/pull/20626
+    Printf(f_typescript, "export {}\n");
   }
 
   Template t_footer(parent->getTemplate("ts_footer"));
