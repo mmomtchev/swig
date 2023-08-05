@@ -663,13 +663,14 @@ String *TYPESCRIPT::emitArguments(Node *n) {
   ParmList *params = Getattr(n, "parms");
   int idx;
 
+  Swig_typemap_attach_parms("in", params, NULL);
   Swig_typemap_attach_parms("ts", params, NULL);
 
   for (idx = 0, p = params; p; idx++) {
-      String *tm = Getattr(p, "tmap:ts");
-      expandTSvars(tm, p);
+    String *tm = Getattr(p, "tmap:ts");
+    expandTSvars(tm, p);
 
-      if (tm != nullptr) {
+    if (tm != nullptr && !checkAttribute(p, "tmap:in:numinputs", "0")) {
       JAVASCRIPT *lang = static_cast<JAVASCRIPT *>(Language::instance());
       String *arg_name = lang->makeParameterName(n, p, idx, false);
       if (!arg_name) {
@@ -677,12 +678,14 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         Printf(arg_name, "arg%d", idx);
       }
       bool opt = parent->isArgOptional(n, p);
-      Printf(args, "%s%s%s: %s", p != params ? ", " : "", arg_name,
-             opt ? "?" : "", tm);
+      Printf(args, "%s%s%s: %s", Len(args) > 0 ? ", " : "", arg_name,
+              opt ? "?" : "", tm);
+    }
+    if (tm != nullptr) {
       p = Getattr(p, "tmap:ts:next");
-      } else {
+    } else {
       p = nextSibling(p);
-      }
+    }
   }
 
   return args;
