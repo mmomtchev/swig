@@ -559,6 +559,7 @@ int TYPESCRIPT::variableHandler(Node *n) {
   bool is_member = GetFlag(n, "ismember");
   String *target;
 
+  switchNamespace(n);
   if (is_member) {
     templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
     target = f_current_class;
@@ -577,7 +578,6 @@ int TYPESCRIPT::variableHandler(Node *n) {
   String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   expandTSvars(tm, n);
 
-  switchNamespace(n);
   t_variable.replace("$jsname", parent->state.variable(NAME))
       .replace("$tstype", tm)
       .replace("$tsqualifier", qualifier)
