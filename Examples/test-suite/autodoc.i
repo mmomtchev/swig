@@ -155,7 +155,6 @@ bool is_python_builtin() { return false; }
 #endif
 %}
 
-#ifndef SWIGTYPESCRIPT
 // Autodoc language keywords
 %feature(autodoc,1) process;
 %feature(autodoc,1) process2;
@@ -174,7 +173,6 @@ int process2(int from = 0, int _in = 1, int var = 2) { return from; }
 int process3(int from, int _in, int var) { return from; }
 int process4(int from = 0, int _in = 1, int var = 2) { return from; }
 %}
-#endif
 
 // Autodoc for methods with default arguments not directly representable in
 // target language.
