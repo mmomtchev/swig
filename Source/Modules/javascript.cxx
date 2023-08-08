@@ -571,7 +571,9 @@ int TYPESCRIPT::enterClass(Node *n) {
 
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
-  if (jsbase) Printf(jsparent, " extends %s", Getattr(jsbase, "sym:name"));
+  if (jsbase && Getattr(jsbase, "module")) {
+    Printf(jsparent, " extends %s", Getattr(jsbase, "sym:name"));
+  }
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
   switchNamespace(n);
