@@ -127,6 +127,9 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		SWIGOPT += -async
 	endif
         ifneq (, $(TYPESCRIPT))
+                ifeq (, $(TSC))
+                        $(error No TypeScript compiler found)
+                endif
 		SWIGOPT += -typescript
 	endif
 
