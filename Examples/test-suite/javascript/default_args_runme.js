@@ -89,6 +89,7 @@ if (error) {
 }
 
 try {
+    /* @ts-ignore */
     var m = /* await */(f.meth(1));
     error = 1;
 } catch {
@@ -99,6 +100,7 @@ if (error) {
 }
 
 try {
+    /* @ts-ignore */
     m = /* await */(f.meth(1, 2));
     error = 1;
 } catch {
@@ -109,6 +111,7 @@ if (error) {
 }
 
 try {
+    /* @ts-ignore */
     m = /* await */(f.meth(1, 2, 3));
     error = 1;
 } catch {
