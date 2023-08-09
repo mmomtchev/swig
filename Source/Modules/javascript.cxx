@@ -670,6 +670,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   Swig_typemap_attach_parms("in", params, NULL);
   Swig_typemap_attach_parms("ts", params, NULL);
+  Swig_typemap_attach_parms("default", params, NULL);
 
   for (idx = 0, p = params; p; idx++) {
     String *tm = Getattr(p, "tmap:ts");
