@@ -24,10 +24,12 @@
 
 %typemap(ts) (int ARGC, char **ARGV) "string[]";
 
+%typemap(ts) (char *STRING, size_t LENGTH) "string";
+
 %typemap(ts) (Char *STRING, size_t LENGTH),
-  (Char *STRING, int LENGTH),  (Char *STRING, size_t SIZE), (Char *STRING, int SIZE), 
+  (Char *STRING, int LENGTH), (Char *STRING, size_t SIZE), (Char *STRING, int SIZE), 
   (int LENGTH, Char *STRING), (int SIZE, Char *STRING)
-  "string";
+  = (char *STRING, size_t LENGTH);
 
 %typemap(ts) (const void *indata, size_t inlen) = (Char *STRING, size_t LENGTH);
 
