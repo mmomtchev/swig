@@ -407,7 +407,7 @@ int TYPESCRIPT::top(Node *n) {
   }
   Swig_register_filebyname("typescript", f_typescript);
   Swig_banner(f_typescript);
-  int banner_length = Len(f_typescript);
+  bool empty = true;
 
   String *module = Getattr(n, NAME);
   Template t_header(parent->getTemplate("ts_header"));
@@ -433,7 +433,10 @@ int TYPESCRIPT::top(Node *n) {
     // Emit the namespace declarations
     nspace = it.item;
     String *f_namespace = Getattr(nspace, "typescript");
-    Printv(f_typescript, f_namespace, "\n", 0);
+    if (Len(f_namespace) > 0) {
+      Printv(f_typescript, f_namespace, "\n", 0);
+      empty = false;
+    }
 
     // Emit successive end namespace statements for
     // each level
@@ -447,7 +450,7 @@ int TYPESCRIPT::top(Node *n) {
     }
     Printf(f_typescript, "%s", namespace_stmts);
   }
-  if (Len(f_typescript) == banner_length) {
+  if (empty) {
     // They do this in the TypeScript project as well
     // https://github.com/microsoft/TypeScript/pull/20626
     Printf(f_typescript, "export {}\n");
