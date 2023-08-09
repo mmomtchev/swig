@@ -3,6 +3,7 @@ var constant_directive = require("constant_directive");
 // TODO
 // Include an official method for detecting the generator
 // from the target language environment
+/* @ts-ignore */
 if (typeof print === 'undefined' && typeof constant_directive.Type1.prototype.equals === 'undefined') {
   // instanceof is not fully supported in JSC/V8
   if (!(constant_directive.TYPE1_CONSTANT1 instanceof constant_directive.Type1)) {
