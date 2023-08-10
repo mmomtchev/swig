@@ -194,20 +194,11 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			fi \
 		fi
 
-	run_testcase_async = \
-		if [ -f $(srcdir)/$*$(SCRIPTSUFFIX) ]; then \
-			env LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
-				$(RUNTOOL) $(NODEJS) $(srcdir)/$*$(SCRIPTASYNCSUFFIX); \
-		fi
-
   %.ctest:
 		$(_setup)
 		+$(swig_and_compile_c)
-        	ifneq (, $(ASYNC))
-			$(run_testcase_async)
-        	else
-			$(run_testcase)
-                endif
+		$(run_testcase)
+
   %.cpptest:
 		$(_setup)
 		+$(swig_and_compile_cpp)
