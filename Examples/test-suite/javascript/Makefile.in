@@ -123,15 +123,23 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 	else
 		BUILD = Release
 	endif
+
+        # async/TS mode can be enabled by ASYNC/TYPESCRIPT _or_ SWIG_FEATURES
         ifneq (, $(ASYNC))
 		SWIGOPT += -async
 	endif
+        ifneq (,$(findstring async,$(SWIG_FEATURES)))
+                ASYNC = 1
+        endif
         ifneq (, $(TYPESCRIPT))
                 ifeq (, $(TSC))
                         $(error No TypeScript compiler found)
                 endif
 		SWIGOPT += -typescript
 	endif
+        ifneq (,$(findstring typescript,$(SWIG_FEATURES)))
+                TYPESCRIPT = 1
+        endif
 
 	setup_node = \
 		test -d $* || mkdir $* && \
