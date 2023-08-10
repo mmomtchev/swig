@@ -57,6 +57,7 @@ case "$SWIGLANG" in
 					$RETRY npm install -g node-gyp
 				fi
 				$RETRY npm install -g node-addon-api
+				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g tsc
 				;;
 			"jsc")
 				$RETRY sudo apt-get install -qq libjavascriptcoregtk-${VER}-dev
