@@ -171,7 +171,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					's@/\* await \*/@await resolve@g; \
 					s@/\* async \*/@async@g; \
 					s@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
-					1s@^@import resolve from "./resolve.mjs"; @' \
+					1s@^@import resolve from "./'$(srcdir)'/resolve.mjs"; @' \
 					$${RUNME} > $*$(SCRIPTASYNCSUFFIX) \
 				&& \
 				RUNME=$*$(SCRIPTASYNCSUFFIX); \
