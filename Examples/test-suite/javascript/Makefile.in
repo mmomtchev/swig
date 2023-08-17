@@ -180,7 +180,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 				sed -e \
 					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
 					s/resolve.mjs/resolve/; ' \
-					$${RUNME} > $(srcdir)/$*_ts_runme.ts && \
+					$${RUNME} > $*_ts_runme.ts && \
 					cp $*.d.ts $*/index.d.ts && \
 					$(TSC) $(TSCOPT) $*_ts_runme.ts && \
 					mv $*_ts_runme.js $*_ts_runme.mjs && \
