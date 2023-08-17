@@ -172,9 +172,9 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					s@/\* async \*/@async@g; \
 					s@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
 					1s@^@import resolve from "./resolve.mjs"; @' \
-					$${RUNME} > $(srcdir)/$*$(SCRIPTASYNCSUFFIX) \
+					$${RUNME} > $*$(SCRIPTASYNCSUFFIX) \
 				&& \
-				RUNME=$(srcdir)/$*$(SCRIPTASYNCSUFFIX); \
+				RUNME=$*$(SCRIPTASYNCSUFFIX); \
 			fi && \
 			if [ -n "$(TYPESCRIPT)" ]; then \
 				sed -e \
@@ -182,15 +182,15 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					s/resolve.mjs/resolve/; ' \
 					$${RUNME} > $(srcdir)/$*_ts_runme.ts && \
 					cp $*.d.ts $*/index.d.ts && \
-					$(TSC) $(TSCOPT) $(srcdir)/$*_ts_runme.ts && \
-					mv $(srcdir)/$*_ts_runme.js $(srcdir)/$*_ts_runme.mjs && \
-					RUNME=$(srcdir)/$*_ts_runme.mjs; \
+					$(TSC) $(TSCOPT) $*_ts_runme.ts && \
+					mv $*_ts_runme.js $*_ts_runme.mjs && \
+					RUNME=$*_ts_runme.mjs; \
 			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) ${NODEJS} $${RUNME}; \
 		else \
 			if [ -n "$(TYPESCRIPT)" ]; then \
-				$(TSC) --noEmit $(TSCOPT) $(srcdir)/$*.d.ts ; \
+				$(TSC) --noEmit $(TSCOPT) $*.d.ts ; \
 			fi \
 		fi
 
