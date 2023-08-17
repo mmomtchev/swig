@@ -350,7 +350,7 @@ public:
 protected:
   virtual String *emitArguments(Node *);
   virtual String *promisify(String *);
-  virtual int expandTSvars(String *, DOH *);
+  virtual String *expandTSvars(String *, DOH *);
 
 private:
   String *f_declarations, *f_current_class;
@@ -370,12 +370,15 @@ void TYPESCRIPT::main(int, char *[]) {
  * Expand the TS-specific typemap special variables
  * $jstype - the wrapped symbol name
  */
-int TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
-  if (!tm) return SWIG_OK;
+String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
+  if (!tm)
+    return nullptr;
+
   SwigType *ctype = SwigType_base(Getattr(target, "type"));
   String *jstype = parent->state.types(ctype);
-  Replace(tm, "$jstype", jstype ? jstype : "any", 0);
-  return SWIG_OK;
+  String *r = Copy(tm);
+  Replace(r, "$jstype", jstype ? jstype : "any", 0);
+  return r;
 }
 
 /**
@@ -470,7 +473,7 @@ int TYPESCRIPT::top(Node *n) {
  * this->f_declarations is always the current namespace
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::switchNamespace(Node *) {
-  Hash *nspace = parent->state.clazz("nspace");
+  Hash *nspace = parent->current_namespace;
   if (!nspace)
     nspace = Getattr(parent->namespaces, "::");
   if (!Getattr(nspace, "typescript")) {
@@ -490,8 +493,9 @@ int TYPESCRIPT::functionHandler(Node *n) {
 
   String *args = emitArguments(n);
   
-  String *ret = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
-  expandTSvars(ret, n);
+  String *ret_tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+  Delete(ret_tm);
+  String *ret_type = expandTSvars(ret_tm, n);
 
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
@@ -506,7 +510,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
         parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
     t_function.replace("$jsname", sync_name)
         .replace("$tsargs", args)
-        .replace("$tsret", ret)
+        .replace("$tsret", ret_type)
         .replace("$tsqualifier", qualifier)
         .print(is_member ? f_current_class : f_declarations);
   }
@@ -515,13 +519,13 @@ int TYPESCRIPT::functionHandler(Node *n) {
         parent->getTemplate(is_member ? "ts_function" : "ts_global_function"));
     t_function.replace("$jsname", async_name)
         .replace("$tsargs", args)
-        .replace("$tsret", promisify(ret))
+        .replace("$tsret", promisify(ret_type))
         .replace("$tsqualifier", qualifier)
         .print(is_member ? f_current_class : f_declarations);
   }
 
   Delete(args);
-  Delete(ret);
+  Delete(ret_type);
   return SWIG_OK;
 }
 
@@ -552,10 +556,11 @@ int TYPESCRIPT::variableHandler(Node *n) {
                               : "";
 
   String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
-  expandTSvars(tm, n);
+  String *type = expandTSvars(tm, n);
+  Delete(tm);
 
   t_variable.replace("$jsname", parent->state.variable(NAME))
-      .replace("$tstype", tm)
+      .replace("$tstype", type)
       .replace("$tsqualifier", qualifier)
       .print(target);
 
@@ -575,7 +580,8 @@ int TYPESCRIPT::enterClass(Node *n) {
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
   if (jsbase && Getattr(jsbase, "module")) {
-    Printf(jsparent, " extends %s", Getattr(jsbase, "sym:name"));
+    String *base_name = Getattr(jsbase, NAME);
+    Printf(jsparent, " extends %s", parent->state.types(base_name));
   }
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
@@ -674,9 +680,12 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   for (idx = 0, p = params; p; idx++) {
     String *tm = Getattr(p, "tmap:ts");
-    expandTSvars(tm, p);
-
     if (tm != nullptr && !checkAttribute(p, "tmap:in:numinputs", "0")) {
+      String *type = expandTSvars(tm, p);
+      //Swig_print_tree(p);
+      //Printf(stdout, "tmap %s\n", tm);
+      Delete(tm);
+
       JAVASCRIPT *lang = static_cast<JAVASCRIPT *>(Language::instance());
       String *arg_name = lang->makeParameterName(n, p, idx, false);
       if (!arg_name) {
@@ -685,7 +694,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       }
       bool opt = parent->isArgOptional(n, p);
       Printf(args, "%s%s%s: %s", Len(args) > 0 ? ", " : "", arg_name,
-              opt ? "?" : "", tm);
+              opt ? "?" : "", type);
     }
     if (tm != nullptr) {
       p = Getattr(p, "tmap:ts:next");
@@ -1268,7 +1277,16 @@ int JSEmitter::enterClass(Node *n) {
   SetFlag(state.clazz(), IS_ABSTRACT);
 
   /* Remember the mapping for the TypeScript definitions */
-  state.types(Copy(state.clazz(TYPE)), Copy(state.clazz(NAME)));
+  String *jsname = NewString("");
+  Hash *nspace = current_namespace;
+  while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
+    String *prefix = NewString("");
+    Printf(prefix, "%s.", Getattr(nspace, NAME));
+    Insert(jsname, 0, prefix);
+    nspace = Getattr(nspace, "parent:nspace");
+  }
+  Printf(jsname, "%s", state.clazz(NAME));
+  state.types(Copy(state.clazz(TYPE)), jsname);
 
   return SWIG_OK;
 }
