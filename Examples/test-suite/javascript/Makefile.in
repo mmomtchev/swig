@@ -181,7 +181,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
 					s/resolve.mjs/resolve/; ' \
 					$${RUNME} > $(srcdir)/$*_ts_runme.ts && \
-					cp $(srcdir)/$*.d.ts $(srcdir)/$*/index.d.ts && \
+					cp $*.d.ts $*/index.d.ts && \
 					$(TSC) $(TSCOPT) $(srcdir)/$*_ts_runme.ts && \
 					mv $(srcdir)/$*_ts_runme.js $(srcdir)/$*_ts_runme.mjs && \
 					RUNME=$(srcdir)/$*_ts_runme.mjs; \
