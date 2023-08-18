@@ -24,9 +24,6 @@ if (/* await */(special_variable_macros.testMary(name)) != "SWIGTYPE_p_NameWrap"
 if (/* await */(special_variable_macros.testJames(name)) != "SWIGTYPE_Name") {
     throw new Error("test failed");
 }
-// The Typescript generator correctly assumes that the second argument is required
-// (as the typemap does not have numinputs=0)
-/* @ts-ignore */
 if (/* await */(special_variable_macros.testJim(name)) != "multiname num") {
     throw new Error("test failed");
 }
