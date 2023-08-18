@@ -686,9 +686,6 @@ String *TYPESCRIPT::emitArguments(Node *n) {
     String *tm = Getattr(p, "tmap:ts");
     if (tm != nullptr && !checkAttribute(p, "tmap:in:numinputs", "0")) {
       String *type = expandTSvars(tm, p);
-      //Swig_print_tree(p);
-      //Printf(stdout, "tmap %s\n", tm);
-      Delete(tm);
 
       JAVASCRIPT *lang = static_cast<JAVASCRIPT *>(Language::instance());
       String *arg_name = lang->makeParameterName(n, p, idx, false);
