@@ -11,6 +11,7 @@ if (cvar.accessed_examplekw != 0) {
 if (/* await */(special_variable_macros.testJack(name)) != "$specialname") {
     throw new Error("test failed");
 }
+/* @ts-ignore */
 if (cvar.accessed_examplekw != 1) {
     throw new Error("Postcondition failed");
 }
@@ -23,6 +24,9 @@ if (/* await */(special_variable_macros.testMary(name)) != "SWIGTYPE_p_NameWrap"
 if (/* await */(special_variable_macros.testJames(name)) != "SWIGTYPE_Name") {
     throw new Error("test failed");
 }
+// The Typescript generator correctly assumes that the second argument is required
+// (as the typemap does not have numinputs=0)
+/* @ts-ignore */
 if (/* await */(special_variable_macros.testJim(name)) != "multiname num") {
     throw new Error("test failed");
 }
