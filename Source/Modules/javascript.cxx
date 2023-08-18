@@ -495,7 +495,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
   
   String *ret_tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   Delete(ret_tm);
-  String *ret_type = expandTSvars(ret_tm, n);
+  String *ret_type = GetFlag(n, "ts:varargs") ? NewString("any") : expandTSvars(ret_tm, n);
 
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
@@ -673,6 +673,10 @@ String *TYPESCRIPT::emitArguments(Node *n) {
   String *args = NewString("");
   ParmList *params = Getattr(n, "parms");
   int idx;
+
+  if (GetFlag(n, "ts:varargs")) {
+    return NewString("...args: any[]");
+  }
 
   Swig_typemap_attach_parms("in", params, NULL);
   Swig_typemap_attach_parms("ts", params, NULL);
@@ -860,7 +864,10 @@ int JAVASCRIPT::constantWrapper(Node *n) {
 
 int JAVASCRIPT::nativeWrapper(Node *n) {
   emitter->emitNativeFunction(n);
-
+  if (ts_emitter) {
+    SetFlag(n, "ts:varargs");
+    ts_emitter->functionHandler(n);
+  }
   return SWIG_OK;
 }
 
