@@ -684,7 +684,8 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   for (idx = 0, p = params; p; idx++) {
     String *tm = Getattr(p, "tmap:ts");
-    if (tm != nullptr && !checkAttribute(p, "tmap:in:numinputs", "0")) {
+    if (tm != nullptr && Getattr(p, "tmap:in") &&
+        !checkAttribute(p, "tmap:in:numinputs", "0")) {
       String *type = expandTSvars(tm, p);
 
       JAVASCRIPT *lang = static_cast<JAVASCRIPT *>(Language::instance());
