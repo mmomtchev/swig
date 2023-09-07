@@ -10,6 +10,16 @@
 
 %ignore Time2::operator Date *;
 
+// allow conversion from Date -> Time1 using the following code
+%types(Time1 = Date) %{
+  Time1 *t = (Time1 *)$from;
+  Date &d = t->dateFromTime();
+  return (void *) &d;
+%}
+
+// allow conversion from Date -> Time2 using conversion operator (cast) in Time2
+%types(Time2 = Date);
+
 %inline %{
 struct Date {
   Date(unsigned int year, unsigned int month, unsigned int day) : year(year), month(month), day(day) {}
@@ -42,14 +52,4 @@ Date add(const Date &date, unsigned int days) {
   return newDate;
 }
 %}
-
-// allow conversion from Date -> Time1 using the following code
-%types(Time1 = Date) %{
-  Time1 *t = (Time1 *)$from;
-  Date &d = t->dateFromTime();
-  return (void *) &d;
-%}
-
-// allow conversion from Date -> Time2 using conversion operator (cast) in Time2
-%types(Time2 = Date);
 
