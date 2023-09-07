@@ -708,7 +708,11 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       List *equiv_types = SwigType_get_equiv_types(type);
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
-          Printf(args, " | %s", Getitem(equiv_types, i));
+          SwigType *ctype = SwigType_base(Getitem(equiv_types, i));
+          String *jstype = parent->state.types(ctype);
+          if (jstype) {
+            Printf(args, " | %s", jstype);
+          }
         }
         Delete(equiv_types);
       }
