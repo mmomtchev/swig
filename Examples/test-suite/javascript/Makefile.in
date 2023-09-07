@@ -178,8 +178,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			fi && \
 			if [ -n "$(TYPESCRIPT)" ]; then \
 				sed -e \
-					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
-					s/resolve.mjs/resolve/; ' \
+					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; ' \
 					$${RUNME} > $*_ts_runme.ts && \
 					cp $*.d.ts $*/index.d.ts && \
 					$(TSC) $(TSCOPT) $*_ts_runme.ts && \
