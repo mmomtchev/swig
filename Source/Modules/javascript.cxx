@@ -694,9 +694,24 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         arg_name = NewString("");
         Printf(arg_name, "arg%d", idx);
       }
-      bool opt = parent->isArgOptional(n, p);
-      Printf(args, "%s%s%s: %s", Len(args) > 0 ? ", " : "", arg_name,
-              opt ? "?" : "", type);
+
+      if (Len(args) > 0) {
+        Append(args, ", ");
+      }
+      Append(args, arg_name);
+      if (parent->isArgOptional(n, p)) {
+        Append(args, "?");
+      }
+      Append(args, ": ");
+
+      Append(args, type);
+      List *equiv_types = SwigType_get_equiv_types(type);
+      if (equiv_types) {
+        for (int i = 0; i < Len(equiv_types); i++) {
+          Printf(args, " | %s", Getitem(equiv_types, i));
+        }
+        Delete(equiv_types);
+      }
     }
     if (tm != nullptr) {
       p = Getattr(p, "tmap:ts:next");
