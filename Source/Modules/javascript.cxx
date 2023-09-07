@@ -699,6 +699,9 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         Append(args, ", ");
       }
       Append(args, arg_name);
+      if (!Getattr(p, INDEX)) {
+        SetInt(p, INDEX, idx);
+      }
       if (parent->isArgOptional(n, p)) {
         Append(args, "?");
       }
