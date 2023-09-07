@@ -501,8 +501,9 @@ int TYPESCRIPT::functionHandler(Node *n) {
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
 
   String *sync_name = parent->state.function("name:sync");
-  if (!sync_name) sync_name = parent->state.function("name");
   String *async_name = parent->state.function("name:async");
+  if (!sync_name && !async_name)
+    sync_name = parent->state.function("name");
 
   switchNamespace(n);
   if (sync_name) {
