@@ -498,7 +498,14 @@ int TYPESCRIPT::functionHandler(Node *n) {
   
   String *ret_tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   Delete(ret_tm);
-  String *ret_type = GetFlag(n, "ts:varargs") ? NewString("any") : expandTSvars(ret_tm, n);
+  String *ret_type = nullptr;
+  if (GetFlag(n, "ts:varargs")) {
+    ret_type = NewString("any");
+  } else if (GetFlag(n, "ts:out")) {
+    ret_type = Getattr(n, "ts:out");
+  } else {
+    ret_type = expandTSvars(ret_tm, n);
+  }
 
   const char *qualifier =
       Equal(Getattr(n, "storage"), "static") ? "static" : "";
@@ -684,10 +691,15 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
   Swig_typemap_attach_parms("in", params, NULL);
   Swig_typemap_attach_parms("ts", params, NULL);
+  Swig_typemap_attach_parms("tsout", params, NULL);
   Swig_typemap_attach_parms("default", params, NULL);
 
   for (idx = 0, p = params; p; idx++) {
     String *tm = Getattr(p, "tmap:ts");
+    String *tm_out = Getattr(p, "tmap:tsout");
+    if (tm_out) {
+      Setattr(n, "ts:out", tm_out);
+    }
     if (tm != nullptr && Getattr(p, "tmap:in") &&
         !checkAttribute(p, "tmap:in:numinputs", "0")) {
       String *type = expandTSvars(tm, p);
