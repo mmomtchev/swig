@@ -401,6 +401,9 @@ int TYPESCRIPT::top(Node *n) {
   String *infile_filename = Swig_file_filename(infile);
   String *basename = Swig_file_basename(infile_filename);
   String *typescript_filename = NewString("");
+  if (Len(SWIG_output_directory()) > 0) {
+    Printf(typescript_filename, "%s/", SWIG_output_directory());
+  }
   Printf(typescript_filename, "%s.d.ts", basename);
 
   File *f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
