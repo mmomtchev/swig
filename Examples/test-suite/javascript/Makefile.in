@@ -68,7 +68,8 @@ ifneq (, $(ASYNC))
 CPP_TEST_CASES += \
 	napi_async_locking \
 	napi_async_overloading \
-	napi_async_reject
+	napi_async_reject \
+	napi_buffer
 endif
 endif
 
@@ -90,7 +91,7 @@ _setup = \
         echo
 SWIGOPT += -$(JSENGINE)
 
-TSCOPT = --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
+TSCOPT = --typeRoots /usr/lib/node_modules/@types --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
