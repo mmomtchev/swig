@@ -33,4 +33,6 @@
 
 %typemap(ts) (const void *indata, size_t inlen) = (Char *STRING, size_t LENGTH);
 
+%include "typescripttypemaps-engine.i";
+
 #endif
