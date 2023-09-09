@@ -31,22 +31,33 @@
  * INPUT, OUTPUT, INOUT
  */
 
+%define INPUT_TMAPS(Type)
+%typemap(ts) Type *INPUT "$typemap(ts, Type)";
+%typemap(ts) Type &INPUT "$typemap(ts, Type)";
+%enddef
+
 %define OUTPUT_TMAPS(Type)
 %typemap(tsout) Type *OUTPUT "$typemap(ts, Type)[]";
 %typemap(tsout) Type &OUTPUT "$typemap(ts, Type)[]";
 %enddef
 
 %define INOUT_TMAPS(Type)
+%typemap(ts)    Type *INOUT = Type *INPUT;
+%typemap(ts)    Type &INOUT = Type &INPUT;
 %typemap(tsout) Type *INOUT = Type *OUTPUT;
 %typemap(tsout) Type &INOUT = Type &OUTPUT;
 %enddef
 
 %define ALL_TMAPS(Type)
+INPUT_TMAPS(Type)
 OUTPUT_TMAPS(Type)
 INOUT_TMAPS(Type)
 %enddef
 
+ALL_TMAPS(bool)
 ALL_TMAPS(char)
+ALL_TMAPS(unsigned char)
+ALL_TMAPS(signed char)
 ALL_TMAPS(std::string)
 ALL_TMAPS(short)
 ALL_TMAPS(unsigned short)
