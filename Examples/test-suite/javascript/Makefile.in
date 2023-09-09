@@ -10,7 +10,7 @@ SCRIPTSUFFIX = _runme.js
 SCRIPTASYNCSUFFIX = _async_runme.mjs
 OBJEXT = @OBJEXT@
 SO = @SO@
-GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I$(shell npm config get prefix)/lib/node_modules/node-addon-api
+GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
 
 HAVE_CXX11   = @HAVE_CXX11@
 HAVE_CXX14   = @HAVE_CXX14@
@@ -63,6 +63,9 @@ endif
 
 ifeq (napi, $(ENGINE))
 # Node-API specific tests
+CPP_TEST_CASES += \
+	napi_buffer
+
 ifneq (, $(ASYNC))
 # async-specific tests
 CPP_TEST_CASES += \
@@ -91,7 +94,7 @@ _setup = \
         echo
 SWIGOPT += -$(JSENGINE)
 
-TSCOPT = --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
+TSCOPT = --typeRoots @NODETYPES_DIR@ --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
