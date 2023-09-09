@@ -502,7 +502,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
   if (GetFlag(n, "ts:varargs")) {
     ret_type = NewString("any");
   } else if (GetFlag(n, "ts:out")) {
-    ret_type = Getattr(n, "ts:out");
+    ret_type = expandTSvars(Getattr(n, "ts:out"), n);
   } else {
     ret_type = expandTSvars(ret_tm, n);
   }
