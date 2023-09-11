@@ -722,9 +722,10 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         Append(args, "?");
       }
       Append(args, ": ");
-
       Append(args, type);
-      List *equiv_types = SwigType_get_equiv_types(type);
+
+      String *ctype = SwigType_base(Getattr(p, "type"));
+      List *equiv_types = SwigType_get_equiv_types(ctype);
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
           SwigType *ctype = SwigType_base(Getitem(equiv_types, i));
