@@ -383,7 +383,8 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm)
     return nullptr;
 
-  SwigType *ctype = SwigType_base(Getattr(target, "type"));
+  SwigType *ctype = SwigType_typedef_resolve_all(
+    SwigType_base(Getattr(target, "type")));
   String *jstype = parent->state.types(ctype);
   String *r = Copy(tm);
   Replace(r, "$jstype", jstype ? jstype : "any", 0);
@@ -630,12 +631,6 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
 
   String *js_name = NewString("");
   Printf(js_name, "%s%s", nspace, name);
-
-  // C/C++ enums can be referenced both
-  // as "type" or as "enum type" (eventually with two different names)
-  String *short_name = Getattr(n, "tdname");
-  if (short_name == nullptr) short_name = name;
-  parent->state.types(short_name, js_name);
 
   String *enum_name = NewString("");
   Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
