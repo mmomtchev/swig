@@ -297,6 +297,12 @@ protected:
 
   virtual int emitNamespaces() = 0;
 
+  /**
+   * Return the full JS prefix of the current namespace
+   * ie "Outer.Inner." or "" if it is the global one
+   */
+  virtual String* currentNamespacePrefix();
+
   virtual const char *getGetterTemplate(bool);
 
   /**
@@ -620,13 +626,20 @@ int TYPESCRIPT::variableHandler(Node *n) {
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::enumDeclaration(Node *n) {
   String *name = enumName(n);
+  String *nspace = parent->currentNamespacePrefix();
+
+  String *js_name = NewString("");
+  Printf(js_name, "%s%s", nspace, name);
 
   // C/C++ enums can be referenced both
   // as "type" or as "enum type" (eventually with two different names)
-  parent->state.types(name, name);
+  String *short_name = Getattr(n, "tdname");
+  if (short_name == nullptr) short_name = name;
+  parent->state.types(short_name, js_name);
+
   String *enum_name = NewString("");
   Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
-  parent->state.types(enum_name, name);
+  parent->state.types(enum_name, js_name);
 
   Template t_enum(parent->getTemplate("ts_enum_declaration"));
 
@@ -1364,6 +1377,18 @@ int JSEmitter::emitNativeFunction(Node *n) {
   return SWIG_OK;
 }
 
+String *JSEmitter::currentNamespacePrefix() {
+  String *name = NewString("");
+  Hash *nspace = current_namespace;
+  while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
+    String *prefix = NewString("");
+    Printf(prefix, "%s.", Getattr(nspace, NAME));
+    Insert(name, 0, prefix);
+    nspace = Getattr(nspace, "parent:nspace");
+  }
+  return name;
+}
+
 int JSEmitter::enterClass(Node *n) {
   state.clazz(RESET);
   state.clazz(NAME, Getattr(n, "sym:name"));
@@ -1395,14 +1420,8 @@ int JSEmitter::enterClass(Node *n) {
 
   /* Remember the mapping for the TypeScript definitions */
   String *jsname = NewString("");
-  Hash *nspace = current_namespace;
-  while (nspace && !Equal(Getattr(nspace, NAME), "exports")) {
-    String *prefix = NewString("");
-    Printf(prefix, "%s.", Getattr(nspace, NAME));
-    Insert(jsname, 0, prefix);
-    nspace = Getattr(nspace, "parent:nspace");
-  }
-  Printf(jsname, "%s", state.clazz(NAME));
+  String *nspace = currentNamespacePrefix();
+  Printf(jsname, "%s%s", nspace, state.clazz(NAME));
   state.types(Copy(state.clazz(TYPE)), jsname);
 
   return SWIG_OK;

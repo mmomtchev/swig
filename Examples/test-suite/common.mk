@@ -232,6 +232,7 @@ CPP_TEST_CASES += \
 	dynamic_cast \
 	empty \
 	enum_ignore \
+	enum_nspace \
 	enum_plus \
 	enum_rename \
 	enum_scope_template \
