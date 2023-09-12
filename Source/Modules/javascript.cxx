@@ -341,6 +341,7 @@ public:
   virtual int functionHandler(Node *);
   virtual int variableHandler(Node *);
   virtual int constructorHandler(Node *);
+  virtual int enumDeclaration(Node *);
   virtual int enterClass(Node *);
   virtual int exitClass(Node *);
   virtual int switchNamespace(Node *);
@@ -351,14 +352,16 @@ protected:
   virtual String *emitArguments(Node *);
   virtual String *promisify(String *);
   virtual String *expandTSvars(String *, DOH *);
+  virtual String *enumName(Node *);
 
 private:
   String *f_declarations, *f_current_class;
   JSEmitter *parent;
+  size_t enum_id;
 };
 
 TYPESCRIPT::TYPESCRIPT(JSEmitter *_parent) :
-  f_declarations(NULL), f_current_class(NULL), parent(_parent) {
+  f_declarations(NULL), f_current_class(NULL), parent(_parent), enum_id(1) {
 }
 
 void TYPESCRIPT::main(int, char *[]) {
@@ -540,41 +543,94 @@ int TYPESCRIPT::functionHandler(Node *n) {
   return SWIG_OK;
 }
 
+String *TYPESCRIPT::enumName(Node *n) {
+  bool is_member = GetFlag(n, "ismember");
+  String *name = Getattr(n, "sym:name");
+
+  if (name == nullptr) {
+    name = Getattr(n, "unnamed");
+    if (name == nullptr) {
+      name = NewString("");
+      Printf(name, "enum%u", enum_id++);
+      Setattr(n, "sym:name", name);
+    }
+  }
+
+  if (is_member) {
+    // There are no class-local types in TypeScript
+    // If we encounter a class-local enum, we must hoist it to the global scope
+    // In this it will prefixed by the class name to avoid collisions
+    String *qualified_name = NewString("");
+    Node *parent = Getattr(n, "parentNode");
+    Printf(qualified_name, "%s_%s", Getattr(parent, "sym:name"), name);
+    name = qualified_name;
+  }
+
+  return name;
+}
+
 /* ---------------------------------------------------------------------
  * variableHandler()
  *
  * Function handler for generating wrappers for functions
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::variableHandler(Node *n) {
-  const char *templ;
+  const char *templ = nullptr;
+  String *target = nullptr;
+  String *type = nullptr;
+
   bool is_member = GetFlag(n, "ismember");
-  String *target;
+  bool is_enumitem = Equal(Getattr(n, "nodeType"), "enumitem");
+  bool is_static = GetFlag(parent->state.variable(), IS_STATIC);
+  bool is_constant = GetFlag(n, "constant");
 
   switchNamespace(n);
   if (is_member) {
-    templ = GetFlag(n, "constant") ? "ts_constant" : "ts_variable";
+    templ = is_constant ? "ts_constant" : "ts_variable";
     target = f_current_class;
   } else {
-    templ =
-        GetFlag(n, "constant") ? "ts_global_constant" : "ts_global_variable";
+    templ = is_constant ? "ts_global_constant" : "ts_global_variable";
     target = f_declarations;
   }
   Template t_variable(parent->getTemplate(templ));
 
-  const char *qualifier = GetFlag(parent->state.variable(), IS_STATIC) ||
-                                  Equal(Getattr(n, "nodeType"), "enumitem")
-                              ? "static"
-                              : "";
+  const char *qualifier = (is_static || is_enumitem) ? "static" : "";
 
-  String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
-  String *type = expandTSvars(tm, n);
-  Delete(tm);
+  if (is_enumitem) {
+    Node *enum_node = Getattr(n, "parentNode");
+    type = enumName(enum_node);
+  } else {
+    String *tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
+    type = expandTSvars(tm, n);
+    Delete(tm);
+  }
 
   t_variable.replace("$jsname", parent->state.variable(NAME))
       .replace("$tstype", type)
       .replace("$tsqualifier", qualifier)
       .print(target);
 
+  return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * enumDeclaration()
+ *
+ * Handler for emitting an enum declaration
+ * --------------------------------------------------------------------- */
+int TYPESCRIPT::enumDeclaration(Node *n) {
+  String *name = enumName(n);
+
+  // C/C++ enums can be referenced both
+  // as "type" or as "enum type" (eventually with two different names)
+  parent->state.types(name, name);
+  String *enum_name = NewString("");
+  Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
+  parent->state.types(enum_name, name);
+
+  Template t_enum(parent->getTemplate("ts_enum_declaration"));
+
+  t_enum.replace("$jsname", name).print(f_declarations);
   return SWIG_OK;
 }
 
@@ -651,6 +707,7 @@ class JAVASCRIPT:public Language {
   virtual int globalvariableHandler(Node *n);
   virtual int staticmemberfunctionHandler(Node *n);
   virtual int classHandler(Node *n);
+  virtual int enumDeclaration(Node *n);
   virtual int functionWrapper(Node *n);
   virtual int constantWrapper(Node *n);
   virtual int nativeWrapper(Node *n);
@@ -865,6 +922,22 @@ int JAVASCRIPT::globalvariableHandler(Node *n) {
   Language::globalvariableHandler(n);
 
   return SWIG_OK;
+}
+
+/* ---------------------------------------------------------------------
+ * enumDeclaration()
+ *
+ * Function handler for declaring new enum types
+ * (used only in TypeScript mode)
+ * --------------------------------------------------------------------- */
+int JAVASCRIPT::enumDeclaration(Node *n) {
+  int rc = Language::enumDeclaration(n);
+  if (rc != SWIG_OK) return rc;
+
+  if (ts_emitter) {
+    rc = ts_emitter->enumDeclaration(n);
+  }
+  return rc;
 }
 
 /* ---------------------------------------------------------------------
