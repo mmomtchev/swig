@@ -5,6 +5,7 @@
  * ----------------------------------------------------------------------------- */
 %fragment("ts_header", "templates")
 %{
+declare const _SWIG_enum_tag: unique symbol;
 %}
 
 /* -----------------------------------------------------------------------------
@@ -128,5 +129,17 @@ export namespace $jsname {
 %fragment("ts_nspace_footer", "templates")
 %{
 }
+%}
+
+/* -----------------------------------------------------------------------------
+ * ts_enum_declaration:  template for enum declaration
+ *   - $jsname:         name of the enum type
+ *
+ * This uses a TypeScript technique called "type branding"
+ * https://spin.atomicobject.com/2018/01/15/typescript-flexible-nominal-typing/
+ * ----------------------------------------------------------------------------- */
+%fragment("ts_enum_declaration", "templates")
+%{
+export type $jsname = number & { readonly [_SWIG_enum_tag]: '$jsname'; };
 %}
 #endif
