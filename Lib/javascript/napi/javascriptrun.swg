@@ -64,10 +64,25 @@ SWIGINTERN inline Napi::Error SWIG_NAPI_NewError(Napi::Env env, Napi::Value obj,
 #if defined(_CPPUNWIND) || defined(__EXCEPTIONS)
 // Used instead of SWIG_NAPI_Raise when rejecting a Promise
 // in the background thread (for handling %catches)
-#define SWIG_NAPI_AsyncThrow(env, ...)          throw SWIG_NAPI_AsyncError(                       \
-                                                  [=](Napi::Env env) -> Napi::Error               \
-                                                  { return SWIG_NAPI_NewError(env, __VA_ARGS__);} \
-                                                )
+// It extends the base functor with the actual exception handling code
+// and rethrows the exception with the original handling code when
+// Error() is called
+#define SWIG_NAPI_AsyncThrow(env, ...)                              \
+class SWIG_NAPI_AsyncError_Instance : public SWIG_NAPI_AsyncError { \
+public:                                                             \
+  using SWIG_NAPI_AsyncError::SWIG_NAPI_AsyncError;                 \
+  virtual SWIG_NAPI_AsyncError *Clone() const {                     \
+    return new SWIG_NAPI_AsyncError_Instance(*this);                \
+  }                                                                 \
+  Napi::Error Error(Napi::Env env) {                                \
+    try {                                                           \
+      std::rethrow_exception(error);                                \
+    } catch (decltype(_e) &_e) {                                    \
+      return SWIG_NAPI_NewError(env, __VA_ARGS__);                  \
+    }                                                               \
+  }                                                                 \
+};                                                                  \
+throw SWIG_NAPI_AsyncError_Instance(std::current_exception());
 #endif
 
 #ifdef NAPI_CPP_EXCEPTIONS
@@ -187,18 +202,20 @@ public:
 };
 
 /*
- * This class carries an asynchronous error from a
- * background thread
- * It takes a lambda that can generate the Napi::Value
- * from the Napi::Env once back to the main thread
- *
- * Its constructors match the different forms of SWIG_NAPI_Raise
+ * This class is the base for all functors that carry
+ * exception handling code from background threads.
+ * It must be extended with the actual exception
+ * handling code.
+ * It is called by SWIG_NAPI_Raise in async contexts.
  */
 class SWIG_NAPI_AsyncError : public std::exception {
-  std::function<Napi::Error(Napi::Env)> make_error;
+protected:
+  std::exception_ptr error;
 public:
-  SWIG_NAPI_AsyncError(const std::function<Napi::Error(Napi::Env)> &err) : make_error(err) {}
-  Napi::Error Error(Napi::Env env) { return make_error(env); }
+  SWIG_NAPI_AsyncError(std::exception_ptr _err): std::exception(), error(_err) {}
+  virtual ~SWIG_NAPI_AsyncError() {}
+  virtual SWIG_NAPI_AsyncError *Clone() const = 0;
+  virtual Napi::Error Error(Napi::Env env) = 0;
 };
 
 /* ---------------------------------------------------------------------------
@@ -620,17 +637,13 @@ public:
     delete context;
   }
 
-  virtual void SetErrorObj(const SWIG_NAPI_AsyncError &err) {
-    error_object = new SWIG_NAPI_AsyncError(err);
-    SetError("SWIG Asynchronous Error");
-  }
-
   virtual void Execute() override {
-#if defined(_CPPUNWIND) || defined(__EXCEPTIONS)
+#ifdef NAPI_CPP_EXCEPTIONS
     try {
       context->SWIG_NAPI_Execute();
     } catch (const SWIG_NAPI_AsyncError &e) {
-      SetErrorObj(e);
+      error_object = e.Clone();
+      SetError("SWIG Node-API Asynchronous Error");
     } catch (const std::exception &e) {
       SetError(e.what());
     }
