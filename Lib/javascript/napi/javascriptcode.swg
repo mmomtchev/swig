@@ -353,6 +353,27 @@ fail:
 
 
 /* -----------------------------------------------------------------------------
+ * jsnapi_register_global_constant:  template for a statement that registers a global constant
+ *   - $jsname:         variable name
+ *   - $jsparent:       parent namespace
+ *   - $jsgetter:       wrapper of the getter function
+ *
+ * Note: this template is also used for global constants.
+ * ----------------------------------------------------------------------------- */
+%fragment("jsnapi_register_global_constant", "templates")
+%{
+  // jsnapi_register_global_constant
+  do {
+    Napi::Function f = Napi::Function::New(env, $jsgetter);
+    Napi::Value value;
+    NAPI_CHECK_RESULT(f.Call(0, SWIG_NULLPTR), value);
+    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Value("$jsname", value, napi_enumerable);
+    NAPI_CHECK_MAYBE($jsparent.DefineProperty(pd));
+  } while (0);
+%}
+
+
+/* -----------------------------------------------------------------------------
  * js_global_function:  template for function wrappers
  *   - $jswrapper:      wrapper function name
  *   - $jslocals:       locals part of wrapper
@@ -1226,6 +1247,24 @@ void $jsmangledname_inst::GetMembers(
 %}
 
 /* -----------------------------------------------------------------------------
+ * jsnapi_register_member_constant:  template for a statement that registers a member constant.
+ *   - $jsname:         name of the function
+ *   - $jsmangledname:  mangled class name
+ *   - $jsgetter:       wrapper of the getter function
+ * ----------------------------------------------------------------------------- */
+%fragment("jsnapi_register_member_constant", "templates")
+%{
+  // jsnapi_register_member_constant
+  members.erase("$jsname");
+  members.insert({"$jsname",
+        $jsmangledname_templ::InstanceAccessor("$jsname",
+                &$jsmangledname_templ::$jsgetter,
+                &$jsmangledname_templ::JS_veto_set_variable,
+                napi_enumerable)
+        });
+%}
+
+/* -----------------------------------------------------------------------------
  * jsnapi_register_static_function:  template for a statement that registers a static class function.
  *   - $jsname:         function name
  *   - $jsmangledname:  mangled class name
@@ -1259,4 +1298,24 @@ void $jsmangledname_inst::GetMembers(
                 &$jsmangledname_templ::$jssetter,
                 static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
         });
+%}
+
+/* -----------------------------------------------------------------------------
+ * jsnapi_register_static_constant:  template for a statement that registers a static constant.
+ *   - $jsname:         constant name
+ *   - $jsmangledname:  mangled class name
+ *   - $jsgetter:       wrapper of the getter function
+ * ----------------------------------------------------------------------------- */
+%fragment("jsnapi_register_static_constant", "templates")
+%{
+  // jsnapi_register_static_constant
+  do {
+    Napi::Function f = Napi::Function::New(env, $jsgetter);
+    Napi::Value value;
+    NAPI_CHECK_RESULT(f.Call(0, SWIG_NULLPTR), value);
+    staticMembers.erase("$jsname");
+    staticMembers.insert({"$jsname",
+          StaticValue("$jsname", value, napi_enumerable)
+    });
+  } while (0);
 %}
