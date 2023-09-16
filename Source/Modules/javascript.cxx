@@ -3613,7 +3613,21 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
-  String *action = emit_action(n);
+  Hash *action = emit_action_hash(n);
+
+  String *rethrow = NewStringEmpty();
+  if (is_async) {
+    // In async mode %exception wraps around the rethrow statement
+    String *rethrow_templ = NewStringEmpty();
+    Template(getTemplate("js_rethrow_exception")).print(rethrow_templ);
+    emit_action_code(n, rethrow, rethrow_templ);
+  } else {
+    // In sync mode %exception wraps around the action itself and becomes the action
+    emit_action_code(n, rethrow, Getattr(action, "action"));
+    Delete(Getattr(action, "action"));
+    Setattr(action, "action", rethrow);
+    rethrow = nullptr;
+  }
 
   wrapper->code = NewString("");
   marshalOutput(n, params, wrapper, NewString(""));
@@ -3637,7 +3651,12 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
       .replace("$jschecks", checks)
       .replace("$jsguard", guard)
       .replace("$jslock", locking)
-      .replace("$jsaction", action)
+      .replace("$jspreaction", Getattr(action, "preaction"))
+      .replace("$jstry", Getattr(action, "try"))
+      .replace("$jsaction", Getattr(action, "action"))
+      .replace("$jsrethrow", rethrow)
+      .replace("$jscatch", Getattr(action, "catch"))
+      .replace("$jspostaction", Getattr(action, "postaction"))
       .replace("$jsoutput", output)
       .replace("$jscleanup", cleanup)
       .replace("$symname", iname)
@@ -3651,6 +3670,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   Delete(action);
   Delete(output);
   Delete(jsasyncworker);
+  Delete(rethrow);
 
   return SWIG_OK;
 }

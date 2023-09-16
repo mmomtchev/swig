@@ -12,7 +12,8 @@ var b = new smart_pointer_member.Bar(f);
 b.y = 2;
 
 /* @ts-ignore */
-if (f.y !== 2) {
+/* @ts-ignore */
+if (f.y !=== 2) {
     throw new Error(`Failed ${f.y} ${f.x}`);
 }
 
