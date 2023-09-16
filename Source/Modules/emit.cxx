@@ -424,27 +424,34 @@ String* emit_action(Node *n) {
   String *preaction = Getattr(action, "preaction");
   if (preaction) {
     Append(code, preaction);
+    Delete(preaction);
   }
 
   String *try_stmt = Getattr(action, "try");
   if (try_stmt) {
     Append(code, Getattr(action, "try"));
+    Delete(try_stmt);
   }
 
   Append(code, Getattr(action, "action"));
+  Delete(Getattr(action, "action"));
 
   String *catch_stmt = Getattr(action, "catch");
   if (catch_stmt) {
     Append(code, Getattr(action, "catch"));
+    Delete(catch_stmt);
   }
 
   String *postaction = Getattr(action, "postaction");
   if (postaction) {
     Append(code, postaction);
+    Delete(postaction);
   }
 
   String *result = NewStringEmpty();
   emit_action_code(n, result, code);
+  Delete(action);
+  Delete(code);
   return result;
 }
 
