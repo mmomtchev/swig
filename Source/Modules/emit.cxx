@@ -429,7 +429,7 @@ String* emit_action(Node *n) {
 
   String *try_stmt = Getattr(action, "try");
   if (try_stmt) {
-    Append(code, Getattr(action, "try"));
+    Append(code, try_stmt);
     Delete(try_stmt);
   }
 
@@ -438,7 +438,7 @@ String* emit_action(Node *n) {
 
   String *catch_stmt = Getattr(action, "catch");
   if (catch_stmt) {
-    Append(code, Getattr(action, "catch"));
+    Append(code, catch_stmt);
     Delete(catch_stmt);
   }
 
