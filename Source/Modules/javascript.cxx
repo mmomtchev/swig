@@ -3042,7 +3042,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
-  String *action = emit_action(n);
+  Hash *action = emit_action_hash(n);
 
   wrapper->code = NewString("");
   marshalOutput(n, params, wrapper, NewString(""));
@@ -3066,7 +3066,11 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
       .replace("$jschecks", checks)
       .replace("$jsguard", guard)
       .replace("$jslock", locking)
-      .replace("$jsaction", action)
+      .replace("$jspreaction", Getattr(action, "preaction"))
+      .replace("$jstry", Getattr(action, "try"))
+      .replace("$jsaction", Getattr(action, "action"))
+      .replace("$jscatch", Getattr(action, "catch"))
+      .replace("$jspostaction", Getattr(action, "postaction"))
       .replace("$jsoutput", output)
       .replace("$jscleanup", cleanup)
       .replace("$symname", iname)

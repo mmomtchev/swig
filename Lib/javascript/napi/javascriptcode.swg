@@ -363,7 +363,11 @@ fail:
  *   - $jschecks:       check typemaps
  *   - $jsguard:        locking declaration
  *   - $jslock:         locking
+ *   - $jspreaction:    preaction part of wrapper
+ *   - $jstry:          try statement
  *   - $jsaction:       action part of wrapper
+ *   - $jscatch:        catch handler
+ *   - $jspostaction:   postaction part of wrapper
  *   - $joutput:        output part of wrapper
  *   - $jscleanup:      cleanup part of wrapper
  * ----------------------------------------------------------------------------- */
@@ -386,7 +390,11 @@ Napi::Value $jswrapper(const Napi::CallbackInfo &info) {
   $jsinput
   $jschecks
   $jslock
+  $jspreaction
+  $jstry
   $jsaction
+  $jscatch
+  $jspostaction
   $jsoutput
   $jscleanup
   return jsresult;
@@ -579,7 +587,11 @@ fail:
  *   - $jschecks:       check typemaps
  *   - $jsguard:        locking declaration
  *   - $jslock:         locking
+ *   - $jspreaction:    preaction part of wrapper
+ *   - $jstry:          try statement
  *   - $jsaction:       action part of wrapper
+ *   - $jscatch:        catch handler
+ *   - $jspostaction:   postaction part of wrapper
  *   - $joutput:        output part of wrapper
  *   - $jscleanup:      cleanup part of wrapper
  * ----------------------------------------------------------------------------- */
@@ -603,7 +615,11 @@ Napi::Value $jsmangledname_templ<SWIG_OBJ_WRAP>::$jswrapper(const Napi::Callback
   $jsinput
   $jschecks
   $jslock
+  $jspreaction
+  $jstry
   $jsaction
+  $jscatch
+  $jspostaction
   $jsoutput
   $jscleanup
   return jsresult;
@@ -686,11 +702,15 @@ fail:
  *   - $jsmangledname: class name
  *   - $jswrapper:     wrapper function name
  *   - $jslocals:      locals part of wrapper
- *   - $jsinput:        input part of wrapper
- *   - $jschecks:       check typemaps
+ *   - $jsinput:       input part of wrapper
+ *   - $jschecks:      check typemaps
  *   - $jsguard:       locking declaration
  *   - $jslock:        locking
- *   - $jsaction:      code part of wrapper
+ *   - $jspreaction:   preaction part of wrapper
+ *   - $jstry:         try statement
+ *   - $jsaction:      action part of wrapper
+ *   - $jscatch:       catch handler
+ *   - $jspostaction:  postaction part of wrapper
  * ----------------------------------------------------------------------------- */
 %fragment ("js_overloaded_function", "templates")
 %{
@@ -707,7 +727,11 @@ Napi::Value $jsmangledname_templ<SWIG_OBJ_WRAP>::$jswrapper(const Napi::Callback
   $jsinput
   $jschecks
   $jslock
+  $jspreaction
+  $jstry
   $jsaction
+  $jscatch
+  $jspostaction
   $jsoutput
   $jscleanup
   return jsresult;
@@ -764,7 +788,11 @@ fail:
  *   - $jsinput:        input part of wrapper
  *   - $jschecks:       check typemaps
  *   - $jsguard:        locking
+ *   - $jspreaction:    preaction part of wrapper
+ *   - $jstry:          try statement
  *   - $jsaction:       action part of wrapper
+ *   - $jscatch:        catch handler
+ *   - $jspostaction:   postaction part of wrapper
  *   - $joutput:        output part of wrapper
  *   - $jscleanup:      cleanup part of wrapper
  * ----------------------------------------------------------------------------- */
@@ -782,7 +810,11 @@ Napi::Value $jswrapper(const Napi::CallbackInfo &info) {
   $jsinput
   $jschecks
   $jslock
+  $jspreaction
+  $jstry
   $jsaction
+  $jscatch
+  $jspostaction
   $jsoutput
   $jscleanup
   return jsresult;
@@ -871,7 +903,11 @@ fail:
  *   - $jschecks:       check typemaps
  *   - $jsguard:        locking declaration
  *   - $jslock:         locking
+ *   - $jspreaction:    preaction part of wrapper
+ *   - $jstry:          try statement
  *   - $jsaction:       action part of wrapper
+ *   - $jscatch:        catch handler
+ *   - $jspostaction:   postaction part of wrapper
  *   - $joutput:        output part of wrapper
  *   - $jscleanup:      cleanup part of wrapper
  * ----------------------------------------------------------------------------- */
@@ -890,16 +926,23 @@ fail:
       Napi::Env env(SWIG_NULLPTR);
       $jsguard
       $jslock
-#define SWIG_NAPI_Raise SWIG_NAPI_AsyncThrow
+      $jspreaction
       $jsaction
-#undef SWIG_NAPI_Raise
+      $jspostaction
       goto fail;
     fail:
       return;
     }
 
+    virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &saved) override {
+      // Back in the main thread with V8 access, caller has HandleScope
+      $jstry
+        std::rethrow_exception(saved);
+      $jscatch
+    }
+
     virtual void SWIG_NAPI_Resolve() override {
-      // Back in the main thread with V8 access
+      // Back in the main thread with V8 access, caller has HandleScope
       Napi::Value jsresult;
       $jsoutput
       if (!SWIG_NAPI_Cleanup()) goto fail;
