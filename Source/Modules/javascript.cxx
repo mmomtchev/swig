@@ -3055,6 +3055,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
     emit_action_code(n, rethrow, Getattr(action, "action"));
     Delete(Getattr(action, "action"));
     Setattr(action, "action", rethrow);
+    rethrow = nullptr;
   }
 
   wrapper->code = NewString("");
