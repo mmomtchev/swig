@@ -537,22 +537,14 @@ public:
   virtual void SWIG_NAPI_Resolve() = 0;
   virtual bool SWIG_NAPI_Cleanup() = 0;
 #ifdef NAPI_CPP_EXCEPTIONS
-  virtual void SWIG_NAPI_Fail(const std::exception_ptr &);
+  virtual void SWIG_NAPI_Fail(const Napi::Error &);
   virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &) = 0;
 #endif
   inline Napi::Promise SWIG_NAPI_Promise() { return SWIG_NAPI_deferred.Promise(); }
 };
 
 #ifdef NAPI_CPP_EXCEPTIONS
-void SWIG_NAPI_AsyncContext::SWIG_NAPI_Fail(const std::exception_ptr &saved) {
-  Napi::Error error;
-  try {
-    SWIG_NAPI_Rethrow(saved);
-  } catch (Napi::Error &ex) {
-    error = Napi::Error(ex);
-  } catch (std::exception &ex) {
-    error = Napi::Error::New(env, ex.what());
-  }
+void SWIG_NAPI_AsyncContext::SWIG_NAPI_Fail(const Napi::Error &error) {
   if (!SWIG_NAPI_Cleanup()) goto fail;
   SWIG_NAPI_deferred_finalized = true;
   SWIG_NAPI_deferred.Reject(error.Value());
@@ -591,16 +583,23 @@ public:
   }
 
   virtual void OnOK() override {
-    Napi::HandleScope scope(Env());
+    Napi::Env env(Env());
+    Napi::HandleScope scope(env);
 #ifdef NAPI_CPP_EXCEPTIONS
-    if (saved_exception) {
-      context->SWIG_NAPI_Fail(saved_exception);
-    } else {
-      context->SWIG_NAPI_Resolve();
+    try {
+      context->SWIG_NAPI_Rethrow(saved_exception);
+    } catch (Napi::Error &error) {
+      context->SWIG_NAPI_Fail(error);
+      delete context;
+      return;
+    } catch (std::exception &ex) {
+      Napi::Error error = Napi::Error::New(env, ex.what());
+      context->SWIG_NAPI_Fail(error);
+      delete context;
+      return;
     }
-#else
-    context->SWIG_NAPI_Resolve();
 #endif
+    context->SWIG_NAPI_Resolve();
     delete context;
   }
 
