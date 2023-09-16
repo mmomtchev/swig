@@ -3044,6 +3044,19 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
 
   Hash *action = emit_action_hash(n);
 
+  String *rethrow = NewStringEmpty();
+  if (is_async) {
+    // In async mode %exception wraps around the rethrow statement
+    String *rethrow_templ = NewStringEmpty();
+    Template(getTemplate("js_rethrow_exception")).print(rethrow_templ);
+    emit_action_code(n, rethrow, rethrow_templ);
+  } else {
+    // In sync mode %exception wraps around the action itself and becomes the action
+    emit_action_code(n, rethrow, Getattr(action, "action"));
+    Delete(Getattr(action, "action"));
+    Setattr(action, "action", rethrow);
+  }
+
   wrapper->code = NewString("");
   marshalOutput(n, params, wrapper, NewString(""));
   String *output = wrapper->code;
@@ -3069,6 +3082,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
       .replace("$jspreaction", Getattr(action, "preaction"))
       .replace("$jstry", Getattr(action, "try"))
       .replace("$jsaction", Getattr(action, "action"))
+      .replace("$jsrethrow", rethrow)
       .replace("$jscatch", Getattr(action, "catch"))
       .replace("$jspostaction", Getattr(action, "postaction"))
       .replace("$jsoutput", output)

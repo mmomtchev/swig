@@ -891,6 +891,15 @@ fail:
   SWIG_guard.lock();
 %}
 
+/* -----------------------------------------------------------------------------
+ * js_rethrow_exception:  default rethrow statement
+ * -----------------------------------------------------------------------------
+ */
+%fragment("js_rethrow_exception", "templates")
+%{
+  std::rethrow_exception(saved);
+%}
+
 
 /* -----------------------------------------------------------------------------
  * js_async_worker_local_class:  template for the local async worker class in async wrappers
@@ -938,7 +947,7 @@ fail:
     virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &saved) override {
       // Back in the main thread with V8 access, caller has HandleScope
       $jstry
-        std::rethrow_exception(saved);
+      $jsrethrow
       $jscatch
     }
 #endif
