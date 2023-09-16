@@ -3096,11 +3096,6 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
 
   DelWrapper(wrapper);
   Delete(input);
-  Delete(Getattr(action, "preaction"));
-  Delete(Getattr(action, "try"));
-  Delete(Getattr(action, "action"));
-  Delete(Getattr(action, "catch"));
-  Delete(Getattr(action, "postaction"));
   Delete(action);
   Delete(output);
   Delete(jsasyncworker);
