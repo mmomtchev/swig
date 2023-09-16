@@ -934,12 +934,14 @@ fail:
       return;
     }
 
+#ifdef NAPI_CPP_EXCEPTIONS
     virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &saved) override {
       // Back in the main thread with V8 access, caller has HandleScope
       $jstry
         std::rethrow_exception(saved);
       $jscatch
     }
+#endif
 
     virtual void SWIG_NAPI_Resolve() override {
       // Back in the main thread with V8 access, caller has HandleScope

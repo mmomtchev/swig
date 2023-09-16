@@ -536,11 +536,14 @@ public:
   virtual void SWIG_NAPI_Execute() = 0;
   virtual void SWIG_NAPI_Resolve() = 0;
   virtual bool SWIG_NAPI_Cleanup() = 0;
+#ifdef NAPI_CPP_EXCEPTIONS
   virtual void SWIG_NAPI_Fail(const std::exception_ptr &);
   virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &) = 0;
+#endif
   inline Napi::Promise SWIG_NAPI_Promise() { return SWIG_NAPI_deferred.Promise(); }
 };
 
+#ifdef NAPI_CPP_EXCEPTIONS
 void SWIG_NAPI_AsyncContext::SWIG_NAPI_Fail(const std::exception_ptr &saved) {
   Napi::Error error;
   try {
@@ -557,6 +560,7 @@ void SWIG_NAPI_AsyncContext::SWIG_NAPI_Fail(const std::exception_ptr &saved) {
 fail:
   return;
 }
+#endif
 
 // This is the async worker, this class deletes itself (NAPI does this)
 // as well as its context when the async operation completes
@@ -588,11 +592,15 @@ public:
 
   virtual void OnOK() override {
     Napi::HandleScope scope(Env());
+#ifdef NAPI_CPP_EXCEPTIONS
     if (saved_exception) {
       context->SWIG_NAPI_Fail(saved_exception);
     } else {
       context->SWIG_NAPI_Resolve();
     }
+#else
+    context->SWIG_NAPI_Resolve();
+#endif
     delete context;
   }
 
@@ -632,7 +640,7 @@ public:
   Napi::Value Run(const Napi::CallbackInfo &info) {
     SWIG_NAPI_AsyncContext::Status rc;
 
-#if defined(_CPPUNWIND) || defined(__EXCEPTIONS)
+#ifdef NAPI_CPP_EXCEPTIONS
     try {
       rc = context->SWIG_NAPI_Init(info);
     } catch (...) {
