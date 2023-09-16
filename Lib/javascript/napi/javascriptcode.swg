@@ -896,9 +896,7 @@ fail:
  * -----------------------------------------------------------------------------
  */
 %fragment("js_rethrow_exception", "templates")
-%{
-  std::rethrow_exception(saved);
-%}
+%{if (saved) std::rethrow_exception(saved);%}
 
 
 /* -----------------------------------------------------------------------------
