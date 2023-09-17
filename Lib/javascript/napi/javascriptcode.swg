@@ -1261,7 +1261,7 @@ void $jsmangledname_inst::GetMembers(
         $jsmangledname_templ::InstanceAccessor("$jsname",
                 &$jsmangledname_templ::$jsgetter,
                 &$jsmangledname_templ::JS_veto_set_variable,
-                napi_enumerable)
+                static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
         });
 %}
 
@@ -1315,8 +1315,8 @@ void $jsmangledname_inst::GetMembers(
     Napi::Value value;
     NAPI_CHECK_RESULT(f.Call(0, SWIG_NULLPTR), value);
     staticMembers.erase("$jsname");
-    staticMembers.insert({"$jsname",
-          StaticValue("$jsname", value, napi_enumerable)
+    staticMembers.insert({"$jsname", StaticValue("$jsname", value,
+              static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
     });
   } while (0);
 %}
