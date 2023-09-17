@@ -3094,7 +3094,6 @@ protected:
   File *f_wrap_cpp;
 
   String *NULL_STR;
-  String *VETO_SET;
   String *moduleName;
 
   // the current index in the class table
@@ -3102,12 +3101,11 @@ protected:
 };
 
 NAPIEmitter::NAPIEmitter()
-:  JSEmitter(JSEmitter::NAPI), NULL_STR(NewString("0")), VETO_SET(NewString("JS_veto_set_variable")), class_idx(0) {
+:  JSEmitter(JSEmitter::NAPI), NULL_STR(NewString("0")), class_idx(0) {
 }
 
 NAPIEmitter::~NAPIEmitter() {
   Delete(NULL_STR);
-  Delete(VETO_SET);
 }
 
 int NAPIEmitter::initialize(Node *n) {
@@ -3348,13 +3346,15 @@ int NAPIEmitter::enterVariable(Node *n) {
 
   JSEmitter::enterVariable(n);
 
-  state.variable(GETTER, VETO_SET);
-  state.variable(SETTER, VETO_SET);
+  state.variable(GETTER, nullptr);
+  state.variable(SETTER, nullptr);
 
   return SWIG_OK;
 }
 
 int NAPIEmitter::exitVariable(Node *n) {
+  const char *templ = nullptr;
+
   // Due to special handling of C++ "static const" member variables
   // (refer to the comment in lang.cxx:Language::staticmembervariableHandler)
   // a static const member variable may get transformed into a constant
@@ -3363,58 +3363,69 @@ int NAPIEmitter::exitVariable(Node *n) {
     return SWIG_OK;
   }
 
+  if (!state.variable(GETTER)) {
+    return SWIG_ERROR;
+  }
+
   if (GetFlag(n, "ismember")) {
     String *modifier = NewStringEmpty();
-    if (GetFlag(state.variable(), IS_STATIC) || Equal(Getattr(n, "nodeType"), "enumitem")) {
-      Template t_register = getTemplate("jsnapi_register_static_variable");
-      t_register.replace("$jsmangledname", state.clazz(NAME_MANGLED))
-	  .replace("$jsname", state.variable(NAME))
-	  .replace("$jsgetter", state.variable(GETTER))
-	  .replace("$jssetter", state.variable(SETTER) != VETO_SET ? state.variable(SETTER)
-		   : "JS_veto_set_static_variable")
-	  .trim()
-	  .pretty_print(f_init_static_wrappers);
+    String *target = nullptr;
+
+    if (GetFlag(state.variable(), IS_STATIC) ||
+        Equal(Getattr(n, "nodeType"), "enumitem")) {
+      templ = state.variable(SETTER) ? "jsnapi_register_static_variable"
+                                     : "jsnapi_register_static_constant";
       Append(modifier, "static");
+      target = f_init_static_wrappers;
     } else {
-      Template t_register = getTemplate("jsnapi_register_member_variable");
-      t_register.replace("$jsmangledname", state.clazz(NAME_MANGLED))
-	  .replace("$jsname", state.variable(NAME))
-	  .replace("$jsgetter", state.variable(GETTER))
-	  .replace("$jssetter", state.variable(SETTER))
-	  .trim()
-	  .pretty_print(f_init_wrappers);
+      templ = state.variable(SETTER) ? "jsnapi_register_member_variable"
+                                     : "jsnapi_register_member_constant";
+      target = f_init_wrappers;
     }
+    Template t_register = getTemplate(templ);
+    t_register.replace("$jsmangledname", state.clazz(NAME_MANGLED))
+        .replace("$jsname", state.variable(NAME))
+        .replace("$jsgetter", state.variable(GETTER));
+    if (state.variable(SETTER) != nullptr)
+      t_register.replace("$jssetter", state.variable(SETTER));
+    t_register.trim().pretty_print(target);
 
     // emit declaration of a class member function
     Template t_getter = getTemplate("jsnapi_class_method_declaration");
     t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
-	.replace("$jsname", state.clazz(NAME))
-	.replace("$jsmangledtype", state.clazz(TYPE_MANGLED))
-	.replace("$jsdtor", state.clazz(DTOR))
-	.replace("$jswrapper", state.variable(GETTER))
-	.replace("$jsstatic", modifier)
-	.trim()
-	.pretty_print(f_class_declarations);
-    if (state.variable(SETTER) != VETO_SET) {
+        .replace("$jsname", state.clazz(NAME))
+        .replace("$jsmangledtype", state.clazz(TYPE_MANGLED))
+        .replace("$jsdtor", state.clazz(DTOR))
+        .replace("$jswrapper", state.variable(GETTER))
+        .replace("$jsstatic", modifier)
+        .trim()
+        .pretty_print(f_class_declarations);
+
+    if (state.variable(SETTER) != nullptr) {
       Template t_setter = getTemplate("jsnapi_class_setter_declaration");
       t_setter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
-	  .replace("$jsname", state.clazz(NAME))
-	  .replace("$jsmangledtype", state.clazz(TYPE_MANGLED))
-	  .replace("$jsdtor", state.clazz(DTOR))
-	  .replace("$jswrapper", state.variable(SETTER))
-	  .replace("$jsstatic", modifier)
-	  .trim()
-	  .pretty_print(f_class_declarations);
+          .replace("$jsname", state.clazz(NAME))
+          .replace("$jsmangledtype", state.clazz(TYPE_MANGLED))
+          .replace("$jsdtor", state.clazz(DTOR))
+          .replace("$jswrapper", state.variable(SETTER))
+          .replace("$jsstatic", modifier)
+          .trim()
+          .pretty_print(f_class_declarations);
     }
     Delete(modifier);
   } else {
-    Template t_register = getTemplate("jsnapi_register_global_variable");
+    templ = state.variable(SETTER) ? "jsnapi_register_global_variable"
+                                   : "jsnapi_register_global_constant";
+
+    Template t_register = getTemplate(templ);
     t_register.replace("$jsparent", Getattr(current_namespace, NAME_MANGLED))
-	.replace("$jsname", state.variable(NAME))
-	.replace("$jsgetter", state.variable(GETTER))
-	.replace("$jssetter", state.variable(SETTER))
-	.trim()
-	.pretty_print(f_init_register_namespaces);
+        .replace("$jsname", state.variable(NAME))
+        .replace("$jsgetter", state.variable(GETTER));
+
+    if (state.variable(SETTER) != nullptr)
+      t_register.replace("$jssetter", state.variable(SETTER));
+
+    t_register.trim().pretty_print(f_init_register_namespaces);
   }
 
   return SWIG_OK;
