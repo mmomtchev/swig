@@ -346,7 +346,8 @@ fail:
 %{
   // jsnapi_register_global_variable
   do {
-    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Accessor<$jsgetter, $jssetter>("$jsname");
+    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Accessor<$jsgetter, $jssetter>("$jsname",
+        static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable));
     NAPI_CHECK_MAYBE($jsparent.DefineProperty(pd));
   } while (0);
 %}
@@ -1223,7 +1224,7 @@ void $jsmangledname_inst::GetMembers(
   members.insert({"$jsname",
         $jsmangledname_templ::InstanceMethod("$jsname",
                 &$jsmangledname_templ::$jswrapper,
-                static_cast<napi_property_attributes>(napi_writable | napi_configurable))
+                static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
         });
 %}
 
@@ -1277,7 +1278,7 @@ void $jsmangledname_inst::GetMembers(
   staticMembers.insert({"$jsname",
         StaticMethod("$jsname",
                 &$jsmangledname_templ::$jswrapper,
-                static_cast<napi_property_attributes>(napi_writable | napi_configurable))
+                static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
         });
 %}
 
