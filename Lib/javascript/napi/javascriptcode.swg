@@ -368,7 +368,8 @@ fail:
     Napi::Function f = Napi::Function::New(env, $jsgetter);
     Napi::Value value;
     NAPI_CHECK_RESULT(f.Call(0, SWIG_NULLPTR), value);
-    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Value("$jsname", value, napi_enumerable);
+    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Value("$jsname", value,
+      static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable));
     NAPI_CHECK_MAYBE($jsparent.DefineProperty(pd));
   } while (0);
 %}
@@ -507,7 +508,8 @@ fail:
 %{
   // jsnapi_register_global_function
   do {
-    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Function("$jsname", $jswrapper);
+    Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Function("$jsname", $jswrapper,
+      static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable));
     NAPI_CHECK_MAYBE($jsparent.DefineProperty(pd));
   } while (0);
 %}
