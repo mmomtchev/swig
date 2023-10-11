@@ -3574,6 +3574,8 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
   return SWIG_OK;
 }
 
+static String *AsyncWorkerFragmentName = NewString("AsyncWorker");
+
 int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static, bool is_async) {
   Wrapper *wrapper = NewWrapper();
   Template t_function(getTemplate(getFunctionTemplate(is_member, is_async)));
@@ -3595,6 +3597,8 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   else Setattr(n, "wrap:name:sync", wrap_name);
   Setattr(n, "wrap:name", wrap_name);
   state.function(WRAPPER_NAME, wrap_name);
+
+  if (is_async) Swig_fragment_emit(AsyncWorkerFragmentName);
 
   // prepare local variables
   ParmList *params = Getattr(n, "parms");

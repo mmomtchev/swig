@@ -33,7 +33,6 @@
 #error NAPI_VERSION 6 is the minimum supported target (Node.js >=14, >=12.17, >=10.20)
 #endif
 #include <napi.h>
-#include <uv.h>
 
 #include <errno.h>
 #include <limits.h>
@@ -44,6 +43,7 @@
 #include <algorithm>
 #include <set>
 #include <stdexcept>
+#include <mutex>
 %}
 
 %insert(runtime) "swigrun.swg";         /* SWIG API */
@@ -51,3 +51,4 @@
 
 %insert(runtime) "javascriptrun.swg";
 
+%include <javascriptrunasync.swg>;      /* Asynchronous execution framework */

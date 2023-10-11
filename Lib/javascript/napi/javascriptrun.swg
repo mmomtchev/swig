@@ -194,28 +194,27 @@ class SWIG_NAPI_ObjectWrap_templ : public Napi::ObjectWrap<SWIG_OBJ_WRAP> {
         self(SWIG_NULLPTR),
         owned(true),
         size(0),
-        info(SWIG_NULLPTR) {
-      uv_mutex_init(&_lock);
+        info(SWIG_NULLPTR),
+        _lock() {
     }
     virtual ~SWIG_NAPI_ObjectWrap_templ() {};
 
     static void JS_veto_set_static_variable(const Napi::CallbackInfo &, const Napi::Value &);
     void JS_veto_set_variable(const Napi::CallbackInfo &, const Napi::Value &);
 
-    inline void lock() { uv_mutex_lock(&_lock); };
-    inline void unlock() { uv_mutex_unlock(&_lock); };
+    inline void lock() { _lock.lock(); };
+    inline void unlock() { _lock.unlock(); };
 
     Napi::Value ToString(const Napi::CallbackInfo &info);
 
   private:
     // Every wrapped object has an associated async lock
-    uv_mutex_t _lock;
+    std::mutex _lock;
 };
 
 template <typename SWIG_OBJ_WRAP>
 SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_NAPI_ObjectWrap_templ(const Napi::CallbackInfo &info) :
-        Napi::ObjectWrap<SWIG_OBJ_WRAP>(info), size(0), info(SWIG_NULLPTR) { 
-  uv_mutex_init(&_lock);
+        Napi::ObjectWrap<SWIG_OBJ_WRAP>(info), size(0), info(SWIG_NULLPTR), _lock() { 
   Napi::Env env = info.Env();
   if (info.Length() == 1 && info[0].IsExternal()) {
     // This constructor has been called internally from C++/SWIG
@@ -493,183 +492,6 @@ fail:
   return Napi::Value();
 #endif
 }
-
-/* ---------------------------------------------------------------------------
- * Async execution
- * ---------------------------------------------------------------------------*/
-
-// This class is essentially a functor with multiple entry points
-// Its main purpose is to keep the context - the wrapper local variables -
-// as class members between those calls in different threads
-// Init() is called on the main thread with V8 access and deals with in typemaps
-// Execute() is called on a worker thread without V8 access and does the work
-// OnOK()/Cleanup() are called on the main thread with V8 access and deal with
-//   the out typemaps
-class SWIG_NAPI_AsyncContext {
-protected:
-  Napi::Env env;
-  Napi::Promise::Deferred SWIG_NAPI_deferred;
-  bool SWIG_NAPI_deferred_finalized;
-public:
-  enum Status { OK, REJECT, THROW };
-  SWIG_NAPI_AsyncContext(
-    Napi::Env _env
-  ) : 
-    env(_env),
-    SWIG_NAPI_deferred(Napi::Promise::Deferred(_env)),
-    SWIG_NAPI_deferred_finalized(false) {}
-  virtual ~SWIG_NAPI_AsyncContext() {
-    if (!SWIG_NAPI_deferred_finalized) {
-      // This fixes a very vicious leak
-      // Once a Deferred has been created, it won't be destroyed
-      // unless it is resolved or rejected - its destructor is a no-op
-      // This code is triggered when synchronously throwing while parsing the args
-      SWIG_NAPI_deferred.Resolve(env.Undefined());
-      SWIG_NAPI_deferred_finalized = true;
-    }
-  }
-  // All methods are prefixed to avoid symbol pollution
-  // Alternatively, inheriting through a template
-  // allows to not import any member definitions from the base class
-  // https://stackoverflow.com/questions/76703197/unshadow-global-identifier-in-a-class
-  virtual Status SWIG_NAPI_Init(const Napi::CallbackInfo &) = 0;
-  virtual void SWIG_NAPI_Execute() = 0;
-  virtual void SWIG_NAPI_Resolve() = 0;
-  virtual bool SWIG_NAPI_Cleanup() = 0;
-#ifdef NAPI_CPP_EXCEPTIONS
-  virtual void SWIG_NAPI_Fail(const Napi::Error &);
-  virtual void SWIG_NAPI_Rethrow(const std::exception_ptr &) = 0;
-#endif
-  inline Napi::Promise SWIG_NAPI_Promise() { return SWIG_NAPI_deferred.Promise(); }
-};
-
-#ifdef NAPI_CPP_EXCEPTIONS
-void SWIG_NAPI_AsyncContext::SWIG_NAPI_Fail(const Napi::Error &error) {
-  if (!SWIG_NAPI_Cleanup()) goto fail;
-  SWIG_NAPI_deferred_finalized = true;
-  SWIG_NAPI_deferred.Reject(error.Value());
-  goto fail;
-fail:
-  return;
-}
-#endif
-
-// This is the async worker, this class deletes itself (NAPI does this)
-// as well as its context when the async operation completes
-class SWIG_NAPI_AsyncWorker : public Napi::AsyncWorker {
-  SWIG_NAPI_AsyncContext *context;
-  // This vector holds persistent references to all JS objects
-  // involved in the asynchronous operation - it protects them
-  // from being garbage-collected
-  std::vector<Napi::ObjectReference *> persistent;
-  std::exception_ptr saved_exception;
-
-public:
-  SWIG_NAPI_AsyncWorker(
-      Napi::Env _env,
-      const char *name,
-      SWIG_NAPI_AsyncContext *_context) :
-    Napi::AsyncWorker(_env, name),
-    context(_context),
-    persistent(),
-    saved_exception(nullptr) {}
-
-  virtual ~SWIG_NAPI_AsyncWorker() {
-    // Release the persistent references
-    for (Napi::ObjectReference *ref : persistent) {
-      delete ref;
-    }
-    persistent.clear();
-  }
-
-  virtual void OnOK() override {
-    Napi::Env env(Env());
-    Napi::HandleScope scope(env);
-#ifdef NAPI_CPP_EXCEPTIONS
-    try {
-      context->SWIG_NAPI_Rethrow(saved_exception);
-    } catch (Napi::Error &error) {
-      context->SWIG_NAPI_Fail(error);
-      delete context;
-      return;
-    } catch (std::exception &ex) {
-      Napi::Error error = Napi::Error::New(env, ex.what());
-      context->SWIG_NAPI_Fail(error);
-      delete context;
-      return;
-    }
-#endif
-    context->SWIG_NAPI_Resolve();
-    delete context;
-  }
-
-  virtual void OnError(const Napi::Error &error) override {
-    // This should never happen, we catch all errors now
-    abort();
-  }
-
-  virtual void Execute() override {
-#ifdef NAPI_CPP_EXCEPTIONS
-    try {
-      context->SWIG_NAPI_Execute();
-    } catch (...) {
-      saved_exception = std::current_exception();
-    }
-#else
-    context->SWIG_NAPI_Execute();
-#endif
-  }
-
-  inline void Persist(const Napi::Value &v) {
-    if (v.IsObject()) {
-      Napi::Object obj;
-      NAPI_CHECK_RESULT(v.ToObject(), obj);
-      Napi::ObjectReference *ref = new Napi::ObjectReference();
-      *ref = Napi::Persistent(obj);
-      persistent.push_back(ref);
-    }
-    return;
-#ifndef NAPI_CPP_EXCEPTIONS
-    goto fail;
-  fail:
-    return;
-#endif
-  }
-
-  Napi::Value Run(const Napi::CallbackInfo &info) {
-    SWIG_NAPI_AsyncContext::Status rc;
-
-#ifdef NAPI_CPP_EXCEPTIONS
-    try {
-      rc = context->SWIG_NAPI_Init(info);
-    } catch (...) {
-      delete context;
-      delete this;
-      throw;
-    }
-#else
-    rc = context->SWIG_NAPI_Init(info);
-#endif
-    if (rc == SWIG_NAPI_AsyncContext::Status::REJECT) {
-      Napi::EscapableHandleScope scope(info.Env());
-      Napi::Value r = context->SWIG_NAPI_Promise();
-      context->SWIG_NAPI_Cleanup();
-      delete context;
-      delete this;
-      return scope.Escape(r);
-    } else if (rc == SWIG_NAPI_AsyncContext::Status::THROW) {
-      context->SWIG_NAPI_Cleanup();
-      delete context;
-      delete this;
-      return Napi::Value();
-    }
-
-    Persist(info.This());
-    for (size_t i = 0; i < info.Length(); i++) Persist(info[i]);
-    Queue();
-    return context->SWIG_NAPI_Promise();
-  }
-};
 
 /* ---------------------------------------------------------------------------
  * PackedData object
