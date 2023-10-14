@@ -2,7 +2,11 @@
 /* ------------------------------------------------------------
  *  utility methods for char strings 
  * ------------------------------------------------------------ */
-%fragment("SWIG_AsCharPtrAndSize", "header", fragment="SWIG_pchar_descriptor") {
+%fragment("SWIG_AsCharPtrAndSize", "header", fragment="run_SWIG_AsCharPtrAndSize") {
+SWIGINTERN int
+SWIG_AsCharPtrAndSize(Napi::Value valRef, char** cptr, size_t* psize, int *alloc);
+}
+%fragment("run_SWIG_AsCharPtrAndSize", "wrapper", fragment="SWIG_pchar_descriptor") {
 SWIGINTERN int
 SWIG_AsCharPtrAndSize(Napi::Value valRef, char** cptr, size_t* psize, int *alloc)
 {
@@ -44,7 +48,11 @@ fail:
 }
 
 
-%fragment(SWIG_From_frag(char), "header") {
+%fragment(SWIG_From_frag(char), "header", fragment="run_" SWIG_From_frag(char)) {
+SWIGINTERNINLINE Napi::Value
+SWIG_From_char(Napi::Env env, char c);
+}
+%fragment("run_" SWIG_From_frag(char), "wrapper") {
 SWIGINTERNINLINE Napi::Value
 SWIG_From_char(Napi::Env env, char c)
 {
@@ -53,12 +61,16 @@ SWIG_From_char(Napi::Env env, char c)
 }
 }
 
-
-%fragment("SWIG_FromCharPtr", "header", fragment = "SWIG_FromCharPtrAndSize") {
+%fragment("SWIG_FromCharPtr", "header", fragment="SWIG_FromCharPtrAndSize") {
 // Override the default one with an empty one
 }
 
-%fragment("SWIG_FromCharPtrAndSize", "header") {
+%fragment("SWIG_FromCharPtrAndSize", "header",
+          fragment="run_SWIG_FromCharPtrAndSize") {
+SWIGINTERNINLINE Napi::Value
+SWIG_Env_FromCharPtrAndSize(Napi::Env env, const char* carray, size_t size);
+}
+%fragment("run_SWIG_FromCharPtrAndSize", "wrapper") {
 SWIGINTERNINLINE Napi::Value
 SWIG_Env_FromCharPtrAndSize(Napi::Env env, const char* carray, size_t size)
 {
@@ -71,7 +83,8 @@ SWIG_Env_FromCharPtrAndSize(Napi::Env env, const char* carray, size_t size)
 }
 }
 
-%insert(runtime) %{
+
+%insert(header) %{
 #define SWIG_FromCharPtrAndSize(cptr, size) SWIG_Env_FromCharPtrAndSize(env, cptr, size)
 #define SWIG_FromCharPtr(cptr)              SWIG_Env_FromCharPtrAndSize(env, cptr, cptr ? strlen(cptr) : 0)
 %}
