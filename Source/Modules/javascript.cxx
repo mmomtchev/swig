@@ -25,6 +25,11 @@ static bool js_template_enable_debug = false;
 static bool js_napi_default_is_async = false;
 static bool js_napi_default_is_locked = false;
 
+/**
+ * Enable code splitting (NAPI only)
+ */
+static int code_splitting = 0;
+
 #define ERR_MSG_ONLY_ONE_ENGINE_PLEASE "Only one engine can be specified at a time."
 
 // keywords used for state variables
@@ -1067,6 +1072,7 @@ Javascript Options (available with -javascript)\n\
      -async                 - create async wrappers by default (NAPI only) \n\
      -async-locking         - add locking by default (NAPI only) \n\
      -typescript            - generates a TypeScript ambient module (d.ts file)\n\
+     -split nnn            - use code splitting, limiting the size of each file to nnn KBytes\n\
      -debug-codetemplates   - generates information about the origin of code templates\n";
 
 /* ---------------------------------------------------------------------
@@ -1128,9 +1134,17 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
       } else if (strcmp(argv[i], "-typescript") == 0) {
         Swig_mark_arg(i);
         ts_enabled = true;
+      } else if (strcmp(argv[i], "-split") == 0) {
+        if (argv[i + 1]) {
+          Swig_mark_arg(i);
+          Swig_mark_arg(i + 1);
+          code_splitting = atoi(argv[i + 1]);
+        } else {
+          Swig_arg_error();
+        }
       } else if (strcmp(argv[i], "-help") == 0) {
         fputs(usage, stdout);
-	return;
+        return;
       }
     }
   }
@@ -3055,6 +3069,7 @@ protected:
   virtual String *emitLocking(Node *, Parm *, Wrapper *);
   virtual String *emitGuard(Node *);
   virtual int emitNamespaces();
+  virtual int emitConstant(Node *n);
   virtual int emitGetter(Node *n, bool is_member, bool is_static);
   virtual int emitSetter(Node *n, bool is_member, bool is_static);
   virtual int emitCtor(Node *);
@@ -3074,6 +3089,7 @@ protected:
 
 protected:
   /* built-in parts */
+  String *f_begin;
   String *f_runtime;
   String *f_header;
   String *f_init;
@@ -3081,6 +3097,7 @@ protected:
 
   /* class declarations */
   String *f_class_declarations;
+  String *f_template_definitions;
 
   /* parts for initilizer */
   String *f_init_namespaces;
@@ -3090,18 +3107,18 @@ protected:
   String *f_init_register_classes;
   String *f_init_register_namespaces;
 
-  // the output cpp file
-  File *f_wrap_cpp;
-
   String *NULL_STR;
   String *moduleName;
+
+  // The wrappers code
+  List *f_split_wrappers;
 
   // the current index in the class table
   size_t class_idx;
 };
 
 NAPIEmitter::NAPIEmitter()
-:  JSEmitter(JSEmitter::NAPI), NULL_STR(NewString("0")), class_idx(0) {
+:  JSEmitter(JSEmitter::NAPI), NULL_STR(NewString("0")), f_split_wrappers(NewList()), class_idx(0) {
 }
 
 NAPIEmitter::~NAPIEmitter() {
@@ -3113,20 +3130,14 @@ int NAPIEmitter::initialize(Node *n) {
 
   moduleName = Getattr(n, "name");
 
-  // Get the output file name
-  String *outfile = Getattr(n, "outfile");
-  f_wrap_cpp = NewFile(outfile, "w", SWIG_output_files());
-  if (!f_wrap_cpp) {
-    FileErrorDisplay(outfile);
-    Exit(EXIT_FAILURE);
-  }
-
+  f_begin = NewString("");
   f_runtime = NewString("");
   f_header = NewString("");
   f_init = NewString("");
   f_post_init = NewString("");
 
   f_class_declarations = NewString("");
+  f_template_definitions = NewString("");
 
   f_init_namespaces = NewString("");
   f_init_wrappers = NewString("");
@@ -3136,7 +3147,7 @@ int NAPIEmitter::initialize(Node *n) {
   f_init_register_namespaces = NewString("");
 
   // note: this is necessary for built-in generation of SWIG runtime code
-  Swig_register_filebyname("begin", f_wrap_cpp);
+  Swig_register_filebyname("begin", f_begin);
   Swig_register_filebyname("runtime", f_runtime);
   Swig_register_filebyname("header", f_header);
   Swig_register_filebyname("wrapper", f_wrappers);
@@ -3145,7 +3156,7 @@ int NAPIEmitter::initialize(Node *n) {
 
   state.globals(FORCE_CPP, NewString("1"));
 
-  Swig_banner(f_wrap_cpp);
+  Swig_banner(f_begin);
 
   Swig_obligatory_macros(f_runtime, "JAVASCRIPT");
 
@@ -3156,15 +3167,57 @@ int NAPIEmitter::dump(Node *n) {
   /* Get the module name */
   String *module = Getattr(n, "name");
 
+  List *file_parts = Split(Getattr(n, "outfile"), '.', 2);
+  Iterator file_parts_it = First(file_parts);
+  String *output_root = file_parts_it.item;
+  String *output_ext = Next(file_parts_it).item;
+
   Template initializer_define(getTemplate("js_initializer_define"));
   initializer_define.replace("$jsname", module).pretty_print(f_header);
 
   SwigType_emit_type_table(f_runtime, f_wrappers);
 
-  Printv(f_wrap_cpp, f_runtime, "\n", 0);
-  Printv(f_wrap_cpp, f_header, "\n", 0);
-  Printv(f_wrap_cpp, f_class_declarations, "\n", 0);
-  Printv(f_wrap_cpp, f_wrappers, "\n", 0);
+  String *header_file = NewString("");
+  Printf(header_file, "%s.h", output_root);
+
+  File *f_split_file = NewFile(Getattr(n, "outfile"), "w", SWIG_output_files());
+  Swig_banner(f_split_file);
+  if (code_splitting) {
+    Printf(f_split_file, "\n#include \"%s\"\n\n", header_file);
+  }
+
+  File *f_header_file;
+  if (code_splitting) {
+    f_header_file = NewFile(header_file, "w", SWIG_output_files());
+  } else {
+    f_header_file = f_split_file;
+  }
+  Printv(f_header_file, f_begin, "\n", 0);
+  Printv(f_header_file, f_runtime, "\n", 0);
+  Printv(f_header_file, f_header, "\n", 0);
+  Printv(f_header_file, f_class_declarations, "\n", 0);
+  Printv(f_header_file, f_template_definitions, "\n", 0);
+
+  Printv(f_split_file, f_wrappers, "\n", 0);
+
+  int file_idx = 1;
+  for (Iterator it = First(f_split_wrappers); it.item; it = Next(it)) {
+    if (code_splitting && Len(f_split_file) + Len(it.item) > code_splitting * 1024) {
+      String *outfile = NewString("");
+      Printf(outfile, "%s_%02d.%s", output_root, file_idx, output_ext);
+      f_split_file = NewFile(outfile, "w", SWIG_output_files());
+      Delete(outfile);
+      file_idx++;
+
+      if (!f_split_file) {
+        FileErrorDisplay(outfile);
+        Exit(EXIT_FAILURE);
+      }
+      Swig_banner(f_split_file);
+      Printf(f_split_file, "\n#include \"%s\"\n\n", header_file);
+    }
+    Printv(f_split_file, it.item, "\n", 0);
+  }
 
   emitNamespaces();
 
@@ -3185,10 +3238,10 @@ int NAPIEmitter::dump(Node *n) {
       .replace("$jsnapiregisternspaces", f_init_register_namespaces);
   Printv(f_init, initializer.str(), 0);
 
-  Printv(f_wrap_cpp, f_init, 0);
+  Printv(f_split_file, f_init, 0);
+  Printv(f_split_file, f_post_init, 0);
 
-  Printv(f_wrap_cpp, f_post_init, 0);
-
+  Delete(file_parts);
   Delete(inheritance);
   return SWIG_OK;
 }
@@ -3197,6 +3250,7 @@ int NAPIEmitter::close() {
   Delete(f_runtime);
   Delete(f_header);
   Delete(f_class_declarations);
+  Delete(f_template_definitions);
   Delete(f_init_namespaces);
   Delete(f_init_wrappers);
   Delete(f_init_inheritance);
@@ -3205,7 +3259,6 @@ int NAPIEmitter::close() {
   Delete(f_init_register_namespaces);
   Delete(f_init);
   Delete(f_post_init);
-  Delete(f_wrap_cpp);
   return SWIG_OK;
 }
 
@@ -3294,11 +3347,13 @@ int NAPIEmitter::enterClass(Node *n) {
 int NAPIEmitter::exitClass(Node *n) {
   if (GetFlag(state.clazz(), IS_ABSTRACT)) {
     Template t_veto_ctor(getTemplate("js_veto_ctor"));
+    String *result = NewString("");
     t_veto_ctor.replace("$jsmangledname", state.clazz(NAME_MANGLED))
 	.replace("$jswrapper", state.clazz(CTOR))
 	.replace("$jsname", state.clazz(NAME))
 	.replace("$jsparent", state.clazz(PARENT_MANGLED))
-	.pretty_print(f_wrappers);
+	.pretty_print(result);
+    Append(f_template_definitions, result);
   }
 
   /* Note: this makes sure that there is a swig_type added for this class */
@@ -3325,13 +3380,15 @@ int NAPIEmitter::exitClass(Node *n) {
       .pretty_print(f_class_declarations);
 
   Template t_class_template = getTemplate("jsnapi_getclass");
+  String *getclass = NewString("");
   t_class_template.replace("$jsname", state.clazz(NAME))
       .replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jsnapiwrappers", f_init_wrappers)
       .replace("$jsnapistaticwrappers", f_init_static_wrappers)
       .replace("$jsparent", state.clazz(PARENT_MANGLED))
       .trim()
-      .pretty_print(f_class_declarations);
+      .pretty_print(getclass);
+  Append(f_split_wrappers, getclass);
 
   /* Save these to be reused in the child classes */
   Setattr(n, MEMBER_FUNCTIONS, f_init_wrappers);
@@ -3462,6 +3519,30 @@ String *NAPIEmitter::emitAsyncTypemaps(Node *, Parm *parms, Wrapper *,
   return result;
 }
 
+int NAPIEmitter::emitConstant(Node *n) {
+  bool is_member = GetFlag(n, "ismember") != 0;
+
+  File *wrappers;
+  if (is_member) {
+    wrappers = f_wrappers;
+    f_wrappers = f_template_definitions;
+  }
+  int rc = JSEmitter::emitConstant(n);
+  if (is_member) {
+    f_wrappers = wrappers;
+  }
+  if (rc != SWIG_OK) return rc;
+
+  if (!is_member) {
+    String *wrap_name = state.variable(GETTER);
+    Template t_declaration = getTemplate("js_global_declaration");
+    t_declaration.replace("$jswrapper", wrap_name)
+        .trim()
+        .pretty_print(f_class_declarations);
+  }
+  return SWIG_OK;
+}
+
 int NAPIEmitter::emitGetter(Node *n, bool is_member, bool is_static) {
   Wrapper *wrapper = NewWrapper();
   bool locking_enabled = State::IsSet(Getattr(n, "feature:async:locking"),
@@ -3499,6 +3580,7 @@ int NAPIEmitter::emitGetter(Node *n, bool is_member, bool is_static) {
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
+  String *result = NewString("");
   t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
       .replace("$jslocals", wrapper->locals)
@@ -3508,7 +3590,15 @@ int NAPIEmitter::emitGetter(Node *n, bool is_member, bool is_static) {
       .replace("$jsaction", action)
       .replace("$jsoutput", output)
       .replace("$jscleanup", cleanup)
-      .pretty_print(f_wrappers);
+      .pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
+
+  if (!is_member) {
+    Template t_declaration = getTemplate("js_global_declaration");
+    t_declaration.replace("$jswrapper", wrap_name)
+        .trim()
+        .pretty_print(f_class_declarations);
+  }
 
   DelWrapper(wrapper);
   Delete(guard);
@@ -3557,6 +3647,7 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
+  String *result = NewString("");
   t_setter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
       .replace("$jslocals", wrapper->locals)
@@ -3565,7 +3656,15 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
       .replace("$jslock", locking)
       .replace("$jsaction", action)
       .replace("$jscleanup", cleanup)
-      .pretty_print(f_wrappers);
+      .pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
+
+  if (!is_member) {
+    Template t_declaration = getTemplate("js_global_setter_declaration");
+    t_declaration.replace("$jswrapper", wrap_name)
+        .trim()
+        .pretty_print(f_class_declarations);
+  }
 
   DelWrapper(wrapper);
   Delete(guard);
@@ -3658,6 +3757,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
     t_worker.print(jsasyncworker);
   }
 
+  String *result = NewString("");
   t_function.replace("$jsasyncworker", jsasyncworker)
       .replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
@@ -3678,7 +3778,8 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
       .replace("$jsargcount", Getattr(n, ARGCOUNT))
       .replace("$jsargrequired", Getattr(n, ARGREQUIRED));
 
-  t_function.pretty_print(f_wrappers);
+  t_function.pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
 
   DelWrapper(wrapper);
   Delete(input);
@@ -3801,6 +3902,12 @@ int NAPIEmitter::emitFunctionDeclaration(Node *n, bool is_async) {
         .replace("$jswrapper", state.function(WRAPPER_NAME))
         .trim()
         .pretty_print(f_init_register_namespaces);
+
+    Template t_declaration = getTemplate("js_global_declaration");
+    t_declaration
+        .replace("$jswrapper", state.function(WRAPPER_NAME))
+        .trim()
+        .pretty_print(f_class_declarations);
   }
 
   return SWIG_OK;
@@ -3869,11 +3976,13 @@ int NAPIEmitter::emitFunctionDispatcher(Node *n, bool is_member, bool is_async) 
   t_function.replace("$jslocals", wrapper->locals)
       .replace("$jscode", wrapper->code);
 
+  String *result = NewString("");
   // call this here, to replace all variables
   t_function.replace("$jswrapper", final_wrap_name)
       .replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jsname", state.function(NAME))
-      .pretty_print(f_wrappers);
+      .pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
 
   // Delete the state variable
   DelWrapper(wrapper);
@@ -4069,7 +4178,12 @@ int NAPIEmitter::emitNamespaces() {
 }
 
 int NAPIEmitter::emitCtor(Node *n) {
+  // We reuse the shared JS code but everything is redirected
+  // to f_template_definitions -> it is going in the header file
+  File *wrappers = f_wrappers;
+  f_wrappers = f_template_definitions;
   int r = JSEmitter::emitCtor(n);
+  f_wrappers = wrappers;
   if (r != SWIG_OK)
     return r;
 
@@ -4089,7 +4203,14 @@ int NAPIEmitter::emitDtor(Node *n) {
   t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .trim()
       .pretty_print(f_class_declarations);
-  return JSEmitter::emitDtor(n);
+
+  // We reuse the shared JS code but everything is redirected
+  // to f_template_definitions -> it is going in the header file
+  File *wrappers = f_wrappers;
+  f_wrappers = f_template_definitions;
+  int rc = JSEmitter::emitDtor(n);
+  f_wrappers = wrappers;
+  return rc;
 }
 
 JSEmitter *swig_javascript_create_V8Emitter() {

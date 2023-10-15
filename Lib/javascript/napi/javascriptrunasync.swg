@@ -55,6 +55,7 @@ public:
   virtual void OnOK() override;
   virtual void OnError(const Napi::Error &error) override;
   virtual void Execute() override;
+  Napi::Value Run(const Napi::CallbackInfo &info);
 
   inline void Persist(const Napi::Value &v) {
     if (v.IsObject()) {
@@ -71,6 +72,7 @@ public:
     return;
 #endif
   }
+};
 %}
 
 %fragment("run_AsyncWorker", "wrapper") %{
@@ -157,7 +159,7 @@ void SWIG_NAPI_AsyncWorker::Execute() {
 #endif
 }
 
-Napi::Value Run(const Napi::CallbackInfo &info) {
+Napi::Value SWIG_NAPI_AsyncWorker::Run(const Napi::CallbackInfo &info) {
   SWIG_NAPI_AsyncContext::Status rc;
 
 #ifdef NAPI_CPP_EXCEPTIONS
@@ -190,5 +192,4 @@ Napi::Value Run(const Napi::CallbackInfo &info) {
   Queue();
   return context->SWIG_NAPI_Promise();
 }
-};
 %}

@@ -251,6 +251,29 @@ ${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {
 }
 %}
 
+
+/* -----------------------------------------------------------------------------
+ * js_global_declaration:  template for declaring global functions & getters
+ *   - $jswrapper:      wrapper function name
+ * ----------------------------------------------------------------------------- */
+%fragment("js_global_declaration", "templates")
+%{
+// js_global_declaration
+Napi::Value $jswrapper(const Napi::CallbackInfo &info);
+%}
+
+
+/* -----------------------------------------------------------------------------
+ * js_global_setter_declaration:  template for declaring global setters
+ *   - $jswrapper:      wrapper function name
+ * ----------------------------------------------------------------------------- */
+%fragment("js_global_setter_declaration", "templates")
+%{
+// js_global_declaration
+void $jswrapper(const Napi::CallbackInfo &info);
+%}
+
+
 /* -----------------------------------------------------------------------------
  * js_global_getter:  template for global getter function wrappers
  *   - $jswrapper:      wrapper function name
@@ -1128,7 +1151,7 @@ fail:
   class $jsmangledname_inst : public $jsmangledname_templ<$jsmangledname_inst> {
     public:
       using $jsmangledname_templ::$jsmangledname_templ;
-      virtual ~$jsmangledname_inst() {};
+      virtual ~$jsmangledname_inst() = default;
       static void GetMembers(
         Napi::Env,
         std::map<std::string, $jsmangledname_templ::PropertyDescriptor> &,

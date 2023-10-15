@@ -43,12 +43,7 @@ fail:
 
 /* char */
 
-%fragment(SWIG_From_frag(unsigned char), "header",
-          fragment="run_" SWIG_From_frag(unsigned char)) {
-SWIGINTERNINLINE Napi::Value
-SWIG_From_unsigned_SS_char(Napi::Env env, unsigned char c);
-}
-%fragment("run_" SWIG_From_frag(unsigned char), "wrapper") {
+%fragment(SWIG_From_frag(unsigned char), "header") {
 SWIGINTERNINLINE Napi::Value
 SWIG_From_unsigned_SS_char(Napi::Env env, unsigned char c)
 {
@@ -56,13 +51,7 @@ SWIG_From_unsigned_SS_char(Napi::Env env, unsigned char c)
 }
 }
 
-
-%fragment(SWIG_From_frag(signed char), "header",
-          fragment="run_" SWIG_From_frag(signed char)) {
-SWIGINTERNINLINE Napi::Value
-SWIG_From_signed_SS_char(Napi::Env env, signed char c);
-}
-%fragment("run_" SWIG_From_frag(signed char), "wrapper") {
+%fragment(SWIG_From_frag(signed char), "header") {
 SWIGINTERNINLINE Napi::Value
 SWIG_From_signed_SS_char(Napi::Env env, signed char c)
 {
@@ -72,13 +61,8 @@ SWIG_From_signed_SS_char(Napi::Env env, signed char c)
 
 /* int */
 
-%fragment(SWIG_From_frag(int), "header",
-          fragment="run_" SWIG_From_frag(int)) {
-SWIGINTERN
-Napi::Value SWIG_From_int(Napi::Env env, int val);
-}
-%fragment("run_" SWIG_From_frag(int), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(int), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_int(Napi::Env env, int val)
 {
   return Napi::Number::New(env, val);
@@ -113,13 +97,8 @@ fail:
 
 /* unsigned int */
 
-%fragment(SWIG_From_frag(unsigned int), "header",
-          fragment="run_" SWIG_From_frag(unsigned int)) {
-SWIGINTERN
-Napi::Value SWIG_From_unsigned_SS_int(Napi::Env env, unsigned int val);
-}
-%fragment("run_" SWIG_From_frag(unsigned int), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(unsigned int), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_int(Napi::Env env, unsigned int val)
 {
   return Napi::Number::New(env, val);
@@ -157,13 +136,8 @@ fail:
 
 /* short */
 
-%fragment("SWIG_Env_FromShort", "header",
-          fragment="run_SWIG_Env_FromShort") {
-SWIGINTERN
-Napi::Value SWIG_From_short(Napi::Env env, short val);
-}
-%fragment("run_SWIG_Env_FromShort", "wrapper") {
-SWIGINTERN
+%fragment("SWIG_Env_FromShort", "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_short(Napi::Env env, short val)
 {
   return Napi::Number::New(env, val);
@@ -198,13 +172,8 @@ fail:
 
 /* unsigned short */
 
-%fragment(SWIG_From_frag(unsigned short), "header",
-          fragment="run_" SWIG_From_frag(unsigned short)) {
-SWIGINTERN
-Napi::Value SWIG_From_unsigned_SS_short(Napi::Env env, unsigned short val);
-}
-%fragment("run_" SWIG_From_frag(unsigned short), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(unsigned short), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_short(Napi::Env env, unsigned short val)
 {
   return Napi::Number::New(env, val);
@@ -242,13 +211,8 @@ fail:
 
 /* long */
 
-%fragment(SWIG_From_frag(long), "header",
-          fragment="run_" SWIG_From_frag(long)) {
-SWIGINTERN
-Napi::Value SWIG_From_long(Napi::Env env, long val);
-}
-%fragment("run_" SWIG_From_frag(long), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(long), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_long(Napi::Env env, long val)
 {
   return Napi::Number::New(env, val);
@@ -282,13 +246,8 @@ fail:
 
 /* unsigned long */
 
-%fragment(SWIG_From_frag(unsigned long), "header",
-          fragment="run_" SWIG_From_frag(unsigned long)) {
-SWIGINTERN
-Napi::Value SWIG_From_unsigned_SS_long(Napi::Env env, unsigned long val);
-}
-%fragment("run_" SWIG_From_frag(unsigned long), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(unsigned long), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_long(Napi::Env env, unsigned long val)
 {
   return Napi::Number::New(env, val);
@@ -325,17 +284,9 @@ fail:
 /* long long */
 
 %fragment(SWIG_From_frag(long long), "header",
-          fragment="SWIG_LongLongAvailable",
-          fragment="run_" SWIG_From_frag(long long)) {
-%#ifdef SWIG_LONG_LONG_AVAILABLE
-SWIGINTERN
-Napi::Value SWIG_From_long_SS_long(Napi::Env env, long long val);
-%#endif
-}
-%fragment("run_" SWIG_From_frag(long long), "wrapper",
           fragment="SWIG_LongLongAvailable") {
 %#ifdef SWIG_LONG_LONG_AVAILABLE
-SWIGINTERN
+SWIGINTERNINLINE
 Napi::Value SWIG_From_long_SS_long(Napi::Env env, long long val)
 {
   return Napi::Number::New(env, val);
@@ -378,17 +329,9 @@ fail:
 /* unsigned long long */
 
 %fragment(SWIG_From_frag(unsigned long long), "header",
-          fragment="run_" SWIG_From_frag(unsigned long long),
           fragment="SWIG_LongLongAvailable") {
 %#ifdef SWIG_LONG_LONG_AVAILABLE
-SWIGINTERN
-Napi::Value SWIG_From_unsigned_SS_long_SS_long(Napi::Env env, unsigned long long val);
-%#endif
-}
-%fragment("run_" SWIG_From_frag(unsigned long long), "wrapper",
-          fragment="SWIG_LongLongAvailable") {
-%#ifdef SWIG_LONG_LONG_AVAILABLE
-SWIGINTERN
+SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_long_SS_long(Napi::Env env, unsigned long long val)
 {
   return Napi::Number::New(env, val);
@@ -434,13 +377,8 @@ fail:
 
 /* float */
 
-%fragment(SWIG_From_frag(float), "header",
-          fragment="run_" SWIG_From_frag(float)) {
-SWIGINTERN
-Napi::Value SWIG_From_float(Napi::Env env, float val);
-}
-%fragment("run_" SWIG_From_frag(float), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(float), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_float(Napi::Env env, float val)
 {
   return Napi::Number::New(env, val);
@@ -476,13 +414,8 @@ fail:
 
 /* double */
 
-%fragment(SWIG_From_frag(double), "header",
-          fragment="run_" SWIG_From_frag(double)) {
-SWIGINTERN
-Napi::Value SWIG_From_double(Napi::Env env, double val);
-}
-%fragment("run_" SWIG_From_frag(double), "wrapper") {
-SWIGINTERN
+%fragment(SWIG_From_frag(double), "header") {
+SWIGINTERNINLINE
 Napi::Value SWIG_From_double(Napi::Env env, double val)
 {
   return Napi::Number::New(env, val);

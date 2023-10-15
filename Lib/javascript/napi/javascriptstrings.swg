@@ -48,11 +48,7 @@ fail:
 }
 
 
-%fragment(SWIG_From_frag(char), "header", fragment="run_" SWIG_From_frag(char)) {
-SWIGINTERNINLINE Napi::Value
-SWIG_From_char(Napi::Env env, char c);
-}
-%fragment("run_" SWIG_From_frag(char), "wrapper") {
+%fragment(SWIG_From_frag(char), "header") {
 SWIGINTERNINLINE Napi::Value
 SWIG_From_char(Napi::Env env, char c)
 {
@@ -65,12 +61,7 @@ SWIG_From_char(Napi::Env env, char c)
 // Override the default one with an empty one
 }
 
-%fragment("SWIG_FromCharPtrAndSize", "header",
-          fragment="run_SWIG_FromCharPtrAndSize") {
-SWIGINTERNINLINE Napi::Value
-SWIG_Env_FromCharPtrAndSize(Napi::Env env, const char* carray, size_t size);
-}
-%fragment("run_SWIG_FromCharPtrAndSize", "wrapper") {
+%fragment("SWIG_FromCharPtrAndSize", "header") {
 SWIGINTERNINLINE Napi::Value
 SWIG_Env_FromCharPtrAndSize(Napi::Env env, const char* carray, size_t size)
 {
