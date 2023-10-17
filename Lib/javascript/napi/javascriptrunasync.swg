@@ -174,12 +174,11 @@ Napi::Value SWIG_NAPI_AsyncWorker::Run(const Napi::CallbackInfo &info) {
   rc = context->SWIG_NAPI_Init(info);
 #endif
   if (rc == SWIG_NAPI_AsyncContext::Status::REJECT) {
-    Napi::EscapableHandleScope scope(info.Env());
     Napi::Value r = context->SWIG_NAPI_Promise();
     context->SWIG_NAPI_Cleanup();
     delete context;
     delete this;
-    return scope.Escape(r);
+    return r;
   } else if (rc == SWIG_NAPI_AsyncContext::Status::THROW) {
     context->SWIG_NAPI_Cleanup();
     delete context;
