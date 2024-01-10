@@ -63,11 +63,11 @@ SWIG_From_dec(String)(const String& s)
 %define %std_string_asval(String)
 %fragment(SWIG_AsVal_frag(String),"header",
           fragment="run_" SWIG_AsVal_frag(String)) {
-SWIGINTERN int
+SWIGCLINKAGE int
 SWIG_AsVal_dec(String)(SWIG_Object obj, String *val);
 }
 %fragment("run_" SWIG_AsVal_frag(String),"wrapper", fragment=SWIG_AsPtr_frag(String)) {
-SWIGINTERN int
+SWIGCLINKAGE int
 SWIG_AsVal_dec(String)(SWIG_Object obj, String *val)
 {
   String* v = (String *) 0;
