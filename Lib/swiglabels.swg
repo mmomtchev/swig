@@ -56,7 +56,6 @@
 
 /* internal SWIG method */
 #ifndef SWIGINTERN
-#ifdef SWIG_CODE_SPLITTING
 # if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
 #   define SWIGINTERN
 # else
@@ -66,14 +65,11 @@
 #     define SWIGINTERN
 #   endif
 # endif
-#else
-# define SWIGINTERN static SWIGUNUSED
-#endif
 #endif
 
 /* internal inline SWIG method */
 #ifndef SWIGINTERNINLINE
-# define SWIGINTERNINLINE SWIGINTERN SWIGINLINE
+# define SWIGINTERNINLINE static inline
 #endif
 
 /* force C linkage */
