@@ -2128,8 +2128,8 @@ void SwigType_emit_type_table(File *f_forward, File *f_table) {
   cast_init = NewStringEmpty();
   imported_types = NewHash();
 
-  Printf(table, "SWIGINTERN swig_type_info *swig_type_initial[] = {\n");
-  Printf(cast_init, "SWIGINTERN swig_cast_info *swig_cast_initial[] = {\n");
+  Printf(table, "swig_type_info *swig_type_initial[] = {\n");
+  Printf(cast_init, "swig_cast_info *swig_cast_initial[] = {\n");
 
   Printf(f_forward, "SWIGCLINKAGE SWIGINTERN swig_type_info *swig_type_initial[];\n");
   Printf(f_forward, "SWIGCLINKAGE SWIGINTERN swig_cast_info *swig_cast_initial[];\n");
@@ -2154,9 +2154,9 @@ void SwigType_emit_type_table(File *f_forward, File *f_table) {
     cast_temp = NewStringEmpty();
     cast_temp_conv = NewStringEmpty();
 
-    Printv(types, "SWIGINTERN swig_type_info _swigt_", ki.item, " = {", NIL);
+    Printv(types, "swig_type_info _swigt_", ki.item, " = {", NIL);
     Append(table_list, ki.item);
-    Printf(cast_temp, "SWIGINTERN swig_cast_info _swigc_%s[] = {", ki.item);
+    Printf(cast_temp, "swig_cast_info _swigc_%s[] = {", ki.item);
     i++;
 
     cd = SwigType_clientdata_collect(ki.item);
@@ -2244,10 +2244,10 @@ void SwigType_emit_type_table(File *f_forward, File *f_table) {
       Delete(ckey);
 
       if (!Getattr(r_mangled, ei.item) && !Getattr(imported_types, ei.item)) {
-	Printf(types, "SWIGINTERN swig_type_info _swigt_%s = {\"%s\", 0, 0, 0, 0, 0};\n", ei.item, ei.item);
+	Printf(types, "swig_type_info _swigt_%s = {\"%s\", 0, 0, 0, 0, 0};\n", ei.item, ei.item);
 	Append(table_list, ei.item);
 
-	Printf(cast, "SWIGINTERN swig_cast_info _swigc_%s[] = {{&_swigt_%s, 0, 0, 0},{0, 0, 0, 0}};\n", ei.item, ei.item);
+	Printf(cast, "swig_cast_info _swigc_%s[] = {{&_swigt_%s, 0, 0, 0},{0, 0, 0, 0}};\n", ei.item, ei.item);
 	i++;
 
 	Setattr(imported_types, ei.item, "1");
@@ -2285,8 +2285,8 @@ void SwigType_emit_type_table(File *f_forward, File *f_table) {
   Printf(f_table, "%s\n", cast_init);
   Printf(f_table, "\n/* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */\n\n");
 
-  Printf(f_table, "SWIGINTERN swig_type_info *swig_types[%d];\n", i + 1);
-  Printf(f_table, "SWIGINTERN swig_module_info swig_module = {swig_types, %d, 0, 0, 0, 0};\n", i);
+  Printf(f_table, "swig_type_info *swig_types[%d];\n", i + 1);
+  Printf(f_table, "swig_module_info swig_module = {swig_types, %d, 0, 0, 0, 0};\n", i);
 
   Printf(f_forward, "SWIGCLINKAGE SWIGINTERN swig_type_info *swig_types[];\n");
   Printf(f_forward, "SWIGCLINKAGE SWIGINTERN swig_module_info swig_module;\n");
