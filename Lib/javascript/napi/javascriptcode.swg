@@ -1393,13 +1393,11 @@ fail:
 %fragment("jsnapi_register_static_constant", "templates")
 %{
   // jsnapi_register_static_constant
-  do {
-    Napi::Function f = Napi::Function::New(env, $jsgetter);
-    Napi::Value value;
-    NAPI_CHECK_RESULT(f.Call(0, SWIG_NULLPTR), value);
-    staticMembers.erase("$jsname");
-    staticMembers.insert({"$jsname", StaticValue("$jsname", value,
-              static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
-    });
-  } while (0);
+  staticMembers.erase("$jsname");
+  staticMembers.insert({"$jsname",
+        StaticAccessor("$jsname",
+                &$jsmangledname_templ::$jsgetter,
+                &JS_veto_set_static_variable,
+                static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
+        });
 %}
