@@ -3583,16 +3583,25 @@ int NAPIEmitter::emitGetter(Node *n, bool is_member, bool is_static) {
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
+  String *result = NewString("");
   t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
       .replace("$jslocals", wrapper->locals)
       .replace("$jsguard", guard)
-      .replace("$jsinput", input)      
+      .replace("$jsinput", input)
       .replace("$jslock", locking)
       .replace("$jsaction", action)
       .replace("$jsoutput", output)
       .replace("$jscleanup", cleanup)
-      .pretty_print(f_wrappers);
+      .pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
+
+  if (!is_member) {
+    Template t_declaration = getTemplate("js_global_declaration");
+    t_declaration.replace("$jswrapper", wrap_name)
+        .trim()
+        .pretty_print(f_class_declarations);
+  }
 
   DelWrapper(wrapper);
   Delete(guard);
@@ -3641,6 +3650,7 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
+  String *result = NewString("");
   t_setter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
       .replace("$jslocals", wrapper->locals)
@@ -3649,7 +3659,15 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
       .replace("$jslock", locking)
       .replace("$jsaction", action)
       .replace("$jscleanup", cleanup)
-      .pretty_print(f_wrappers);
+      .pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
+
+  if (!is_member) {
+    Template t_declaration = getTemplate("js_global_setter_declaration");
+    t_declaration.replace("$jswrapper", wrap_name)
+        .trim()
+        .pretty_print(f_class_declarations);
+  }
 
   DelWrapper(wrapper);
   Delete(guard);
@@ -3658,7 +3676,8 @@ int NAPIEmitter::emitSetter(Node *n, bool is_member, bool is_static) {
   return SWIG_OK;
 }
 
-int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static, bool is_async) {
+int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
+                                        bool is_async) {
   Wrapper *wrapper = NewWrapper();
   Template t_function(getTemplate(getFunctionTemplate(is_member, is_async)));
 
@@ -3668,17 +3687,25 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
 
   // prepare the function wrapper name
   String *iname;
-  if (is_async) iname = Getattr(n, "sym:name:async");
-  else iname = Getattr(n, "sym:name:sync");
+  if (is_async)
+    iname = Getattr(n, "sym:name:async");
+  else
+    iname = Getattr(n, "sym:name:sync");
   String *wrap_name = Swig_name_wrapper(iname);
   if (is_overloaded) {
-    t_function = getTemplate(getOverloadedFunctionTemplate(is_member, is_async));
+    t_function =
+        getTemplate(getOverloadedFunctionTemplate(is_member, is_async));
     Append(wrap_name, Getattr(n, "sym:overname"));
   }
-  if (is_async) Setattr(n, "wrap:name:async", wrap_name);
-  else Setattr(n, "wrap:name:sync", wrap_name);
+  if (is_async)
+    Setattr(n, "wrap:name:async", wrap_name);
+  else
+    Setattr(n, "wrap:name:sync", wrap_name);
   Setattr(n, "wrap:name", wrap_name);
   state.function(WRAPPER_NAME, wrap_name);
+
+  if (is_async)
+    Swig_fragment_emit(AsyncWorkerFragmentName);
 
   // prepare local variables
   ParmList *params = Getattr(n, "parms");
@@ -3717,7 +3744,8 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
     Template(getTemplate("js_rethrow_exception")).print(rethrow_templ);
     emit_action_code(n, rethrow, rethrow_templ);
   } else {
-    // In sync mode %exception wraps around the action itself and becomes the action
+    // In sync mode %exception wraps around the action itself and becomes the
+    // action
     emit_action_code(n, rethrow, Getattr(action, "action"));
     Delete(Getattr(action, "action"));
     Setattr(action, "action", rethrow);
@@ -3727,7 +3755,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   wrapper->code = NewString("");
   marshalOutput(n, params, wrapper, NewString(""));
   String *output = wrapper->code;
-  
+
   wrapper->code = NewString("");
   emitCleanupCode(n, wrapper, params);
   String *cleanup = wrapper->code;
@@ -3738,6 +3766,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
     t_worker.print(jsasyncworker);
   }
 
+  String *result = NewString("");
   t_function.replace("$jsasyncworker", jsasyncworker)
       .replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jswrapper", wrap_name)
@@ -3758,7 +3787,8 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
       .replace("$jsargcount", Getattr(n, ARGCOUNT))
       .replace("$jsargrequired", Getattr(n, ARGREQUIRED));
 
-  t_function.pretty_print(f_wrappers);
+  t_function.pretty_print(result);
+  Append(is_member ? f_template_definitions : f_split_wrappers, result);
 
   DelWrapper(wrapper);
   Delete(input);
