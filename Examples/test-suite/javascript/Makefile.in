@@ -71,7 +71,8 @@ ifneq (, $(ASYNC))
 CPP_TEST_CASES += \
 	napi_async_locking \
 	napi_async_overloading \
-	napi_async_reject
+	napi_async_reject \
+	napi_async_feature
 endif
 endif
 

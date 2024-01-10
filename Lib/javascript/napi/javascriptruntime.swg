@@ -5,6 +5,13 @@
 
 // NAPI
 // ----------
+%insert(begin) %{
+#define SWIG_CODE_SPLITTING
+#ifdef SWIG_CODE_SPLITTING
+# define SWIGINTERN
+# define SWIGRUNTIME
+#endif
+%}
 
 %insert(runtime) %{
 #if defined(_CPPUNWIND) || defined(__EXCEPTIONS)
@@ -44,10 +51,14 @@
 #include <algorithm>
 #include <set>
 #include <stdexcept>
+#include <mutex>
 %}
 
 %insert(runtime) "swigrun.swg";         /* SWIG API */
+%insert(wrapper) "swigrun_body.swg";    /* SWIG API */
 %insert(runtime) "swigerrors.swg";      /* SWIG errors */
 
-%insert(runtime) "javascriptrun.swg";
+%insert(runtime) "javascriptrun.swg";     /* SWIG Node-API runtime (definitions) */
+%insert(wrapper) "javascriptrunbody.swg"; /* SWIG Node-API runtime (declarations) */
 
+%include <javascriptrunasync.swg>;      /* Asynchronous execution framework */
