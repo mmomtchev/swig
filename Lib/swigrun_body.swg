@@ -110,14 +110,6 @@ SWIG_TypeCheckStruct(const swig_type_info *from, swig_type_info *ty) {
 }
 
 /*
-  Cast a pointer up an inheritance hierarchy
-*/
-SWIGRUNTIMEINLINE void *
-SWIG_TypeCast(swig_cast_info *ty, void *ptr, int *newmemory) {
-  return ((!ty) || (!ty->converter)) ? ptr : (*ty->converter)(ptr, newmemory);
-}
-
-/*
    Dynamic pointer casting. Down an inheritance hierarchy
 */
 SWIGRUNTIME swig_type_info *
@@ -129,14 +121,6 @@ SWIG_TypeDynamicCast(swig_type_info *ty, void **ptr) {
     if (ty) lastty = ty;
   }
   return lastty;
-}
-
-/*
-  Return the name associated with this type
-*/
-SWIGRUNTIMEINLINE const char *
-SWIG_TypeName(const swig_type_info *ty) {
-  return ty->name;
 }
 
 /*
