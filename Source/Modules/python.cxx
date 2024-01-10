@@ -824,8 +824,6 @@ public:
       Dump(f_builtins, f_wrappers);
     }
 
-    SwigType_emit_type_table(f_runtime, f_wrappers);
-
     Append(const_code, "{0, 0, 0, 0.0, 0, 0}};\n");
     Printf(f_wrappers, "%s\n", const_code);
 
@@ -844,6 +842,9 @@ public:
     Printf(f_wrappers, "#ifdef __cplusplus\n");
     Printf(f_wrappers, "}\n");
     Printf(f_wrappers, "#endif\n");
+
+    // the type table must come after the closing of the C linkage block
+    SwigType_emit_type_table(f_runtime, f_wrappers);
 
     if (shadow) {
       Swig_banner_target_lang(f_shadow_py, "#");

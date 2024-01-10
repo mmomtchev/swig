@@ -64,7 +64,7 @@ SWIG_From_dec(String)(const String& s)
 %fragment(SWIG_AsVal_frag(String),"header",
           fragment="run_" SWIG_AsVal_frag(String)) {
 SWIGINTERN int
-SWIG_AsVal_dec(String)(SWIG_Object obj, String *val)
+SWIG_AsVal_dec(String)(SWIG_Object obj, String *val);
 }
 %fragment("run_" SWIG_AsVal_frag(String),"wrapper", fragment=SWIG_AsPtr_frag(String)) {
 SWIGINTERN int

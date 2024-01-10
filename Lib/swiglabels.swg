@@ -56,7 +56,19 @@
 
 /* internal SWIG method */
 #ifndef SWIGINTERN
+#ifdef SWIG_CODE_SPLITTING
+# if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#   define SWIGINTERN
+# else
+#   if defined(__GNUC__) && defined(GCC_HASCLASSVISIBILITY)
+#     define SWIGINTERN __attribute__ ((visibility("hidden")))
+#   else
+#     define SWIGINTERN
+#   endif
+# endif
+#else
 # define SWIGINTERN static SWIGUNUSED
+#endif
 #endif
 
 /* internal inline SWIG method */
