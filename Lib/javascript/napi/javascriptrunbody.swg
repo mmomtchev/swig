@@ -92,6 +92,48 @@ SWIG_Guard::~SWIG_Guard() {
   }
 }
 
+template <typename SWIG_OBJ_WRAP>
+SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_NAPI_ObjectWrap_templ(const Napi::CallbackInfo &info) :
+        Napi::ObjectWrap<SWIG_OBJ_WRAP>(info), size(0), info(SWIG_NULLPTR), _lock() { 
+  Napi::Env env = info.Env();
+  if (info.Length() == 1 && info[0].IsExternal()) {
+    // This constructor has been called internally from C++/SWIG
+    // to wrap an already existing C++ object of unknown type in JS
+    this->self = info[0].As<Napi::External<void>>().Data();
+    this->owned = false;
+  } else {
+    SWIG_Error(SWIG_ERROR, "This constructor is not accessible from JS");
+  }
+  return;
+#ifndef NAPI_CPP_EXCEPTIONS
+  goto fail;
+fail:
+  return;
+#endif
+}
+
+template <typename SWIG_OBJ_WRAP>
+Napi::Value SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::ToString(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  static char repr[128];
+  const char *name = SWIG_TypePrettyName(this->info);
+  snprintf(repr, sizeof(repr), "{SwigObject %s (%s) at %p %s}",
+    this->info ? this->info->name : "unknown",
+    name ? name : "unknown",
+    this->self,
+    this->owned ? "[owned]" : "[copy]");
+  return Napi::String::New(env, repr);
+}
+
+template <typename SWIG_OBJ_WRAP>
+void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::JS_veto_set_static_variable(const Napi::CallbackInfo &info, const Napi::Value &value) {
+  SWIG_NAPI_Raise(info.Env(), "Tried to write read-only variable.");
+}
+
+template <typename SWIG_OBJ_WRAP>
+void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::JS_veto_set_variable(const Napi::CallbackInfo &info, const Napi::Value &value) {
+  SWIG_NAPI_Raise(info.Env(), "Tried to write read-only variable.");
+}
 
 void SWIG_NAPI_ObjectWrap_inst::GetMembers(
         Napi::Env env,
@@ -338,6 +380,9 @@ int SWIG_NAPI_ConvertPacked(Napi::Value valRef, void *ptr, size_t size, swig_typ
   memcpy(ptr, tmp, size);
   return SWIG_OK;
 }
+
+#define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_NAPI_ConvertPacked(obj, ptr, sz, ty)
+#define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
 
 
 /* ---------------------------------------------------------------------------
