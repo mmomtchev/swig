@@ -91,6 +91,9 @@ void JS_veto_set_variable(const Napi::CallbackInfo &info);
 
 #define SWIG_GetInstancePtr(obj, ptr)                   SWIG_NAPI_GetInstancePtr(obj, ptr)
 
+#define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_NAPI_ConvertPacked(obj, ptr, sz, ty)
+#define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
+
 
 /* ---------------------------------------------------------------------------
  * Module data per V8 isolate
