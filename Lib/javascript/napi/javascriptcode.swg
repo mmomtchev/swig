@@ -1221,6 +1221,12 @@ void $jsmangledname_inst::GetMembers(
     $jsnapiwrappers
     /* add static class functions and variables */
     $jsnapistaticwrappers
+
+#ifndef NAPI_CPP_EXCEPTIONS
+  goto fail;
+fail:
+  return;
+#endif
 }
 %}
 
