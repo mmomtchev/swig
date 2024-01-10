@@ -381,9 +381,6 @@ int SWIG_NAPI_ConvertPacked(Napi::Value valRef, void *ptr, size_t size, swig_typ
   return SWIG_OK;
 }
 
-#define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_NAPI_ConvertPacked(obj, ptr, sz, ty)
-#define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
-
 
 /* ---------------------------------------------------------------------------
  * Support for IN/OUTPUT typemaps (see Lib/typemaps/inoutlist.swg)
