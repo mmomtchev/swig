@@ -18,8 +18,8 @@
         ],
         ['OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="solaris"',
           {
-            'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", $cflags],
-            'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", $cxxflags, $cflags],
+            'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", $cflags],
+            'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", $cxxflags, $cflags],
             'cflags!': [ '-fno-exceptions' ],
             'cflags_cc!': [ '-fno-exceptions', '-fno-rtti' ]
           }
