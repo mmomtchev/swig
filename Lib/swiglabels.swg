@@ -87,6 +87,13 @@
 #define SWIGCLINKAGE
 #endif
 
+/* force C++ linkage */
+#ifdef __cplusplus
+#define SWIGCPPLINKAGE extern "C++"
+#else
+#define SWIGCPPLINKAGE
+#endif
+
 /* exporting methods */
 #ifndef SWIGEXPORT
 # if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
