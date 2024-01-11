@@ -230,6 +230,9 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			$(run_testcase)
                 endif
 
+  %.multicpptest:
+		$(_setup)
+
   %.splitcpptest:
 		$(_setup)
 		+$(swig_and_compile_splitcpp)
