@@ -270,7 +270,7 @@ endif
 
 %.clean:
 	@rm -rf $*
-	@rm -f $*_wrap.* $*$(SO) $*.$(OBJEXT)
+	@rm -f $*_wrap.* $*_wrap_*.cxx  $*$(SO) $*.$(OBJEXT)
 	@rm -f $*$(SCRIPTASYNCSUFFIX)
 	@rm -f $*.d.ts $*_ts_runme.mjs $*_ts_runme.js $*_ts_runme.ts
 
