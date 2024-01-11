@@ -83,31 +83,33 @@ struct InheritedMemberVars {
 };
 %}
 
-// As these actually declare variables, they must be explicitly included
+// As these actually define variables, they must be explicitly included
 // in the wrapper section for compatibility with JavaScript code splitting
+// The linkage must be set explicitly because there is a number of interpreters
+// that force C linkage for their wrappers (Python and Lua are two examples)
 // (or -alternatively- you can use a bigger hammer and specify -Wl,-z muldefs)
 %wrapper %{
-AssignValueDerived InheritedMemberVars::StaticMemberValueDerived;
-AssignArrayDerived InheritedMemberVars::StaticMemberArrayDerived;
-AssignPtrDerived InheritedMemberVars::StaticMemberPtrDerived;
-AssignMatrixDerived InheritedMemberVars::StaticMemberMatrixDerived;
+SWIGCPPLINKAGE AssignValueDerived InheritedMemberVars::StaticMemberValueDerived;
+SWIGCPPLINKAGE AssignArrayDerived InheritedMemberVars::StaticMemberArrayDerived;
+SWIGCPPLINKAGE AssignPtrDerived InheritedMemberVars::StaticMemberPtrDerived;
+SWIGCPPLINKAGE AssignMatrixDerived InheritedMemberVars::StaticMemberMatrixDerived;
 
-AssignValueDerivedSettable InheritedMemberVars::StaticMemberValueDerivedSettable;
-AssignArrayDerivedSettable InheritedMemberVars::StaticMemberArrayDerivedSettable;
-AssignPtrDerivedSettable InheritedMemberVars::StaticMemberPtrDerivedSettable;
-AssignMatrixDerivedSettable InheritedMemberVars::StaticMemberMatrixDerivedSettable;
+SWIGCPPLINKAGE AssignValueDerivedSettable InheritedMemberVars::StaticMemberValueDerivedSettable;
+SWIGCPPLINKAGE AssignArrayDerivedSettable InheritedMemberVars::StaticMemberArrayDerivedSettable;
+SWIGCPPLINKAGE AssignPtrDerivedSettable InheritedMemberVars::StaticMemberPtrDerivedSettable;
+SWIGCPPLINKAGE AssignMatrixDerivedSettable InheritedMemberVars::StaticMemberMatrixDerivedSettable;
 
 // These will only have getters
-AssignValueDerived GlobalValueDerived;
-AssignArrayDerived GlobalArrayDerived;
-AssignPtrDerived GlobalPtrDerived;
-AssignMatrixDerived GlobalMatrixDerived;
+SWIGCPPLINKAGE AssignValueDerived GlobalValueDerived;
+SWIGCPPLINKAGE AssignArrayDerived GlobalArrayDerived;
+SWIGCPPLINKAGE AssignPtrDerived GlobalPtrDerived;
+SWIGCPPLINKAGE AssignMatrixDerived GlobalMatrixDerived;
 
 // These will have getters and setters
-AssignValueDerivedSettable GlobalValueDerivedSettable;
-AssignArrayDerivedSettable GlobalArrayDerivedSettable;
-AssignPtrDerivedSettable GlobalPtrDerivedSettable;
-AssignMatrixDerivedSettable GlobalMatrixDerivedSettable;
+SWIGCPPLINKAGE AssignValueDerivedSettable GlobalValueDerivedSettable;
+SWIGCPPLINKAGE AssignArrayDerivedSettable GlobalArrayDerivedSettable;
+SWIGCPPLINKAGE AssignPtrDerivedSettable GlobalPtrDerivedSettable;
+SWIGCPPLINKAGE AssignMatrixDerivedSettable GlobalMatrixDerivedSettable;
 %}
 
 // (3) Test indirectly non-assignable member variables via classes that themselves have non-assignable member variables
@@ -149,18 +151,17 @@ struct StaticMembersMemberVarsHolder {
 };
 %}
 
-// As these actually declare variables, they must be explicitly included
-// in the wrapper section for compatibility with JavaScript code splitting
+// Actual definitions
 %wrapper %{
-MemberValueVar StaticMembersMemberVars::StaticMemberValue;
-MemberArrayVar StaticMembersMemberVars::StaticMemberArray;
-MemberPtrVar StaticMembersMemberVars::StaticMemberPtr;
-MemberMatrixVar StaticMembersMemberVars::StaticMemberMatrix;
+SWIGCPPLINKAGE MemberValueVar StaticMembersMemberVars::StaticMemberValue;
+SWIGCPPLINKAGE MemberArrayVar StaticMembersMemberVars::StaticMemberArray;
+SWIGCPPLINKAGE MemberPtrVar StaticMembersMemberVars::StaticMemberPtr;
+SWIGCPPLINKAGE MemberMatrixVar StaticMembersMemberVars::StaticMemberMatrix;
 
-MemberValueVar GlobalMemberValue;
-MemberArrayVar GlobalMemberArray;
-MemberPtrVar GlobalMemberPtr;
-MemberMatrixVar GlobalMemberMatrix;
+SWIGCPPLINKAGE MemberValueVar GlobalMemberValue;
+SWIGCPPLINKAGE MemberArrayVar GlobalMemberArray;
+SWIGCPPLINKAGE MemberPtrVar GlobalMemberPtr;
+SWIGCPPLINKAGE MemberMatrixVar GlobalMemberMatrix;
 
-StaticMembersMemberVars GlobalStaticMembersMemberVars;
+SWIGCPPLINKAGE StaticMembersMemberVars GlobalStaticMembersMemberVars;
 %}
