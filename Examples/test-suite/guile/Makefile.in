@@ -7,6 +7,8 @@ EXTRA_TEST_CASES += guile_ext_test.externaltest
 LANGUAGE     = guile
 VARIANT      =
 SCRIPTSUFFIX = _runme.scm
+# TODO: Fix the consequences of the code splitting
+LDFLAGS      = -Wl,--allow-multiple-definition
 
 HAVE_CXX11   = @HAVE_CXX11@
 HAVE_CXX14   = @HAVE_CXX14@
