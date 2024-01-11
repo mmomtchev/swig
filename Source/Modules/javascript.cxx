@@ -636,6 +636,7 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
 
   String *js_name = NewString("");
   Printf(js_name, "%s%s", nspace, name);
+  switchNamespace(n);
 
   String *enum_name = NewString("");
   Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
