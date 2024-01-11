@@ -67,9 +67,6 @@ ifeq (napi, $(ENGINE))
 # Node-API specific tests
 CPP_TEST_CASES += \
 	napi_buffer
-EXTRA_TEST_CASES += \
-	assign_const_split.splitcpptest \
-	class_scope_namespace_split.splitcpptest
 
 ifneq (, $(ASYNC))
 # async-specific tests
@@ -79,6 +76,7 @@ CPP_TEST_CASES += \
 	napi_async_reject \
 	napi_async_feature
 endif
+EXTRA_TEST_CASES += $(addsuffix '.splitcpptest', $(CPP_TEST_CASES))
 endif
 
 include $(srcdir)/../common.mk
@@ -96,6 +94,11 @@ _setup = \
 	if [ -n "$(TYPESCRIPT)" ]; then	                                  \
 	  echo -n " (TypeScript mode)" ;                                  \
 	fi;                                                               \
+	case "$@" in    	                                          \
+	  *.splitcpptest) echo -n " (split C++ mode)" ;;                  \
+	  *.cpptest) echo -n " (C++ mode)" ;;                             \
+	  *.ctest) echo -n " (C mode)" ;;                                 \
+	esac;                                                             \
         echo
 SWIGOPT += -$(JSENGINE)
 
@@ -219,19 +222,11 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   %.ctest:
 		$(_setup)
 		+$(swig_and_compile_c)
-        	ifneq (, $(ASYNC))
-			$(run_testcase_async)
-        	else
-			$(run_testcase)
-                endif
+		$(run_testcase)
   %.cpptest:
 		$(_setup)
 		+$(swig_and_compile_cpp)
-        	ifneq (, $(ASYNC))
-			$(run_testcase_async)
-        	else
-			$(run_testcase)
-                endif
+		$(run_testcase)
 
   %.multicpptest:
 		$(_setup)
@@ -239,11 +234,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   %.splitcpptest:
 		$(_setup)
 		+$(swig_and_compile_splitcpp)
-        	ifneq (, $(ASYNC))
-			$(run_testcase_async)
-        	else
-			$(run_testcase)
-                endif
+		$(run_testcase)
 
 else
 
