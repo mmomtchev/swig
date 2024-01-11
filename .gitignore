@@ -159,6 +159,7 @@ Examples/java/doxygen/javadocs
 *_wrap_*.h
 Examples/test-suite/javascript/*/
 !Examples/test-suite/javascript/node_template/
+!Examples/test-suite/javascript/wasm_template/
 Examples/test-suite/javascript/*_async_runme.mjs
 Examples/test-suite/javascript/*_ts_runme.*
 Examples/test-suite/javascript/resolve.js
