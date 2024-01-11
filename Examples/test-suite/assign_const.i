@@ -81,7 +81,12 @@ struct InheritedMemberVars {
   static AssignPtrDerivedSettable StaticMemberPtrDerivedSettable;
   static AssignMatrixDerivedSettable StaticMemberMatrixDerivedSettable;
 };
+%}
 
+// As these actually declare variables, they must be explicitly included
+// in the wrapper section for compatibility with JavaScript code splitting
+// (or -alternatively- you can use a bigger hammer and specify -Wl,-z muldefs)
+%wrapper %{
 AssignValueDerived InheritedMemberVars::StaticMemberValueDerived;
 AssignArrayDerived InheritedMemberVars::StaticMemberArrayDerived;
 AssignPtrDerived InheritedMemberVars::StaticMemberPtrDerived;
@@ -137,6 +142,16 @@ struct StaticMembersMemberVars {
   static MemberPtrVar StaticMemberPtr;
   static MemberMatrixVar StaticMemberMatrix;
 };
+
+// Setters and getters available
+struct StaticMembersMemberVarsHolder {
+    StaticMembersMemberVars Member;
+};
+%}
+
+// As these actually declare variables, they must be explicitly included
+// in the wrapper section for compatibility with JavaScript code splitting
+%wrapper %{
 MemberValueVar StaticMembersMemberVars::StaticMemberValue;
 MemberArrayVar StaticMembersMemberVars::StaticMemberArray;
 MemberPtrVar StaticMembersMemberVars::StaticMemberPtr;
@@ -147,9 +162,5 @@ MemberArrayVar GlobalMemberArray;
 MemberPtrVar GlobalMemberPtr;
 MemberMatrixVar GlobalMemberMatrix;
 
-// Setters and getters available
-struct StaticMembersMemberVarsHolder {
-    StaticMembersMemberVars Member;
-};
 StaticMembersMemberVars GlobalStaticMembersMemberVars;
 %}

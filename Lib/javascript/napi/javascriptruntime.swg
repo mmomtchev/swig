@@ -5,14 +5,6 @@
 
 // NAPI
 // ----------
-%insert(begin) %{
-#define SWIG_CODE_SPLITTING
-#ifdef SWIG_CODE_SPLITTING
-# define SWIGINTERN
-# define SWIGRUNTIME
-#endif
-%}
-
 %insert(runtime) %{
 #if defined(_CPPUNWIND) || defined(__EXCEPTIONS)
 
