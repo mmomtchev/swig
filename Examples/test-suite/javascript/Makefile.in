@@ -65,6 +65,8 @@ ifeq (napi, $(ENGINE))
 # Node-API specific tests
 CPP_TEST_CASES += \
 	napi_buffer
+EXTRA_TEST_CASES += \
+	assign_const.splitcpptest
 
 ifneq (, $(ASYNC))
 # async-specific tests
@@ -163,6 +165,12 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			$(srcdir)/node_template/binding.gyp.in > $*/binding.gyp && \
 		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g;' \
 			$(srcdir)/node_template/index.js.in > $*/index.js
+	setup_node_split = \
+		test -d $* || mkdir $* && \
+		sed -e 's|$$testcase|$*|g; s|$$cflags|$(GYP_CFLAGS)|g; s|$$cxxflags|"$(GYP_CXXFLAGS)"|g; s|$$srcdir|$(srcdir)|g' \
+			$(srcdir)/node_template/binding-split.gyp.in > $*/binding.gyp && \
+		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g;' \
+			$(srcdir)/node_template/index.js.in > $*/index.js
 		
 	# Note: we need to use swig in C parse mode, but make node-gyp believe it is c++ (via file extension)
 	swig_and_compile_c = \
@@ -178,6 +186,13 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
 		SWIGOPT='-c++ -javascript $(SWIGOPT) $(SWIGASYNC) $(srcdir)/../$*.i' swiginvoke && \
 		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build -j 1>>/dev/null
+
+	swig_and_compile_splitcpp = \
+		$(setup_node_split) && \
+		$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile SRCDIR='$(SRCDIR)' \
+		SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
+		SWIGOPT='-c++ -javascript -split $(SWIGOPT) $(SWIGASYNC) $(srcdir)/../$*.i' swiginvoke && \
+		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build 1>>/dev/null
 
 	run_testcase = \
 		RUNME="$(srcdir)/$*$(SCRIPTSUFFIX)" && \
@@ -219,8 +234,14 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		+$(swig_and_compile_cpp)
 		$(run_testcase)
 
-  %.multicpptest:
+  %.splitcpptest:
 		$(_setup)
+		+$(swig_and_compile_splitcpp)
+        	ifneq (, $(ASYNC))
+			$(run_testcase_async)
+        	else
+			$(run_testcase)
+                endif
 
 else
 
