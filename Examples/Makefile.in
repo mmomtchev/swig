@@ -48,7 +48,6 @@ CXX        = @CXX@
 CPPFLAGS   = $(SRCDIR_INCLUDE)
 CFLAGS     = @PLATCFLAGS@ $(EXTRA_CFLAGS)
 CXXFLAGS   = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ $(EXTRA_CXXFLAGS)
-LDFLAGS    = -Wl,--allow-multiple-definition
 prefix     = @prefix@
 exec_prefix= @exec_prefix@
 SRCS       =
