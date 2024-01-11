@@ -3388,7 +3388,6 @@ int NAPIEmitter::exitClass(Node *n) {
       .pretty_print(f_class_declarations);
 
   Template t_class_template = getTemplate("jsnapi_getclass");
-  String *getclass = NewString("");
   t_class_template.replace("$jsname", state.clazz(NAME))
       .replace("$jsmangledname", state.clazz(NAME_MANGLED))
       .replace("$jsnapiwrappers", f_init_wrappers)
