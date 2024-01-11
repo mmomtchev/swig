@@ -234,6 +234,9 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		+$(swig_and_compile_cpp)
 		$(run_testcase)
 
+  %.multicpptest:
+		$(_setup)
+
   %.splitcpptest:
 		$(_setup)
 		+$(swig_and_compile_splitcpp)
