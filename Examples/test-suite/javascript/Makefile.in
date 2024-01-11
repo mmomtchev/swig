@@ -27,7 +27,8 @@ CPP_TEST_CASES += \
 	javascript_lib_arrays \
 	li_factory \
 	li_std_containers_int \
-	li_std_map_member
+	li_std_map_member \
+	assign_const_split
 
 # napi fails
 FAILING_CPP_TESTS += \
@@ -66,7 +67,7 @@ ifeq (napi, $(ENGINE))
 CPP_TEST_CASES += \
 	napi_buffer
 EXTRA_TEST_CASES += \
-	assign_const.splitcpptest
+	assign_const_split.splitcpptest
 
 ifneq (, $(ASYNC))
 # async-specific tests
