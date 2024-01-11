@@ -28,7 +28,8 @@ CPP_TEST_CASES += \
 	li_factory \
 	li_std_containers_int \
 	li_std_map_member \
-	assign_const_split
+	assign_const_split \
+	class_scope_namescape
 
 # napi fails
 FAILING_CPP_TESTS += \
@@ -67,7 +68,8 @@ ifeq (napi, $(ENGINE))
 CPP_TEST_CASES += \
 	napi_buffer
 EXTRA_TEST_CASES += \
-	assign_const_split.splitcpptest
+	assign_const_split.splitcpptest \
+	class_scope_namescape.splitcpptest
 
 ifneq (, $(ASYNC))
 # async-specific tests
@@ -174,7 +176,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile SRCDIR='$(SRCDIR)' \
 		SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
 		SWIGOPT='-c++ -javascript $(SWIGOPT) $(SWIGASYNC) $(srcdir)/../$*.i' swiginvoke && \
-		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build 1>>/dev/null
+		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build -j 1>>/dev/null
 
 	swig_and_compile_splitcpp = \
 		$(setup_node_split) && \
