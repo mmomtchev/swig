@@ -1,4 +1,4 @@
-%module assign_const
+%module assign_const_split
 
 %{
 #if defined(_MSC_VER)
@@ -6,11 +6,14 @@
 #endif
 %}
 
-// Similar to assign_reference.i testcase but reference member variables replaced by const members
+// This test is code-splitting-compatible which means that
+// actual variable definitions must be explicitly included
+// in the wrapper section when code splitting is enabled
+// The linkage must be set explicitly because there is a number of interpreters
+// that force C linkage for their wrappers (Python and Lua are two examples)
 
 %rename(Assign) *::operator=;
 
-// (1) Test directly non-assignable member variables
 %inline %{
 struct AssignValue {
   AssignValue() : ValueMember() {}
@@ -81,28 +84,31 @@ struct InheritedMemberVars {
   static AssignPtrDerivedSettable StaticMemberPtrDerivedSettable;
   static AssignMatrixDerivedSettable StaticMemberMatrixDerivedSettable;
 };
+%}
 
-AssignValueDerived InheritedMemberVars::StaticMemberValueDerived;
-AssignArrayDerived InheritedMemberVars::StaticMemberArrayDerived;
-AssignPtrDerived InheritedMemberVars::StaticMemberPtrDerived;
-AssignMatrixDerived InheritedMemberVars::StaticMemberMatrixDerived;
+// Actual definitions
+%wrapper %{
+  SWIGCPPLINKAGE AssignValueDerived InheritedMemberVars::StaticMemberValueDerived;
+  SWIGCPPLINKAGE AssignArrayDerived InheritedMemberVars::StaticMemberArrayDerived;
+  SWIGCPPLINKAGE AssignPtrDerived InheritedMemberVars::StaticMemberPtrDerived;
+  SWIGCPPLINKAGE AssignMatrixDerived InheritedMemberVars::StaticMemberMatrixDerived;
 
-AssignValueDerivedSettable InheritedMemberVars::StaticMemberValueDerivedSettable;
-AssignArrayDerivedSettable InheritedMemberVars::StaticMemberArrayDerivedSettable;
-AssignPtrDerivedSettable InheritedMemberVars::StaticMemberPtrDerivedSettable;
-AssignMatrixDerivedSettable InheritedMemberVars::StaticMemberMatrixDerivedSettable;
+  SWIGCPPLINKAGE AssignValueDerivedSettable InheritedMemberVars::StaticMemberValueDerivedSettable;
+  SWIGCPPLINKAGE AssignArrayDerivedSettable InheritedMemberVars::StaticMemberArrayDerivedSettable;
+  SWIGCPPLINKAGE AssignPtrDerivedSettable InheritedMemberVars::StaticMemberPtrDerivedSettable;
+  SWIGCPPLINKAGE AssignMatrixDerivedSettable InheritedMemberVars::StaticMemberMatrixDerivedSettable;
 
-// These will only have getters
-AssignValueDerived GlobalValueDerived;
-AssignArrayDerived GlobalArrayDerived;
-AssignPtrDerived GlobalPtrDerived;
-AssignMatrixDerived GlobalMatrixDerived;
+  // These will only have getters
+  SWIGCPPLINKAGE AssignValueDerived GlobalValueDerived;
+  SWIGCPPLINKAGE AssignArrayDerived GlobalArrayDerived;
+  SWIGCPPLINKAGE AssignPtrDerived GlobalPtrDerived;
+  SWIGCPPLINKAGE AssignMatrixDerived GlobalMatrixDerived;
 
-// These will have getters and setters
-AssignValueDerivedSettable GlobalValueDerivedSettable;
-AssignArrayDerivedSettable GlobalArrayDerivedSettable;
-AssignPtrDerivedSettable GlobalPtrDerivedSettable;
-AssignMatrixDerivedSettable GlobalMatrixDerivedSettable;
+  // These will have getters and setters
+  SWIGCPPLINKAGE AssignValueDerivedSettable GlobalValueDerivedSettable;
+  SWIGCPPLINKAGE AssignArrayDerivedSettable GlobalArrayDerivedSettable;
+  SWIGCPPLINKAGE AssignPtrDerivedSettable GlobalPtrDerivedSettable;
+  SWIGCPPLINKAGE AssignMatrixDerivedSettable GlobalMatrixDerivedSettable;
 %}
 
 // (3) Test indirectly non-assignable member variables via classes that themselves have non-assignable member variables
@@ -137,19 +143,24 @@ struct StaticMembersMemberVars {
   static MemberPtrVar StaticMemberPtr;
   static MemberMatrixVar StaticMemberMatrix;
 };
-MemberValueVar StaticMembersMemberVars::StaticMemberValue;
-MemberArrayVar StaticMembersMemberVars::StaticMemberArray;
-MemberPtrVar StaticMembersMemberVars::StaticMemberPtr;
-MemberMatrixVar StaticMembersMemberVars::StaticMemberMatrix;
-
-MemberValueVar GlobalMemberValue;
-MemberArrayVar GlobalMemberArray;
-MemberPtrVar GlobalMemberPtr;
-MemberMatrixVar GlobalMemberMatrix;
 
 // Setters and getters available
 struct StaticMembersMemberVarsHolder {
     StaticMembersMemberVars Member;
 };
-StaticMembersMemberVars GlobalStaticMembersMemberVars;
+%}
+
+// Actual definitions
+%wrapper %{
+  SWIGCPPLINKAGE MemberValueVar StaticMembersMemberVars::StaticMemberValue;
+  SWIGCPPLINKAGE MemberArrayVar StaticMembersMemberVars::StaticMemberArray;
+  SWIGCPPLINKAGE MemberPtrVar StaticMembersMemberVars::StaticMemberPtr;
+  SWIGCPPLINKAGE MemberMatrixVar StaticMembersMemberVars::StaticMemberMatrix;
+
+  SWIGCPPLINKAGE MemberValueVar GlobalMemberValue;
+  SWIGCPPLINKAGE MemberArrayVar GlobalMemberArray;
+  SWIGCPPLINKAGE MemberPtrVar GlobalMemberPtr;
+  SWIGCPPLINKAGE MemberMatrixVar GlobalMemberMatrix;
+
+  SWIGCPPLINKAGE StaticMembersMemberVars GlobalStaticMembersMemberVars;
 %}
