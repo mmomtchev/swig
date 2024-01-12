@@ -2,8 +2,9 @@
   "targets": [
     {
       "target_name": "$testcase",
-      "sources":[ "../$testcase_wrap.cxx" ],
+      "sources": [ $sources ], 
       "include_dirs": ["../$srcdir/.."],
+      "ldflags": [ "-Wl,-z muldefs" ],
       'defines': [
         'BUILDING_NODE_EXTENSION=1',
       ],
