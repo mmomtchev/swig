@@ -203,10 +203,10 @@
    
 %define %aggregate_check(TYPE, NAME, FIRST, ...)
 %header %{
-SWIGINTERN int NAME(TYPE x);
+SWIGCLINKAGE SWIGINTERN int NAME(TYPE x);
 %}
 %wrapper %{
-SWIGINTERN int NAME(TYPE x) {
+SWIGCLINKAGE SWIGINTERN int NAME(TYPE x) {
     static  TYPE values[] = { FIRST, ##__VA_ARGS__ };
     static  int size = sizeof(values);
     int     i,j;
