@@ -150,7 +150,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
         SOURCES = "../$*_wrap.cxx"
         ifneq (,$(findstring split,$(SWIG_FEATURES)))
                 SPLIT = 1		
-                SOURCES = $(foreach file,$(wildcard $*_wrap*.cxx),"../$(file)",)
+                SOURCES = "<@(source_glob)"
         endif
 
 	setup_node = \

@@ -1,10 +1,13 @@
 {
+  "variables": {
+    "source_glob": [ '<!@(node -p "fs.readdirSync(\'..\').filter(f => f.match(/$testcase.*\.cxx/)).map(f => path.join(\'..\', f)).join(\' \')")' ]
+  },
   "targets": [
     {
       "target_name": "$testcase",
       "sources": [ $sources ], 
       "include_dirs": ["../$srcdir/.."],
-      "ldflags": [ "-Wl,-z muldefs" ],
+      "ldflags": [ "-Wl,-z,muldefs" ],
       'defines': [
         'BUILDING_NODE_EXTENSION=1',
       ],
@@ -19,8 +22,8 @@
         ],
         ['OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="solaris"',
           {
-            'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", $cflags],
-            'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", $cxxflags, $cflags],
+            'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", "-Wunused-function", $cflags],
+            'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized", "-Wunused-function", $cxxflags, $cflags],
             'cflags!': [ '-fno-exceptions' ],
             'cflags_cc!': [ '-fno-exceptions', '-fno-rtti' ]
           }
