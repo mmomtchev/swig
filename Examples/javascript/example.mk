@@ -28,7 +28,7 @@ endif
 # Examples are always built w/o code splitting
 ifneq (,$(findstring split,$(SWIG_FEATURES)))
 $(info Ignoring -split in SWIG_FEATURES, examples are always built w/o code splitting)
-SWIGOPT = $(filter-out -split,$(SWIGOPT))
+SWIGOPT := $(filter-out -split,$(SWIGOPT))
 endif
 
 
