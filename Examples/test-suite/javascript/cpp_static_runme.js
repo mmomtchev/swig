@@ -13,15 +13,15 @@ if (cpp_static.StaticBase.statty !== 11)
 if (cpp_static.StaticDerived.statty !== 111)
   throw new Error;
 
-if (cpp_static.StaticBase.grab_statty_base() !== 11)
+if (/* await */(cpp_static.StaticBase.grab_statty_base()) !== 11)
   throw new Error;
 
 if (Object.keys(cpp_static.StaticDerived).length === 1 && typeof print === undefined) {
   // This works only with Node-API where the classes themselves are inherited
   // (only the instances are inherited in raw V8/JSC)
-  if (cpp_static.StaticDerived.grab_statty_base() !== 11)
+  if (/* await */(cpp_static.StaticDerived.grab_statty_base()) !== 11)
     throw new Error;
 }
 
-if (cpp_static.StaticDerived.grab_statty_derived() !== 111)
+if (/* await */(cpp_static.StaticDerived.grab_statty_derived()) !== 111)
   throw new Error;
