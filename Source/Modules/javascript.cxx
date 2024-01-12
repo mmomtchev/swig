@@ -3921,7 +3921,7 @@ int NAPIEmitter::emitFunctionDeclaration(Node *n, bool is_async) {
     t_declaration
         .replace("$jswrapper", state.function(WRAPPER_NAME))
         .trim()
-        .pretty_print(f_class_declarations);
+        .pretty_print(f_header);
   }
 
   return SWIG_OK;
