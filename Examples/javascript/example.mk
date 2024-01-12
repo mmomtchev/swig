@@ -35,12 +35,16 @@ check: build
 	$(MAKE) -f $(EXAMPLES_TOP)/Makefile SRCDIR='$(SRCDIR)' TARGET='$(TARGET)' javascript_run
 
 build:
+	echo SWIGOPT=$(SWIGOPT)
+	echo SWIG_FEATURES=$(SWIG_FEATURES)
 	$(MAKE) -f $(EXAMPLES_TOP)/Makefile SRCDIR='$(SRCDIR)' CXXSRCS='$(CXXSRCS)' \
 	SRCS='$(SRCS)' SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
-	SWIGOPT='$(filter-out -split,$(SWIGOPT))' TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' javascript_wrapper$(_CPP)
+	SWIG_FEATURES='$(filter-out -split,$(SWIG_FEATURES))' \
+	SWIGOPT='$(SWIGOPT)' TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' javascript_wrapper$(_CPP)
 	$(MAKE) -f $(EXAMPLES_TOP)/Makefile SRCDIR='$(SRCDIR)' CXXSRCS='$(CXXSRCS)' \
 	SRCS='$(SRCS)' SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
-	SWIGOPT='$(filter-out -split,$(SWIGOPT))' TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' javascript_build$(_CPP)
+	SWIG_FEATURES='$(filter-out -split,$(SWIG_FEATURES))' \
+	SWIGOPT='$(SWIGOPT)' TARGET='$(TARGET)' INTERFACE='$(INTERFACE)' javascript_build$(_CPP)
 
 clean:
 	$(MAKE) -f $(EXAMPLES_TOP)/Makefile SRCDIR='$(SRCDIR)' javascript_clean
