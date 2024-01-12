@@ -130,6 +130,18 @@ jobs:
           CPPSTD: c++14
           SWIG_FEATURES: -typescript -async
           desc: TypeScript w/ async
+        - SWIGLANG: javascript
+          ENGINE: napi
+          VER: '18'
+          CPPSTD: c++14
+          SWIG_FEATURES: -split
+          desc: Code splitting
+        - SWIGLANG: javascript
+          ENGINE: napi
+          VER: '18'
+          CPPSTD: c++14
+          SWIG_FEATURES: -split -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
+          desc: Async w/ splitting & locking
         - SWIGLANG: lua
         - SWIGLANG: lua
           VER: '5.3'
