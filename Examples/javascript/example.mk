@@ -25,6 +25,13 @@ $(info Ignoring -async in SWIG_FEATURES, examples are always sync by default)
 SWIGOPT += -sync
 endif
 
+# Examples are always built w/o code splitting
+ifneq (,$(findstring split,$(SWIG_FEATURES)))
+$(info Ignoring -split in SWIG_FEATURES, examples are always built w/o code splitting)
+SWIGOPT = $(filter-out -split,$(SWIGOPT))
+endif
+
+
 check: build
 	$(MAKE) -f $(EXAMPLES_TOP)/Makefile SRCDIR='$(SRCDIR)' TARGET='$(TARGET)' javascript_run
 
