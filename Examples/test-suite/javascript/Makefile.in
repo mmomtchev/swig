@@ -74,7 +74,6 @@ CPP_TEST_CASES += \
 	napi_async_reject \
 	napi_async_feature
 endif
-EXTRA_TEST_CASES += $(addsuffix '.splitcpptest', $(CPP_TEST_CASES))
 endif
 
 include $(srcdir)/../common.mk
@@ -91,9 +90,6 @@ _setup = \
 	fi;                                                               \
 	if [ -n "$(TYPESCRIPT)" ]; then	                                  \
 	  echo -n " (TypeScript mode)" ;                                  \
-	fi;                                                               \
-	if [ -n "$(SPLIT)" ]; then	                                  \
-	  echo -n " (split mode)" ;                                       \
 	fi;                                                               \
 	if [ -n "$(SPLIT)" ]; then	                                  \
 	  echo -n " (split mode)" ;                                       \
@@ -167,12 +163,6 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			$(srcdir)/node_template/binding.gyp.in > $*/binding.gyp && \
 		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g;' \
 			$(srcdir)/node_template/index.js.in > $*/index.js
-	setup_node_split = \
-		test -d $* || mkdir $* && \
-		sed -e 's|$$testcase|$*|g; s|$$cflags|$(GYP_CFLAGS)|g; s|$$cxxflags|"$(GYP_CXXFLAGS)"|g; s|$$srcdir|$(srcdir)|g' \
-			$(srcdir)/node_template/binding-split.gyp.in > $*/binding.gyp && \
-		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g;' \
-			$(srcdir)/node_template/index.js.in > $*/index.js
 		
 	# Note: we need to use swig in C parse mode, but make node-gyp believe it is c++ (via file extension)
 	swig_and_compile_c = \
@@ -188,13 +178,6 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
 		SWIGOPT='-c++ -javascript $(SWIGOPT) $(SWIGASYNC) $(srcdir)/../$*.i' swiginvoke && \
 		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build -j 1>>/dev/null
-
-	swig_and_compile_splitcpp = \
-		$(setup_node_split) && \
-		$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile SRCDIR='$(SRCDIR)' \
-		SWIG_LIB_DIR='$(SWIG_LIB_DIR)' SWIGEXE='$(SWIGEXE)' \
-		SWIGOPT='-c++ -javascript -split $(SWIGOPT) $(SWIGASYNC) $(srcdir)/../$*.i' swiginvoke && \
-		MAKEFLAGS= $(COMPILETOOL) $(NODEGYP) --loglevel=silent --directory $* configure $(GYP_OPTS) build 1>>/dev/null
 
 	run_testcase = \
 		RUNME="$(srcdir)/$*$(SCRIPTSUFFIX)" && \
@@ -238,11 +221,6 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 
   %.multicpptest:
 		$(_setup)
-
-  %.splitcpptest:
-		$(_setup)
-		+$(swig_and_compile_splitcpp)
-		$(run_testcase)
 
 else
 
