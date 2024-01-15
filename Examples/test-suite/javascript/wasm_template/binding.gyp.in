@@ -1,0 +1,52 @@
+{
+  "variables": {
+    "source_glob": [ '<!@(node -p "fs.readdirSync(\'..\').filter(f => f.match(/^$testcase_wrap.*\.cxx/)).map(f => path.join(\'..\', f)).join(\' \')")' ]
+  },
+  "target_defaults": {
+    'cflags': [
+      '-fexceptions'
+    ],
+    'ldflags': [
+      '--js-library=<!(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').js_library")',
+      '-sALLOW_MEMORY_GROWTH=1',
+      '-sEXPORTED_FUNCTIONS=["_napi_register_wasm_v1","_malloc","_free"]',
+      '-sEXPORTED_RUNTIME_METHODS=["FS"]',
+      '-sNO_DISABLE_EXCEPTION_CATCHING',
+      '-sNODEJS_CATCH_EXIT=0',
+      '-sNODEJS_CATCH_REJECTION=0',
+      '-sAUTO_JS_LIBRARIES=0',
+      '-sAUTO_NATIVE_LIBRARIES=0',
+      '-sMODULARIZE=1',
+      '-sEXPORT_NAME=$testcase',
+      '--bind'
+      '-sSAFE_HEAP=1',
+      '-sASSERTIONS=2',
+      '-sSTACK_OVERFLOW_CHECK=2'
+    ],
+    'defines': [
+      '__STDC_FORMAT_MACROS',
+    ],
+    'include_dirs': [
+      '<!(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').include")',
+    ],
+    'sources': [
+      '<!@(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').sources.map(x => JSON.stringify(path.relative(process.cwd(), x))).join(\' \')")'
+    ],
+  },
+  "targets": [
+    {
+      'type': 'executable',
+      "target_name": "$testcase",
+      "sources": [ $sources ], 
+      "include_dirs": ["../$srcdir/.."],
+      'defines': [
+        'BUILDING_NODE_EXTENSION=1',
+      ],
+      'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", $cflags],
+      'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", $cxxflags, $cflags],
+      'cflags!': [ '-fno-exceptions', '-m64' ],
+      'cflags_cc!': [ '-fno-exceptions', '-fno-rtti', '-m64' ],
+      'ldflags!': [ '-m64' ]
+    }
+  ],
+}

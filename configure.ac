@@ -1225,6 +1225,7 @@ else
       fi
     fi
     AC_SUBST(JSNAPIENABLED)
+    AC_SUBST(NODENPM_PREFIX)
   fi
 
   #----------------------------------------------------------------
@@ -1378,6 +1379,44 @@ AC_SUBST(NODEGYP)
 #----------------------------------------------------------------
 AC_CHECK_PROGS(TSC, [tsc])
 AC_SUBST(TSC)
+
+#----------------------------------------------------------------
+# Look for emscripten (EMSDKDIR)
+# (specify --with-emsdkdir if the environment is not activated)
+#----------------------------------------------------------------
+
+# check for emscripten SDK
+AC_MSG_CHECKING(for emsdk)
+AC_ARG_WITH(emsdkdir, [  --with-emsdkdir=path     Set location of emsdk], [EMSDKDIR="$withval"], [EMSDKDIR=1])
+
+emsdkdirs="${EMSDKDIR} /usr/local/ /opt/"
+for d in $emsdkdirs ; do
+  if test -r $d/emsdk_env.sh; then
+    source $d/emsdk_env.sh
+    break
+  fi
+done
+
+if test -d ${EMSDK}; then
+  AC_MSG_RESULT(found in ${EMSDK})
+else
+  AC_MSG_RESULT(not found)
+fi
+AC_SUBST(EMSDK)
+
+#----------------------------------------------------------------
+# Look for emnapi (EMNAPIDIR)
+#----------------------------------------------------------------
+
+AC_MSG_CHECKING(for emnapi)
+EMNAPIDIR=`NODE_PATH=${NODENPM_PREFIX}/lib/node_modules node -p "require('emnapi').include"`
+if test -r "${EMNAPIDIR}/node_api.h" ; then
+  EMNAPI_INC_DIR=${EMNAPIDIR}
+  AC_MSG_RESULT(found in ${EMNAPIDIR})
+else
+  AC_MSG_RESULT(not found)
+fi
+AC_SUBST(EMNAPI_INC_DIR)
 
 #----------------------------------------------------------------
 # Look for Lua

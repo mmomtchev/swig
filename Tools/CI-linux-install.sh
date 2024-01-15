@@ -56,7 +56,11 @@ case "$SWIGLANG" in
 				else
 					$RETRY npm install -g node-gyp
 				fi
-				$RETRY npm install -g node-addon-api
+                                if [ "$CC" == "emcc" ]; then
+      				        $RETRY npm install -g emnapi @emnapi/runtime
+                                else
+				        $RETRY npm install -g node-addon-api
+                                fi
 				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript @types/node
 				;;
 			"jsc")

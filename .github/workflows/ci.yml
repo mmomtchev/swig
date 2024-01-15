@@ -441,6 +441,19 @@ jobs:
 
             CFLAGS="$CFLAGS -fPIE"
             CXXFLAGS="$CXXFLAGS -fPIE"
+          elif test '${{ matrix.compiler }}' = 'emscripten'; then
+            git clone https://github.com/emscripten-core/emsdk.git
+            (
+              cd emsdk
+              git pull
+              sh ./emsdk install latest
+              sh ./emsdk activate latest
+            )
+            source ./emsdk/emsdk_env.sh
+
+            CC="emcc"
+            CXX="em++"
+
           elif test -n "$GCC"; then
             CC="gcc-$GCC"
             CXX="g++-$GCC"
