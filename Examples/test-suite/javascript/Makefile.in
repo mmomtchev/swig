@@ -88,16 +88,6 @@ ifeq (emcc, $(CC))
   	GYP_CXXFLAGS = -I@NODENAPI_DIR@
   	GYP_TEMPLATE = wasm_template
   	SWIGOPT += -D__EMSCRIPTEN__
-	# Boost is out of scope for now    
-  	CPP_TEST_BROKEN += \
-		director_smartptr \
-		li_boost_intrusive_ptr \
-		li_boost_shared_ptr_attribute \
-		li_boost_shared_ptr_bits \
-		li_boost_shared_ptr_director \
-		li_boost_shared_ptr \
-		li_boost_shared_ptr_template \
-		multiple_inheritance_shared_ptr
 else
   	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template

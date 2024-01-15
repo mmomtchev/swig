@@ -4,7 +4,8 @@
   },
   "target_defaults": {
     'cflags': [
-      '-fexceptions'
+      '-fexceptions',
+      '-sUSE_BOOST_HEADERS=1'
     ],
     'ldflags': [
       '--js-library=<!(node -p "require(\'$emnapidir\').js_library")',
@@ -19,6 +20,8 @@
       '-sMODULARIZE=1',
       '-sEXPORT_NAME=$testcase',
       '--bind'
+      '-sUSE_BOOST_HEADERS=1',
+      # These are the debug (extra-checks) options
       '-sSAFE_HEAP=1',
       '-sASSERTIONS=2',
       '-sSTACK_OVERFLOW_CHECK=2'
