@@ -211,6 +211,7 @@ jobs:
       CPPSTD: ${{ matrix.CPPSTD }}
       CPPFLAGS: ${{ matrix.CPPFLAGS }}
       EXTRA_CXXFLAGS: ${{ matrix.EXTRA_CXXFLAGS }}
+      COMPILER: ${{ matrix.compiler || 'gcc' }}
 
     steps:
     - name: Checkout
