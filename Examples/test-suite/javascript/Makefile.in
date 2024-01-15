@@ -228,9 +228,6 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					mv $*_ts_runme.js $*_ts_runme.mjs && \
 					RUNME=$*_ts_runme.mjs; \
 			fi && \
-			echo "Run command:" && \
-			echo "env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \\" && \
-			echo "  $(RUNTOOL) ${NODEJS} $${RUNME}" && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) ${NODEJS} $${RUNME}; \
 		else \
