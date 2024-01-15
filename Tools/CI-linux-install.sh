@@ -56,7 +56,7 @@ case "$SWIGLANG" in
 				else
 					$RETRY npm install -g node-gyp
 				fi
-                                if [ "$CC" == "emcc" ]; then
+                                if [ "$TARGET_CC" == "emcc" ]; then
       				        $RETRY npm install -g emnapi @emnapi/runtime
                                 else
 				        $RETRY npm install -g node-addon-api
