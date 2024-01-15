@@ -4,7 +4,8 @@
   },
   "target_defaults": {
     'cflags': [
-      '-fexceptions'
+      '-fexceptions',
+      '-std=c++11'
     ],
     'ldflags': [
       '--js-library=<!(node -p "require(\'$emnapidir\').js_library")',
