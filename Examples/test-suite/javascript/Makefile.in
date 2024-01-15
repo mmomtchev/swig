@@ -79,9 +79,12 @@ endif
 
 # emscripten is cross-compilation, skip the platform flags
 ifeq (emcc, $(CC))
+      	EMNAPI_DIR = @EMNAPI_DIR@
+        ifeq (, $(EMNAPI_DIR))
+                $(error emnapi not found)
+        endif
   	GYP_CXXFLAGS = -I@NODENAPI_DIR@
   	GYP_TEMPLATE = wasm_template
-      	EMNAPI_DIR = @EMNAPI_DIR@
 else
   	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template
