@@ -127,6 +127,7 @@ jobs:
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '18'
+          CPPSTD: c++14
           COMPILER: emscripten
           desc: WASM
         - SWIGLANG: lua
