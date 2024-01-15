@@ -451,8 +451,8 @@ jobs:
             )
             source ./emsdk/emsdk_env.sh
 
-            CC="emcc"
-            CXX="em++"
+            TARGET_CC="emcc"
+            TARGET_CXX="em++"
 
           elif test -n "$GCC"; then
             CC="gcc-$GCC"
@@ -462,7 +462,10 @@ jobs:
             CXX="g++"
           fi
 
-          export CC CXX
+          [ -z "$TARGET_CC" ] && TARGET_CC="$CC"
+          [ -z "$TARGET_CXX" ] && TARGET_CXX="$CXX"
+
+          export CC CXX TARGET_CC TARGET_CXX
 
           echo CC="$CC" >> $GITHUB_ENV
           echo CXX="$CXX" >> $GITHUB_ENV
@@ -527,8 +530,8 @@ jobs:
             cxxflags="$($GITHUB_WORKSPACE/Tools/testflags.py --language $SWIGLANG --cxxflags --std=$CPPSTD --compiler=$CC) $EXTRA_CXXFLAGS"
             make check-$SWIGLANG-version
             make check-$SWIGLANG-enabled
-            make $SWIGJOBS check-$SWIGLANG-examples CFLAGS="$cflags" CXXFLAGS="$cxxflags"
-            make $SWIGJOBS check-$SWIGLANG-test-suite CFLAGS="$cflags" CXXFLAGS="$cxxflags"
+            make $SWIGJOBS check-$SWIGLANG-examples CC="$TARGET_CC" CXX="$TARGET_CXX" CFLAGS="$cflags" CXXFLAGS="$cxxflags"
+            make $SWIGJOBS check-$SWIGLANG-test-suite CC="$TARGET_CC" CXX="$TARGET_CXX" CFLAGS="$cflags" CXXFLAGS="$cxxflags"
           fi
 
     - name: Install
