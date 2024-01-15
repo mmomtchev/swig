@@ -11,12 +11,7 @@
       '--js-library=<!(node -p "require(\'$emnapidir\').js_library")',
       '-sALLOW_MEMORY_GROWTH=1',
       '-sEXPORTED_FUNCTIONS=["_napi_register_wasm_v1","_malloc","_free"]',
-      '-sEXPORTED_RUNTIME_METHODS=["FS"]',
       '-sNO_DISABLE_EXCEPTION_CATCHING',
-      '-sNODEJS_CATCH_EXIT=0',
-      '-sNODEJS_CATCH_REJECTION=0',
-      '-sAUTO_JS_LIBRARIES=0',
-      '-sAUTO_NATIVE_LIBRARIES=0',
       '-sMODULARIZE=1',
       '-sEXPORT_NAME=$testcase',
       '--bind'
