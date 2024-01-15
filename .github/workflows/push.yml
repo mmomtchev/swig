@@ -272,6 +272,8 @@ jobs:
 
             TARGET_CC="emcc"
             TARGET_CXX="em++"
+            CC="cc"
+            CXX="c++"
 
           elif test -n "$GCC"; then
             CC="gcc-$GCC"
@@ -291,9 +293,11 @@ jobs:
           echo TARGET_CC="$TARGET_CC" >> $GITHUB_ENV
           echo TARGET_CXX="$TARGET_CXX" >> $GITHUB_ENV
 
-          ls -la $(which $CC) $(which $CXX)
+          ls -la $(which $CC) $(which $CXX) $(which $TARGET_CC) $(which $TARGET_CXX)
           $CC --version
           $CXX --version
+          $TARGET_CC --version
+          $TARGET_CXX --version
 
     - name: Configure
       run: |
