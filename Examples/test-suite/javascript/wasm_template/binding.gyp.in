@@ -16,7 +16,6 @@
       '-sNODEJS_CATCH_REJECTION=0',
       '-sAUTO_JS_LIBRARIES=0',
       '-sAUTO_NATIVE_LIBRARIES=0',
-      '-sDEFAULT_TO_CXX=1',
       '-sMODULARIZE=1',
       '-sEXPORT_NAME=$testcase',
       '--bind'
@@ -30,8 +29,8 @@
     'include_dirs': [
       '<!(node -p "require(\'$emnapidir\').include")',
     ],
-    'sources': [
-      '<!@(node -p "require(\'$emnapidir\').sources.map(x => JSON.stringify(path.relative(process.cwd(), x))).join(\' \')")'
+    'libraries': [
+      '-lemnapi', '-L$emnapidir/lib/wasm32-emscripten'
     ],
   },
   "targets": [
