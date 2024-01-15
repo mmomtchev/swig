@@ -449,7 +449,7 @@ jobs:
               sh ./emsdk install latest
               sh ./emsdk activate latest
             )
-            source ./emsdk/emsdk_env.sh
+            source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
 
             TARGET_CC="emcc"
             TARGET_CXX="em++"
@@ -469,8 +469,8 @@ jobs:
 
           echo CC="$CC" >> $GITHUB_ENV
           echo CXX="$CXX" >> $GITHUB_ENV
-          echo TARGET_CC="$CC" >> $GITHUB_ENV
-          echo TARGET_CXX="$CXX" >> $GITHUB_ENV
+          echo TARGET_CC="$TARGET_CC" >> $GITHUB_ENV
+          echo TARGET_CXX="$TARGET_CXX" >> $GITHUB_ENV
 
           ls -la $(which $CC) $(which $CXX)
           $CC --version
