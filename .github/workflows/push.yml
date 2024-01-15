@@ -269,6 +269,7 @@ jobs:
               sh ./emsdk activate latest
             )
             source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
+            echo $EMSDK >> $GITHUB_ENV
 
             TARGET_CC="emcc"
             TARGET_CXX="em++"
