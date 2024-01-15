@@ -7,7 +7,7 @@
       '-fexceptions'
     ],
     'ldflags': [
-      '--js-library=<!(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').js_library")',
+      '--js-library=<!(node -p "require(\'$emnapidir\').js_library")',
       '-sALLOW_MEMORY_GROWTH=1',
       '-sEXPORTED_FUNCTIONS=["_napi_register_wasm_v1","_malloc","_free"]',
       '-sEXPORTED_RUNTIME_METHODS=["FS"]',
@@ -27,10 +27,10 @@
       '__STDC_FORMAT_MACROS',
     ],
     'include_dirs': [
-      '<!(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').include")',
+      '<!(node -p "require(\'$emnapidir\').include")',
     ],
     'sources': [
-      '<!@(node -p "require(\'$npmprefix/lib/node_modules/emnapi\').sources.map(x => JSON.stringify(path.relative(process.cwd(), x))).join(\' \')")'
+      '<!@(node -p "require(\'$emnapidir\').sources.map(x => JSON.stringify(path.relative(process.cwd(), x))).join(\' \')")'
     ],
   },
   "targets": [

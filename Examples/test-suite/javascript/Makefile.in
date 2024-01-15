@@ -81,6 +81,7 @@ endif
 ifeq (emcc, $(CC))
   	GYP_CXXFLAGS = -I@NODENAPI_DIR@
   	GYP_TEMPLATE = wasm_template
+      	EMNAPI_DIR = @EMNAPI_DIR@
 else
   	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template
@@ -172,7 +173,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			s|$$cflags|$(GYP_CFLAGS)|g; \
 			s|$$cxxflags|"$(GYP_CXXFLAGS)"|g; \
 			s|$$srcdir|$(srcdir)|g; \
-			s|$$npmprefix|$(NPM_PREFIX)|g; \
+			s|$$emnapidir|$(EMNAPI_DIR)|g; \
 			s|$$sources|$(SOURCES)|g;' \
 			$(srcdir)/$(GYP_TEMPLATE)/binding.gyp.in > $*/binding.gyp && \
 		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g; \

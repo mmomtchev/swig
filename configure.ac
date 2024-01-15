@@ -1409,14 +1409,13 @@ AC_SUBST(EMSDK)
 #----------------------------------------------------------------
 
 AC_MSG_CHECKING(for emnapi)
-EMNAPIDIR=`NODE_PATH=${NODENPM_PREFIX}/lib/node_modules node -p "require('emnapi').include"`
-if test -r "${EMNAPIDIR}/node_api.h" ; then
-  EMNAPI_INC_DIR=${EMNAPIDIR}
-  AC_MSG_RESULT(found in ${EMNAPIDIR})
+if test -r "${NODENPM_PREFIX}/lib/node_modules/emnapi/include/emnapi.h" ; then
+  EMNAPI_DIR="${NODENPM_PREFIX}/lib/node_modules/emnapi"
+  AC_MSG_RESULT(found in $EMNAPI_DIR)
 else
   AC_MSG_RESULT(not found)
 fi
-AC_SUBST(EMNAPI_INC_DIR)
+AC_SUBST(EMNAPI_DIR)
 
 #----------------------------------------------------------------
 # Look for Lua
