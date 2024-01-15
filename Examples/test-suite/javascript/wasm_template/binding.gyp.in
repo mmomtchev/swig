@@ -42,8 +42,8 @@
       'defines': [
         'BUILDING_NODE_EXTENSION=1',
       ],
-      'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", $cflags],
-      'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", $cxxflags, $cflags],
+      'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", "-Wno-pthreads-mem-growth", $cflags],
+      'cflags_cc': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", "-Wno-pthreads-mem-growth", $cxxflags, $cflags],
       'cflags!': [ '-fno-exceptions', '-m64' ],
       'cflags_cc!': [ '-fno-exceptions', '-fno-rtti', '-m64' ],
       'ldflags!': [ '-m64' ]

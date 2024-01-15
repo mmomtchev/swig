@@ -457,6 +457,7 @@ jobs:
             )
             source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
             echo EMSDK=$EMSDK >> $GITHUB_ENV
+            echo EMCC_LOGGING=0 >> $GITHUB_ENV
 
             TARGET_CC="emcc"
             TARGET_CXX="em++"
