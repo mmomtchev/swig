@@ -88,6 +88,11 @@ ifeq (emcc, $(CC))
   	GYP_CXXFLAGS = -I@NODENAPI_DIR@
   	GYP_TEMPLATE = wasm_template
   	SWIGOPT += -D__EMSCRIPTEN__
+# Some emscripten-specific warnings on certain tests
+cpp11_lambda_functions.cpptest: GYP_CFLAGS = \"-Wno-unused-lambda-capture\"
+li_typemaps_apply.cpptest: GYP_CFLAGS = \"-Wno-self-assign\"
+li_typemaps.cpptest: GYP_CFLAGS = \"-Wno-self-assign\"
+long_long_apply.cpptest: GYP_CFLAGS = \"-Wno-self-assign\"
 else
   	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template
