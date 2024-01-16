@@ -47,3 +47,4 @@ SWIG JavaScript Evolution is currently pending a first official release which sh
 
 You can find an example skeleton for a new project that uses a dual-build Node.js/native and browser/WASM system at [`swig-napi-example-project`](https://github.com/mmomtchev/swig-napi-example-project).
 
+If you want to see a real-world complex project that uses `conan` to manage a large pool of dependencies - including WASM builds -  you should take a look at [`magickwand.js`](https://github.com/mmomtchev/magickwand.js) - the ImageMagick-7 bindings for JavaScript.
