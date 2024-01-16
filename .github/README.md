@@ -44,3 +44,6 @@ As it name suggests, tt adds a number of features exclusive to JavaScript. It ke
 # Usage
 
 SWIG JavaScript Evolution is currently pending a first official release which should come very soon.
+
+You can find an example skeleton for a new project that uses a dual-build Node.js/native and browser/WASM system at [`swig-napi-example-project`](https://github.com/mmomtchev/swig-napi-example-project).
+
