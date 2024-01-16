@@ -152,6 +152,10 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
         ifneq (, $(DEBUG))
 		GYP_OPTS = --debug
 		BUILD = Debug
+		ifeq (emcc, $(CC))
+			GYP_CFLAGS += \"-gsource-map\"
+			GYP_LDFLAGS += \"-gsource-map\"
+		endif
 	else
 		BUILD = Release
 	endif
