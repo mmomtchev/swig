@@ -984,6 +984,10 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 <em># required by SWIG Node-API (although supported in theory,
 # building w/o exceptions is still not unit tested at the moment)</em>
 -fexceptions
+
+<em># the emnapi glue code that allows C++ to parse JavaScript values
+# after installing emnapi (npm install emnapi)</em>
+-I [the output of `node -p "require('emnapi').include"`]
 </pre>
 </div>
 
@@ -1019,8 +1023,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <pre>
 <em># the emnapi glue code that allows C++ to parse JavaScript values
 # after installing emnapi (npm install emnapi)</em>
---js-library= [the output of `node -p "require('emnapi').js_library"` <em># the JS library</em>
--I [the output of `node -p "require('emnapi').include"`]              <em># the C headers</em>
+--js-library= [the output of `node -p "require('emnapi').js_library"`
 
 <em># highly recommended, otherwise the allocated memory will be fixed in the beginning</em>
 -sALLOW_MEMORY_GROWTH=1
