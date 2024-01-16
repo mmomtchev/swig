@@ -109,8 +109,11 @@ extern "C" {
 %#ifdef _WIN32
 %#else
 
-%#ifdef __APPLE__
+%#if defined(__APPLE__)
       int setname = pthread_setname_np("MyThreadName");
+%#elif defined(__EMSCRIPTEN__)
+      // https://github.com/emscripten-core/emscripten/pull/18751
+      int setname = 0;
 %#else
       int setname = pthread_setname_np(pthread_self(), "MyThreadName");
 %#endif
