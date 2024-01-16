@@ -1112,7 +1112,9 @@ export default <em>module_name</em>;
 
 <H3><a name="Javascript_WASM_differences">28.8.4 Incompatibilities between <code>node-addon-api</code> and <code>emnapi</code></a></H3>
 
-<p>There are some minor incompatibilities between the two platforms, mostly pertaining to the fact that WASM uses a separate heap from JavaScript which places additional restrictions on using <code>ArrayBuffer</code> objects. These cannot always be transparently shared between JavaScript and C++ and must be copied. The built-in typemaps for handling a writable <code>ArrayBuffer</code> in <code>arraybuffer.i</code> takes this into account and can be used as an example for implementing similar typemaps.</p>
+<p>There are some minor incompatibilities between the two platforms, mostly pertaining to the fact that WASM uses a separate heap from JavaScript which places additional restrictions on using <code>ArrayBuffer</code> objects. These cannot always be transparently shared between JavaScript and C++ and must be copied. This is not a problem for functions that expect an <code>ArrayBuffer</code> as argument or that return a new <code>ArrayBuffer</code> as a result - in these cases <code>emnapi</code> will automatically handle the copying. However functions that expect an <code>ArrayBuffer</code> argument and modify it, will need an additional step for these modifications to be copied back to the JavaScript copy.</p>
+
+<p>The built-in typemaps for handling a writable <code>ArrayBuffer</code> in <code>arraybuffer.i</code> takes this into account and can be used as an example for implementing similar typemaps.</p>
 
 <H2><a name="Javascript_code_splitting">28.9 Code Spltting</a></H2>
 
@@ -1153,7 +1155,7 @@ int add(int a, int b) { return a + b; }
 <H2><a name="Javascript_implementation">28.10 Implementation</a></H2>
 
 
-<p>The Javascript Module implementation has taken a very different approach compared to other language modules in order to support different Javascript interpreters.</p>
+<p>The Javascript Module implementation has taken a very different approach compared to other language modules in order to support different Javacript interpreters.</p>
 
 <H3><a name="Javascript_source_code">28.10.1 Source Code</a></H3>
 
