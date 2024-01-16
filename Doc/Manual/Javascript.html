@@ -1112,7 +1112,7 @@ export default <em>module_name</em>;
 
 <H3><a name="Javascript_WASM_differences">28.8.4 Incompatibilities between <code>node-addon-api</code> and <code>emnapi</code></a></H3>
 
-<p>There are some minor incompatibilities between the two platforms, mostly pertaining to the fact that WASM uses a separate heap from JavaScript which places additional restrictions on using <code>ArrayBuffer</code> objects. These cannot always be transparently shared between JavaScript and C++ and must be copied. The built-in typemaps for handling <code>ArrayBuffer</code> take this into account and can be used as an example for implementing similar typemaps.</p>
+<p>There are some minor incompatibilities between the two platforms, mostly pertaining to the fact that WASM uses a separate heap from JavaScript which places additional restrictions on using <code>ArrayBuffer</code> objects. These cannot always be transparently shared between JavaScript and C++ and must be copied. The built-in typemaps for handling a writable <code>ArrayBuffer</code> in <code>arraybuffer.i</code> takes this into account and can be used as an example for implementing similar typemaps.</p>
 
 <H2><a name="Javascript_code_splitting">28.9 Code Spltting</a></H2>
 
