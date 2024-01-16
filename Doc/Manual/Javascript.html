@@ -1100,6 +1100,15 @@ module.exports = require('./build/Release/<em>[module-name]</em>')()
 </pre>
 </div>
 
+<p>If using TypeScript with WASM, the generated typings will be compatible but it will be necessary to take into account that the whole API is now hidden behind a <code>Promise</code> - example for an <code>index.d.ts</code>:</p>
+
+<div class="code">
+<pre>
+// Import the original SWIG-generated typings and re-export everything in a Promise
+declare const <em>module_name</em>: Promise&lt;typeof import(&#39;<em>module_name</em>&#39;)&gt;;
+export default <em>module_name</em>;
+</pre>
+</div>
 
 <H3><a name="Javascript_WASM_differences">28.8.4 Incompatibilities between <code>node-addon-api</code> and <code>emnapi</code></a></H3>
 
