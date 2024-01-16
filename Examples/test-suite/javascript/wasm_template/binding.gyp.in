@@ -28,7 +28,7 @@
       '<!(node -p "require(\'$emnapidir\').include")',
     ],
     'libraries': [
-      '-lemnapi', '-L$emnapidir/lib/wasm32-emscripten'
+      '$emnapilib', '-L$emnapidir/lib/wasm32-emscripten'
     ],
   },
   'targets': [
