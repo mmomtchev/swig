@@ -1,8 +1,8 @@
 {
-  "variables": {
-    "source_glob": [ '<!@(node -p "fs.readdirSync(\'..\').filter(f => f.match(/^$testcase_wrap.*\.cxx/)).map(f => path.join(\'..\', f)).join(\' \')")' ]
+  'variables': {
+    'source_glob': [ '<!@(node -p "fs.readdirSync(\'..\').filter(f => f.match(/^$testcase_wrap.*\.cxx/)).map(f => path.join(\'..\', f)).join(\' \')")' ]
   },
-  "target_defaults": {
+  'target_defaults': {
     'cflags': [
       '-fexceptions',
       '-sUSE_BOOST_HEADERS=1'
@@ -31,37 +31,37 @@
       '-lemnapi', '-L$emnapidir/lib/wasm32-emscripten'
     ],
   },
-  "targets": [
+  'targets': [
     {
       'type': 'executable',
-      "target_name": "$testcase",
-      "sources": [ $sources ], 
-      "include_dirs": ["../$srcdir/.."],
+      'target_name': '$testcase',
+      'sources': [ $sources ], 
+      'include_dirs': ['../$srcdir/..'],
       'defines': [
         'BUILDING_NODE_EXTENSION=1',
       ],
       'cflags': [
-        "-Wno-unused-variable",
-        "-Wno-unused-but-set-variable",
-        "-Wno-unused-but-set-parameter",
-        "-Wno-uninitialized",
-        "-Wno-unused-function",
-        "-Wno-unused-private-field",
-        "-Wno-pthreads-mem-growth",
+        '-Wno-unused-variable',
+        '-Wno-unused-but-set-variable',
+        '-Wno-unused-but-set-parameter',
+        '-Wno-uninitialized',
+        '-Wno-unused-function',
+        '-Wno-unused-private-field',
+        '-Wno-pthreads-mem-growth',
         $cflags
       ],
       'cflags_cc': [
-        "-Wno-unused-variable",
-        "-Wno-unused-but-set-variable",
-        "-Wno-unused-but-set-parameter",
-        "-Wno-uninitialized",
-        "-Wno-unused-function",
-        "-Wno-unused-private-field",
-        "-Wno-pthreads-mem-growth",
+        '-Wno-unused-variable',
+        '-Wno-unused-but-set-variable',
+        '-Wno-unused-but-set-parameter',
+        '-Wno-uninitialized',
+        '-Wno-unused-function',
+        '-Wno-unused-private-field',
+        '-Wno-pthreads-mem-growth',
         $cxxflags,
         $cflags
       ],
-      'ldflags': [ "-Wno-pthreads-mem-growth" ],
+      'ldflags': [ '-Wno-pthreads-mem-growth', $ldflags ],
       'cflags!': [ '-fno-exceptions', '-m64' ],
       'cflags_cc!': [ '-fno-exceptions', '-fno-rtti', '-m64' ],
       'ldflags!': [ '-m64' ]

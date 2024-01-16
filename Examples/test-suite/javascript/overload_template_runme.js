@@ -2,11 +2,7 @@ var overload_template = require("overload_template");
 var f = /* await */(overload_template.foo());
 
 var a = /* await */(overload_template.maximum(3, 4));
-// TODO: Alas, overloading between integers and floats
-// requires lots of work with emscripten
-if (typeof Worker === 'undefined') {
-  var b = /* await */(overload_template.maximum(3.4, 5.2));
-}
+var b = /* await */(overload_template.maximum(3.4, 5.2));
 
 // mix 1
 if (/* await */(overload_template.mix1("hi")) != 101) {
