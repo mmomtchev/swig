@@ -981,11 +981,38 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 <li><p>Compiler settings</p>
 <div class="code">
 <pre>
-<em># required by SWIG Node-API (alhtough supported in theory,
+<em># required by SWIG Node-API (although supported in theory,
 # building w/o exceptions is still not unit tested at the moment)</em>
 -fexceptions
 </pre>
 </div>
+
+<li><p>Library / Additional sources</p>
+<ul>
+<li><p>Option 1: include the additional source files listed by the output of <code>node -p "require('emnapi').sources"</code></p></li>
+<div class="code">
+<pre>
+emnapi/packages/emnapi/src/js_native_api.c
+emnapi/packages/emnapi/src/node_api.c
+emnapi/packages/emnapi/src/async_cleanup_hook.c
+emnapi/packages/emnapi/src/async_context.c
+emnapi/packages/emnapi/src/async_work.c
+emnapi/packages/emnapi/src/threadsafe_function.c
+emnapi/packages/emnapi/src/uv/uv-common.c
+emnapi/packages/emnapi/src/uv/threadpool.c
+emnapi/packages/emnapi/src/uv/unix/loop.c
+emnapi/packages/emnapi/src/uv/unix/thread.c
+emnapi/packages/emnapi/src/uv/unix/async.c
+emnapi/packages/emnapi/src/uv/unix/core.c
+</pre>
+</div>
+<li><p>Option 2: link with the precompiled static library <code>emnapi.a</code> (no async) or <code>emnapi-mt.a</code> (w/ async)</p></li>
+<div class="code">
+<pre>
+-lemnapi -L./node_modules/emnapi/lib/wasm32-emscripten
+</pre>
+</div>
+</ul>
 
 <li><p>Linker settings</p>
 <div class="code">
