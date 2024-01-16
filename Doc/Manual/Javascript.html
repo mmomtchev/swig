@@ -987,7 +987,7 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 
 <em># the emnapi glue code that allows C++ to parse JavaScript values
 # after installing emnapi (npm install emnapi)</em>
--I [the output of `node -p "require('emnapi').include"`]
+-I <em>[the output of `node -p "require('emnapi').include"`]</em>
 </pre>
 </div>
 
@@ -1023,7 +1023,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <pre>
 <em># the emnapi glue code that allows C++ to parse JavaScript values
 # after installing emnapi (npm install emnapi)</em>
---js-library= [the output of `node -p "require('emnapi').js_library"`
+--js-library= <em>[the output of `node -p "require('emnapi').js_library"`</em>
 
 <em># highly recommended, otherwise the allocated memory will be fixed in the beginning</em>
 -sALLOW_MEMORY_GROWTH=1
@@ -1038,7 +1038,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 -sMODULARIZE=1
 
 <em># required when producing ES6-compatible module</em>
--sEXPORT_NAME=[module-name]
+-sEXPORT_NAME=<em>[module-name]</em>
 
 <em># required by emnapi</em>
 --bind
@@ -1095,7 +1095,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <div class="code">
 <pre>
 const emnapi = require('@emnapi/runtime');
-module.exports = require('./build/Release/[module-name]')()
+module.exports = require('./build/Release/<em>[module-name]</em>')()
   .then((m) => m.emnapiInit({context: emnapi.getDefaultContext()}));
 </pre>
 </div>
