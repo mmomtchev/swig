@@ -106,14 +106,12 @@ extern "C" {
     }
 
     void setThreadName() {
-%#ifdef _WIN32
+%#if defined(_WIN32) || defined(__EMSCRIPTEN__)
+    // https://github.com/emscripten-core/emscripten/pull/18751
 %#else
 
-%#if defined(__APPLE__)
+%#ifdef __APPLE__
       int setname = pthread_setname_np("MyThreadName");
-%#elif defined(__EMSCRIPTEN__)
-      // https://github.com/emscripten-core/emscripten/pull/18751
-      int setname = 0;
 %#else
       int setname = pthread_setname_np(pthread_self(), "MyThreadName");
 %#endif
@@ -127,7 +125,7 @@ extern "C" {
     }
 
     static bool namedThread() {
-%#ifdef _WIN32
+%#if defined(_WIN32) || defined(__EMSCRIPTEN__)
       return false;
 %#else
       return true;
