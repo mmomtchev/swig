@@ -70,9 +70,6 @@
   } else {
     SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument is not a Buffer");
   }
-#ifdef __EMSCRIPTEN__
-  _global_array_ref = Napi::Persistent(_global_typed_array.ArrayBuffer().As<Napi::Value>());
-#endif
 }
 
 %typemap(typecheck, precedence=SWIG_TYPECHECK_VOIDPTR) WRITABLE_BUFFER_SIGNATURE {
@@ -82,7 +79,6 @@
 #else
 
 // Node.js + WASM version
-
 %typemap(in) WRITABLE_BUFFER_SIGNATURE (Napi::ArrayBuffer _global_ab, Napi::Reference<Napi::Value> _global_ab_ref) %{
   if ($input.IsArrayBuffer()) {
     _global_ab = $input.As<Napi::ArrayBuffer>();
