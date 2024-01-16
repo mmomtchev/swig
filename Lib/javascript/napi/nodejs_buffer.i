@@ -12,7 +12,7 @@
 %typemap(in) (const void* buffer_data, const size_t buffer_len) {
   if ($input.IsBuffer()) {
     Napi::Buffer<char> buf = $input.As<Napi::Buffer<char>>();
-    $1 = static_cast<void *>(buf.Data());
+    $1 = static_cast<$1_ltype>(buf.Data());
     $2 = buf.ByteLength();
   } else {
     SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument is not a Buffer");
@@ -33,7 +33,7 @@
  * no arguments (because of numinputs=0) and returns a Buffer
  */
 
-%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) (void *temp_data, size_t temp_len) {
+%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) ($*1_ltype temp_data, size_t temp_len) {
   $1 = &temp_data;
   $2 = &temp_len;
 }

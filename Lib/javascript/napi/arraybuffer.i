@@ -12,7 +12,7 @@
 %typemap(in) (const void *arraybuffer_data, const size_t arraybuffer_len) {
   if ($input.IsArrayBuffer()) {
     Napi::ArrayBuffer buf = $input.As<Napi::ArrayBuffer>();
-    $1 = static_cast<void *>(buf.Data());
+    $1 = static_cast<$1_ltype>(buf.Data());
     $2 = buf.ByteLength();
   } else {
     SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument is not a Buffer");
@@ -32,7 +32,7 @@
  * In this case, this function will be wrapped by a JS function that takes
  * no arguments (because of numinputs=0) and returns a Buffer
  */
-%typemap(in, numinputs=0) (void **arraybuffer_data, size_t *arraybuffer_len) (void *temp_data, size_t temp_len) {
+%typemap(in, numinputs=0) (void **arraybuffer_data, size_t *arraybuffer_len) ($*1_ltype temp_data, size_t temp_len) {
   $1 = &temp_data;
   $2 = &temp_len;
 }
@@ -65,7 +65,7 @@
 %typemap(in) WRITABLE_BUFFER_SIGNATURE  {
   if ($input.IsArrayBuffer()) {
     Napi::ArrayBuffer buf = $input.As<Napi::ArrayBuffer>();
-    $1 = static_cast<void *>(buf.Data());
+    $1 = static_cast<$1_ltype>(buf.Data());
     $2 = buf.ByteLength();
   } else {
     SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument is not a Buffer");
@@ -86,7 +86,7 @@
 %typemap(in) WRITABLE_BUFFER_SIGNATURE (Napi::ArrayBuffer _global_ab, Napi::Reference<Napi::Value> _global_ab_ref) %{
   if ($input.IsArrayBuffer()) {
     _global_ab = $input.As<Napi::ArrayBuffer>();
-    $1 = static_cast<void *>(_global_ab.Data());
+    $1 = static_cast<$1_ltype>(_global_ab.Data());
     $2 = _global_ab.ByteLength();
   } else {
     SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument is not a Buffer");
