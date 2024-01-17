@@ -3278,7 +3278,9 @@ int NAPIEmitter::dump(Node *n) {
     for (Iterator it = First(global_symbols); it.item; it = Next(it)) {
       Printf(exports, "  %s,\n", it.item);
     }
-    t_exports.replace("$jsexportlist", exports).print(f_exports);
+    t_exports.replace("$jsexportlist", exports)
+        .replace("$module", Getattr(n, NAME))
+        .print(f_exports);
 
     Delete(global_symbols);
     Delete(exports);

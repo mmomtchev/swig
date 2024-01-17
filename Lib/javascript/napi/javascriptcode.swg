@@ -1406,6 +1406,7 @@ fail:
 /* -----------------------------------------------------------------------------
  * jsnapi_exports:  template for an exports file.
  *   - $jsexports:      list of exports
+ *   - $module          the module name
  * ----------------------------------------------------------------------------- */
 %fragment("jsnapi_exports", "templates")
 %{
@@ -1422,7 +1423,7 @@ fail:
  *
  * ---------------------------------------------------------------------------*/
 
-var dll = require('./dll.cjs');
+var dll = require('./$module_dll.cjs');
 var {
 $jsexportlist} = dll;
 

@@ -267,11 +267,11 @@ $ node-gyp build
 
 <H4><a name="Javascript_exports_file">28.3.1.2 Generating an exports file</a></H4>
 
-<p>The Node-API generator can also automatically generate an exports file with named exports that will be compatible with both CommonJS and ECMAScript 6. This file follows the syntax guidelines set by <a href="https://github.com/nodejs/cjs-module-lexer/">cjs-module-lexer</a>. In order to generate the file, add the <code>-exports</code> CLI option. This exports file will try to load <code>dll.cjs</code> that must be present in the same directory. This file should implement whatever method is desired for actually loading the shared library. For example, if the filename of the shared library is fixed, a <code>dll.cjs</code> could be as following:</p>
+<p>The Node-API generator can also automatically generate an exports file with named exports that will be compatible with both CommonJS and ECMAScript 6. This file follows the syntax guidelines set by <a href="https://github.com/nodejs/cjs-module-lexer/">cjs-module-lexer</a>. In order to generate the file, add the <code>-exports</code> CLI option. This exports file will try to load <code><em>module_name</em>_dll.cjs</code> that must be present in the same directory. This file should implement whatever method is desired for actually loading the shared library. For example, if the filename of the shared library is fixed, a <code><em>module_name</em>_dll.cjs</code> could be as following:</p>
 
 <div class="shell">
 <pre>
-module.exports = require('../build/Release/bindings.node');
+module.exports = require('../build/Release/<em>module_name</em>.node');
 </pre>
 </div>
 
