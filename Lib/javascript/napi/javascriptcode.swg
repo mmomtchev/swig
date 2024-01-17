@@ -1423,7 +1423,7 @@ fail:
  *
  * ---------------------------------------------------------------------------*/
 
-var dll = require('./$module_dll.cjs');
+var dll = require('$file');
 var {
 $jsexportlist} = dll;
 

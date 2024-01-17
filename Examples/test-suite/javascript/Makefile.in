@@ -68,7 +68,7 @@ CPP_TEST_CASES += \
 	napi_buffer \
 	napi_exports_file
 
-napi_exports_file.cpptest: SWIGOPT += -exports
+napi_exports_file.cpptest: SWIGOPT += -exports $(srcdir)/napi_exports_file_dll.cjs
 napi_exports_file.cpptest: SCRIPTSUFFIX = _runme.mjs
 
 ifneq (, $(ASYNC))

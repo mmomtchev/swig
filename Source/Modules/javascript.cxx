@@ -33,7 +33,7 @@ static bool code_splitting = false;
 /**
  * Generate an exports file (NAPI only)
  */
-static bool js_napi_generate_exports = false;
+static String *js_napi_generate_exports = nullptr;
 
 #define ERR_MSG_ONLY_ONE_ENGINE_PLEASE "Only one engine can be specified at a time."
 
@@ -1081,7 +1081,8 @@ Javascript Options (available with -javascript)\n\
      -async                 - create async wrappers by default (NAPI only) \n\
      -async-locking         - add locking by default (NAPI only) \n\
      -typescript            - generates a TypeScript ambient module (d.ts file)\n\
-     -exports               - generate a .cjs exports file that can be used with both require and import (NAPI only)\n\
+     -exports <file>        - generate a .cjs exports file that can be used with both require and import,\n\
+                                 <file> is the name of shared library binary (NAPI only)\n\
      -split                 - use code splitting, produce multiple compilation units (NAPI only)\n\
      -debug-codetemplates   - generates information about the origin of code templates\n";
 
@@ -1148,8 +1149,14 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
         Swig_mark_arg(i);
         code_splitting = true;
       } else if (strcmp(argv[i], "-exports") == 0) {
-        Swig_mark_arg(i);
-        js_napi_generate_exports = true;
+        if (argv[i + 1]) {
+          js_napi_generate_exports = NewString(argv[i + 1]);
+          Swig_mark_arg(i);
+          Swig_mark_arg(i + 1);
+          i++;
+        } else {
+          Swig_arg_error();
+        }
       } else if (strcmp(argv[i], "-help") == 0) {
         fputs(usage, stdout);
         return;
@@ -3279,7 +3286,7 @@ int NAPIEmitter::dump(Node *n) {
       Printf(exports, "  %s,\n", it.item);
     }
     t_exports.replace("$jsexportlist", exports)
-        .replace("$module", Getattr(n, NAME))
+        .replace("$file", js_napi_generate_exports)
         .print(f_exports);
 
     Delete(global_symbols);
