@@ -3491,50 +3491,34 @@ int NAPIEmitter::exitVariable(Node *n) {
     t_register.trim().pretty_print(f_init_register_namespaces);
   }
 
-  // prepare code part
-  String *action = emit_action(n);
-  marshalInputArgs(n, params, wrapper, Getter, is_member, is_static);
-  emitChecks(n, params, wrapper);
-  Append(wrapper->code, emitAsyncTypemaps(n, params, wrapper, "lock"));
-  String *input = wrapper->code;
+  return SWIG_OK;
+}
 
-  wrapper->code = NewString("");
-  marshalOutput(n, params, wrapper, NewString(""));
-  String *output = wrapper->code;
+int NAPIEmitter::emitConstant(Node *n) {
+  bool is_member = GetFlag(n, "ismember") != 0;
 
-  wrapper->code = NewString("");
-  emitCleanupCode(n, wrapper, params);
-  String *cleanup = wrapper->code;
-
-  String *guard = emitGuard(n);
-  String *locking = emitLocking(n, params, wrapper);
-
-  String *result = NewString("");
-  t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
-      .replace("$jswrapper", wrap_name)
-      .replace("$jslocals", wrapper->locals)
-      .replace("$jsguard", guard)
-      .replace("$jsinput", input)      
-      .replace("$jslock", locking)
-      .replace("$jsaction", action)
-      .replace("$jsoutput", output)
-      .replace("$jscleanup", cleanup)
-      .pretty_print(result);
-  Append(is_member ? f_template_definitions : f_split_wrappers, result);
+  File *wrappers;
+  if (is_member) {
+    wrappers = f_wrappers;
+    f_wrappers = f_template_definitions;
+  }
+  int rc = JSEmitter::emitConstant(n);
+  if (is_member) {
+    f_wrappers = wrappers;
+  }
+  if (rc != SWIG_OK) return rc;
 
   if (!is_member) {
+    String *wrap_name = state.variable(GETTER);
     Template t_declaration = getTemplate("js_global_declaration");
     t_declaration.replace("$jswrapper", wrap_name)
         .trim()
         .pretty_print(f_class_declarations);
   }
-
-  DelWrapper(wrapper);
-  Delete(guard);
-  Delete(locking);
-
   return SWIG_OK;
 }
+
+static String *AsyncWorkerFragmentName = NewString("AsyncWorker");
 
 String *NAPIEmitter::emitAsyncTypemaps(Node *, Parm *parms, Wrapper *,
                                    const char *tmname) {

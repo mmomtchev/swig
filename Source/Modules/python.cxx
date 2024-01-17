@@ -844,9 +844,6 @@ public:
 
     SwigType_emit_type_table(f_runtime, f_wrappers);
 
-    // the type table must come after the closing of the C linkage block
-    SwigType_emit_type_table(f_runtime, f_wrappers);
-
     if (shadow) {
       Swig_banner_target_lang(f_shadow_py, "#");
 
