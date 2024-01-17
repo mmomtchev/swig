@@ -65,11 +65,15 @@ endif
 ifeq (napi, $(ENGINE))
 # Node-API specific tests
 CPP_TEST_CASES += \
-	napi_buffer \
-	napi_exports_file
+	napi_buffer
 
-napi_exports_file.cpptest: SWIGOPT += -exports $(srcdir)/napi_exports_file_dll.cjs
+# napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
+ifneq (emcc, $(CC))
+CPP_TEST_CASES += \
+	napi_exports_file
 napi_exports_file.cpptest: SCRIPTSUFFIX = _runme.mjs
+napi_exports_file.cpptest: SWIGOPT += -exports $(srcdir)/napi_exports_file_dll.cjs
+endif
 
 ifneq (, $(ASYNC))
 # async-specific tests
