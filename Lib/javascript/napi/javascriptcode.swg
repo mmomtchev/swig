@@ -1413,13 +1413,7 @@ fail:
 /* ---------------------------------------------------------------------------
  * SWIG Node-API runtime : module exports
  *
- * In order to use this file, create a 'dll.cjs' in the same directory
- * that contains:
- *
- * module.exports = require(<your method of finding the binary>);
- *
- * Then require/import this file, it will be compatible with both
- * CommonJS and ECMAScript 6
+ * This file provdes named exports for both CommonJS and ECMAScript 6
  *
  * ---------------------------------------------------------------------------*/
 
