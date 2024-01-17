@@ -252,6 +252,11 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					mv $*_ts_runme.js $*_ts_runme.mjs && \
 					RUNME=$*_ts_runme.mjs; \
 			fi && \
+			if grep -q '%target' $${RUNME}; then \
+				echo "$${RUNME}" && \
+				sed -e "s@%target@$${PWD}@g;" $${RUNME} > $*_mjs_runme.mjs && \
+				RUNME=$*_mjs_runme.mjs; \
+			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) ${NODEJS} $${RUNME}; \
 		else \
@@ -301,7 +306,7 @@ endif
 	@rm -rf $*
 	@rm -f $*_wrap.* $*_wrap_*.cxx  $*$(SO) $*.$(OBJEXT)
 	@rm -f $*$(SCRIPTASYNCSUFFIX) $*$(SCRIPTWASMSUFFIX)
-	@rm -f $*.d.ts $*_ts_runme.mjs $*_ts_runme.js $*_ts_runme.ts $*_wrap.cjs
+	@rm -f $*.d.ts $*_ts_runme.mjs $*_ts_runme.js $*_ts_runme.ts $*_wrap.cjs $*_mjs_runme.mjs
 
 clean:
 	for ext in _wrap.cxx _wrap.$(OBJEXT) $(SO); do \

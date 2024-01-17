@@ -1,4 +1,4 @@
-import { global_fn, global_var, global_class, global_ns } from './napi_exports_file_wrap.cjs';
+import { global_fn, global_var, global_class, global_ns } from '%target/napi_exports_file_wrap.cjs';
 
 if (typeof global_fn !== 'function') throw new Error('global_fn not found');
 if (typeof global_var !== 'number') throw new Error('global_var not found');

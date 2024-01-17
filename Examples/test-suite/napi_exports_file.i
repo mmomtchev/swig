@@ -4,7 +4,7 @@
 %nspace;
 
 %inline %{
-  void global_fn(void);
+  void global_fn();
   class global_class {};
   int global_var;
 %}
@@ -19,4 +19,5 @@ namespace global_ns {
   namespace global_ns {
     int hidden;
   };
+  void global_fn() {}
 %}
