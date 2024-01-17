@@ -65,7 +65,11 @@ endif
 ifeq (napi, $(ENGINE))
 # Node-API specific tests
 CPP_TEST_CASES += \
-	napi_buffer
+	napi_buffer \
+	napi_exports_file
+
+napi_exports_file.cpptest: SWIGOPT += -exports
+napi_exports_file.cpptest: SCRIPTSUFFIX = _runme.mjs
 
 ifneq (, $(ASYNC))
 # async-specific tests
@@ -297,7 +301,7 @@ endif
 	@rm -rf $*
 	@rm -f $*_wrap.* $*_wrap_*.cxx  $*$(SO) $*.$(OBJEXT)
 	@rm -f $*$(SCRIPTASYNCSUFFIX) $*$(SCRIPTWASMSUFFIX)
-	@rm -f $*.d.ts $*_ts_runme.mjs $*_ts_runme.js $*_ts_runme.ts
+	@rm -f $*.d.ts $*_ts_runme.mjs $*_ts_runme.js $*_ts_runme.ts $*_wrap.cjs
 
 clean:
 	for ext in _wrap.cxx _wrap.$(OBJEXT) $(SO); do \

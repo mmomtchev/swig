@@ -1401,3 +1401,31 @@ fail:
                 static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable))
         });
 %}
+
+
+/* -----------------------------------------------------------------------------
+ * jsnapi_exports:  template for an exports file.
+ *   - $jsexports:      list of exports
+ * ----------------------------------------------------------------------------- */
+%fragment("jsnapi_exports", "templates")
+%{
+/* ---------------------------------------------------------------------------
+ * SWIG Node-API runtime : module exports
+ *
+ * In order to use this file, create a 'dll.cjs' in the same directory
+ * that contains:
+ *
+ * module.exports = require(<your method of finding the binary>);
+ *
+ * Then require/import this file, it will be compatible with both
+ * CommonJS and ECMAScript 6
+ *
+ * ---------------------------------------------------------------------------*/
+
+var dll = require('./dll.cjs');
+var {
+$jsexportlist} = dll;
+
+module.exports = {
+$jsexportlist};
+%}
