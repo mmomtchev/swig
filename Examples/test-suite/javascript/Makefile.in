@@ -242,6 +242,10 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 				&& \
 				RUNME=$*$(SCRIPTASYNCSUFFIX); \
 			fi && \
+			if grep -q '%target' $${RUNME}; then \
+				sed -e "s@%target@$${PWD}@g;" $${RUNME} > $*_mjs_runme.mjs && \
+				RUNME=$*_mjs_runme.mjs; \
+			fi && \
 			if [ -n "$(TYPESCRIPT)" ]; then \
 				sed -e \
 					's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@import \2 from "'"$(PWD)"'/\4/index.js"@g; \
@@ -251,11 +255,6 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					$(TSC) $(TSCOPT) $*_ts_runme.ts && \
 					mv $*_ts_runme.js $*_ts_runme.mjs && \
 					RUNME=$*_ts_runme.mjs; \
-			fi && \
-			if grep -q '%target' $${RUNME}; then \
-				echo "$${RUNME}" && \
-				sed -e "s@%target@$${PWD}@g;" $${RUNME} > $*_mjs_runme.mjs && \
-				RUNME=$*_mjs_runme.mjs; \
 			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
 				$(RUNTOOL) ${NODEJS} $${RUNME}; \
