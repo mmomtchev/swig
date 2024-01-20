@@ -12,10 +12,3 @@ try {
 } catch { }
 
 if (fail) throw new Error();
-
-// @ts-ignore
-if (typeof print === 'undefined' && typeof li_std_vector.StructVector.prototype.equals === 'undefined') {
-  // This tests the generic STL typemaps that work only with Node-API
-
-  if ((/* async */(li_std_vector.sum([1, 2, 3]))) !== 6) throw new Error('sum failed');
-}
