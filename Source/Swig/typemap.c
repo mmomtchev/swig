@@ -974,10 +974,11 @@ static int typemap_replace_vars(String *s, ParmList *locals, SwigType *type, Swi
   /* Type-related stuff */
   {
     SwigType *star_type, *amp_type, *base_type, *lex_type;
-    SwigType *ltype, *star_ltype, *amp_ltype;
+    SwigType *ltype, *star_ltype, *amp_ltype, *templ_arg1;
     String *mangle, *star_mangle, *amp_mangle, *base_mangle, *base_name, *base_type_str;
     String *descriptor, *star_descriptor, *amp_descriptor;
     String *ts;
+    List *templ_args;
     char *sc;
 
     sc = Char(s);
@@ -1068,6 +1069,15 @@ static int typemap_replace_vars(String *s, ParmList *locals, SwigType *type, Swi
       if (index == 1) {
 	Replace(s, "$*ltype", ts, DOH_REPLACE_ANY);
 	replace_local_types(locals, "$*ltype", star_ltype);
+      }
+      if (SwigType_istemplate(ftype)) {
+        templ_args = SwigType_templateargslist(ftype);
+        if (templ_args && Len(templ_args) > 0) {
+          templ_arg1 = SwigType_str(Getitem(templ_args, 0), 0);
+          Replace(s, "$Ttype", templ_arg1, DOH_REPLACE_ANY);
+          Delete(templ_arg1);
+          Delete(templ_args);
+        }          
       }
       sprintf(varname, "$*%d_ltype", index);
       Replace(s, varname, ts, DOH_REPLACE_ANY);

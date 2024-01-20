@@ -97,3 +97,33 @@ namespace std {
 #warning "specialize_std_vector - specialization for type T no longer needed"
 %enddef
 
+/* -----------------------*/
+/* const std::vector (in) */
+/* -----------------------*/
+
+// reference to const vector, C++ receives:
+//  * for values -> copies (objects must be copyable)
+//  * for references -> references
+//  * for pointers -> pointers
+// (all input arguments are protected from the GC for the duration of the operation
+// and this includes the JS array that contains the references)
+// Don't try this at home, it uses an undocumented feature of $typemap
+%typemap(in)        std::vector const & {
+  if ($input.IsArray()) {
+    $1 = new $*ltype;
+    Napi::Array array = $input.As<Napi::Array>();
+    for (size_t i = 0; i < array.Length(); i++) {
+      $Ttype c_val;
+      Napi::Value js_val = array.Get(i);
+      $typemap(in, $Ttype, input=js_val, 1=c_val);
+      $1->emplace_back(c_val);
+    }
+  } else {
+    SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument $argnum is not an array");
+  }
+}
+%typemap(freearg)   std::vector const & {
+  delete $1;
+}
+// reference the base typemap
+%typemap(ts)        std::vector const &   "$typemap(ts, $Ttype)[]";
