@@ -36,6 +36,7 @@
 <ul>
 <li><a href="#Javascript_simple_example">Simple</a>
 <li><a href="#Javascript_class_example">Class</a>
+<li><a href="#Javascript_STL_example">STL Containers</a>
 </ul>
 <li><a href="#Javascript_exceptions">Exceptions</a>
 <ul>
@@ -664,6 +665,72 @@ at emitKey (readline.js:1095:12)</pre>
 <p>
 <b>Note</b>: In ECMAScript 5 there is no concept for classes. Instead each function can be used as a constructor function which is executed by the 'new' operator. Furthermore, during construction the key property <code>prototype</code> of the constructor function is used to attach a prototype instance to the created object. A prototype is essentially an object itself that is the first-class delegate of a class used whenever the access to a property of an object fails. The very same prototype instance is shared among all instances of one type. Prototypal inheritance is explained in more detail on in <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain">Inheritance and the prototype chain</a>, for instance.
 </p>
+
+<H3><a name="Javascript_STL_example">28.4.3 STL Containers</a></H3>
+<p>There are two strategies when dealing with STL containers:</p>
+<ul>
+  <li>
+    <p>Expose the C++ container to JavaScript
+    <ul>
+      <li><strong>+</strong> Avoids copying</li>
+      <li><strong>-</strong> The interface won't have a native feel - the user will have to use <code>array.get(0)</code> instead of <code>array[0]</code> and native <code>Array</code> methods such as
+        <code>map</code> won't be supported.</li>
+    </ul>
+    </p>
+  </li>
+  <li>
+    <p>Convert the arguments at every call
+    <ul>
+      <li><strong>+</strong> Native feel, methods can be called with a JavaScript array <code>method([1, 2, 3])</code></li>
+      <li><strong>-</strong> Extensive copying at each call</li>
+    </ul>
+    </p>
+  </li>
+</ul>
+
+<p>The first method is available with every JavaScript generator, while the second is supported natively only by Node-API - but still can be manually implemented in a typemap for the others.</p>
+
+<ul>
+<li>
+<p>Expose the C++ containers:</p>
+<p>SWIG</p>
+<div class="code">
+<pre>
+%include "std_vector.i"
+%template (IntVector) std::vector&lt;int&gt;;
+void method(std::vector&lt;int&gt; &amp;vec);
+</pre>
+</div>
+<p>JavaScript</p>
+<div class="code">
+<pre>
+let vec = new IntVector;
+IntVector.set(0, 10);
+IntVector.set(1, 20);
+method(IntVector);
+</pre>
+</div>
+</li>
+
+<li>
+<p>Convert the C++ containers:</p>
+<p>SWIG</p>
+<div class="code">
+<pre>
+%include "std_vector.i"
+%apply(std::vector const &INPUT) { std::vector &vec };
+void method(std::vector&lt;int&gt; &amp;vec);
+</pre>
+</div>
+<p>JavaScript</p>
+<div class="code">
+<pre>
+method([10, 20]);
+</pre>
+</div>
+</li>
+</ul>
+
 
 <H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
 
