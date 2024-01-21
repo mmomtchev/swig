@@ -97,8 +97,8 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
       $T1type c_val;
       Napi::Value js_key = keys.Get(i);
       Napi::Value js_val = obj.Get(js_key);
-      $typemap(in, std::string, input=js_key, 1=c_key, argnum=Garga);
-      $typemap(in, $T1type, input=js_val, 1=c_val, argnum=Garga);
+      $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
+      $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
       $1->emplace(c_key, c_val);
     }
   } else {

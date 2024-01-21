@@ -115,7 +115,7 @@ namespace std {
     for (size_t i = 0; i < array.Length(); i++) {
       $T0type c_val;
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $T0type, input=js_val, 1=c_val);
+      $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
       $1->emplace_back(c_val);
     }
   } else {
@@ -151,7 +151,7 @@ namespace std {
     for (size_t i = 0; i < array.Length(); i++) {
       $T0type c_val;
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $T0type, input=js_val, 1=c_val);
+      $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
       $1.emplace_back(c_val);
     }
   } else {
@@ -169,7 +169,7 @@ namespace std {
   for (size_t i = 0; i < $1.size(); i++) {
     $T0type c_val = $1.at(i);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);
   }
   $result = array;
@@ -184,7 +184,7 @@ namespace std {
   for (size_t i = 0; i < $1->size(); i++) {
     $T0type c_val = $1->at(i);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);
   }
   $result = array;
@@ -210,7 +210,7 @@ namespace std {
   for (size_t i = 0; i < _global_temp_vector.size(); i++) {
     $T0type c_val = _global_temp_vector.at(i);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);
   }
   $result = array;
