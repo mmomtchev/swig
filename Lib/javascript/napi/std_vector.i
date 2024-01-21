@@ -113,19 +113,19 @@ namespace std {
     $1 = new $*ltype;
     Napi::Array array = $input.As<Napi::Array>();
     for (size_t i = 0; i < array.Length(); i++) {
-      $Ttype c_val;
+      $T0type c_val;
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $Ttype, input=js_val, 1=c_val);
+      $typemap(in, $T0type, input=js_val, 1=c_val);
       $1->emplace_back(c_val);
     }
   } else {
-    SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument $argnum is not an array");
+    %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
   }
 }
 %typemap(freearg)   std::vector const &INPUT {
   delete $1;
 }
-%typemap(ts)        std::vector const &INPUT "$typemap(ts, $Ttype)[]";
+%typemap(ts)        std::vector const &INPUT "$typemap(ts, $T0type)[]";
 
 
 /* -------------------------*/
@@ -149,16 +149,16 @@ namespace std {
   if ($input.IsArray()) {
     Napi::Array array = $input.As<Napi::Array>();
     for (size_t i = 0; i < array.Length(); i++) {
-      $Ttype c_val;
+      $T0type c_val;
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $Ttype, input=js_val, 1=c_val);
+      $typemap(in, $T0type, input=js_val, 1=c_val);
       $1.emplace_back(c_val);
     }
   } else {
-    SWIG_exception_fail(SWIG_TypeError, "in method '$symname', argument $argnum is not an array");
+    %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
   }
 }
-%typemap(ts)        std::vector INPUT "$typemap(ts, $Ttype)[]";
+%typemap(ts)        std::vector INPUT "$typemap(ts, $T0type)[]";
 
 
 /* -------------------*/
@@ -167,14 +167,14 @@ namespace std {
 %typemap(out)       std::vector RETURN {
   Napi::Array array = Napi::Array::New(env, $1.size());
   for (size_t i = 0; i < $1.size(); i++) {
-    $Ttype c_val = $1.at(i);
+    $T0type c_val = $1.at(i);
     Napi::Value js_val;
-    $typemap(out, $Ttype, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val);
     array.Set(i, js_val);
   }
   $result = array;
 }
-%typemap(ts)        std::vector RETURN "$typemap(ts, $Ttype)[]";
+%typemap(ts)        std::vector RETURN "$typemap(ts, $T0type)[]";
 
 /* --------------------*/
 /* std::vector &RETURN */
@@ -182,14 +182,14 @@ namespace std {
 %typemap(out)       std::vector &RETURN {
   Napi::Array array = Napi::Array::New(env, $1->size());
   for (size_t i = 0; i < $1->size(); i++) {
-    $Ttype c_val = $1->at(i);
+    $T0type c_val = $1->at(i);
     Napi::Value js_val;
-    $typemap(out, $Ttype, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val);
     array.Set(i, js_val);
   }
   $result = array;
 }
-%typemap(ts)        std::vector &RETURN "$typemap(ts, $Ttype)[]";
+%typemap(ts)        std::vector &RETURN "$typemap(ts, $T0type)[]";
 
 /* --------------------*/
 /* std::vector *RETURN */
@@ -202,20 +202,20 @@ namespace std {
 /* --------------------*/
 
 // Return a vector in a reference argument
-%typemap(in, numinputs=0)  std::vector &OUTPUT ($*ltype _global_temp) {
-  $1 = &_global_temp;
+%typemap(in, numinputs=0)  std::vector &OUTPUT ($*ltype _global_temp_vector) {
+  $1 = &_global_temp_vector;
 }
 %typemap(argout)  std::vector &OUTPUT {
-  Napi::Array array = Napi::Array::New(env, _global_temp.size());
-  for (size_t i = 0; i < _global_temp.size(); i++) {
-    $Ttype c_val = _global_temp.at(i);
+  Napi::Array array = Napi::Array::New(env, _global_temp_vector.size());
+  for (size_t i = 0; i < _global_temp_vector.size(); i++) {
+    $T0type c_val = _global_temp_vector.at(i);
     Napi::Value js_val;
-    $typemap(out, $Ttype, 1=c_val, result=js_val);
+    $typemap(out, $T0type, 1=c_val, result=js_val);
     array.Set(i, js_val);
   }
   $result = array;
 }
-%typemap(tsout)      std::vector &OUTPUT "$typemap(ts, $Ttype)[]";
+%typemap(tsout)      std::vector &OUTPUT "$typemap(ts, $T0type)[]";
 
 /* --------------------*/
 /* std::vector *OUTPUT */

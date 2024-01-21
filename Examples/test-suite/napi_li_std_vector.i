@@ -12,7 +12,6 @@
 %apply(std::vector RETURN)            { std::vector };
 %apply(std::vector *RETURN)           { std::vector *, std::vector & };
 
-
 // Convert "*output" and "&output" to return values
 %apply(std::vector &OUTPUT)           { std::vector &output, std::vector *output };
 

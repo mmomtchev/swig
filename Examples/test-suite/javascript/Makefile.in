@@ -73,7 +73,9 @@ endif
 ifeq (napi, $(ENGINE))
 # Node-API specific tests
 CPP_TEST_CASES += \
-	napi_buffer
+	napi_buffer \
+	napi_li_std_map \
+	napi_li_std_vector
 
 # napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
 ifneq (emcc, $(CC))
