@@ -670,7 +670,7 @@ at emitKey (readline.js:1095:12)</pre>
 <p>There are two strategies when dealing with STL containers:</p>
 <ul>
   <li>
-    <p>Expose the C++ container to JavaScript
+    <p>Wrap the C++ container to JavaScript - it is a C++ class that can be wrapped as any other class.
     <ul>
       <li><strong>+</strong> Avoids copying</li>
       <li><strong>-</strong> The interface won't have a native feel - the user will have to use <code>array.get(0)</code> instead of <code>array[0]</code> and native <code>Array</code> methods such as
@@ -680,7 +680,7 @@ at emitKey (readline.js:1095:12)</pre>
     <p>This works best when the container is large and it is expected to be reused across multiple calls.</p>
   </li>
   <li>
-    <p>Convert the arguments at every call
+    <p>Use a typemap that converts the arguments at every call.
     <ul>
       <li><strong>+</strong> Native feel, methods can be called with a JavaScript array <code>method([1, 2, 3])</code></li>
       <li><strong>-</strong> The C++ container will have to be recreated at each call - values will be copied, pointers and references will remain pointing to the original object.</li>
@@ -699,8 +699,10 @@ at emitKey (readline.js:1095:12)</pre>
 <div class="code">
 <pre>
 %include "std_vector.i"
+// Refer to the section on C++ templates for this statement
 %template (IntVector) std::vector&lt;int&gt;;
-void method(std::vector&lt;int&gt; &amp;vec);
+void consume(std::vector&lt;int&gt; const &amp;vec);
+std::vector&lt;int&gt; produce();
 </pre>
 </div>
 <p>JavaScript</p>
@@ -709,7 +711,9 @@ void method(std::vector&lt;int&gt; &amp;vec);
 let vec = new IntVector;
 vec.set(0, 10);
 vec.set(1, 20);
-method(vec);
+consume(vec);
+vec = produce();
+let last = vec.get(vec.size() - 1);
 </pre>
 </div>
 </li>
@@ -720,14 +724,27 @@ method(vec);
 <div class="code">
 <pre>
 %include "std_vector.i"
-%apply(std::vector const &INPUT) { std::vector &vec };
-void method(std::vector&lt;int&gt; &amp;vec);
+// When using the  Node-API generator, std::vector and std::map
+// will have INPUT, OUTPUT and RETURN typemaps
+
+%apply(std::vector const &INPUT) { std::vector const &vec };
+void consume(std::vector&lt;int&gt; const &amp;vec);
+
+%apply(std::vector &OUTPUT) { std::vector &vec };
+void produce1(std::vector&lt;int&gt;);
+
+%apply(std::vector RETURN & ) { std::vector produce2 };
+std::vector&lt;int&gt; &amp;produce2();
 </pre>
 </div>
 <p>JavaScript</p>
 <div class="code">
 <pre>
-method([10, 20]);
+consume([10, 20]);
+let vec1 = produce1();
+let vec2 = produce2();
+let last1 = vec1[vec1.length - 1];
+let last2 = vec2[vec2.length - 1];
 </pre>
 </div>
 </li>
