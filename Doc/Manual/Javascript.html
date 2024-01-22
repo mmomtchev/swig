@@ -684,6 +684,7 @@ at emitKey (readline.js:1095:12)</pre>
     <ul>
       <li><strong>+</strong> Native feel, methods can be called with a JavaScript array <code>method([1, 2, 3])</code></li>
       <li><strong>-</strong> The C++ container will have to be recreated at each call - values will be copied, pointers and references will remain pointing to the original object.</li>
+      <li><strong>-</strong> The STL must contain default-constructible and copy-assignable objects.</li>
     </ul>
     </p>
     <p>This works best when the array is small and it is constructed ad-hoc from an anonymous JS array at each call - in this case there is no performance overhead at all.</p>
