@@ -1,6 +1,6 @@
 // Node-API specific implementations
 // (with copy-conversion)
-%module napi_li_std
+%module napi_li_std_vector
 
 %include "std_vector.i"
 

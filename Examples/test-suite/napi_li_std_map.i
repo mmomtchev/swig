@@ -1,5 +1,8 @@
+// Node-API specific implementations
+// (with copy-conversion)
+%module napi_li_std_map
+
 /* --- std::map --- */
-%warnfilter(302) Struct;
 %include "std_map.i"
 
 // for valueAverage & stringifyKeys
