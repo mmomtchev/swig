@@ -53,17 +53,17 @@ var napi_li_std_vector = require('napi_li_std_vector');
 
 {
   const v = new napi_li_std_vector.ULongVector([8, 9, 3]);
-  if (!(v instanceof napi_li_std_vector.ULongVector) || v.get(1) !== 9) throw new Error('failed constructing std::vector');
+  if (!(v instanceof napi_li_std_vector.ULongVector) || /* await */(v.get(1)) !== 9) throw new Error('failed constructing std::vector');
 }
 
 {
   const v = new napi_li_std_vector.LongVector([8, 9, 3]);
-  if (!(v instanceof napi_li_std_vector.LongVector) || v.get(1) !== 9) throw new Error('failed constructing std::vector');
+  if (!(v instanceof napi_li_std_vector.LongVector) || /* await */(v.get(1)) !== 9) throw new Error('failed constructing std::vector');
 }
 
 {
   const v = new napi_li_std_vector.DoubleVector([8, 9, 3]);
-  if (!(v instanceof napi_li_std_vector.DoubleVector) || v.get(1) !== 9) throw new Error('failed constructing std::vector');
+  if (!(v instanceof napi_li_std_vector.DoubleVector) || /* await */(v.get(1)) !== 9) throw new Error('failed constructing std::vector');
 }
 
 {
