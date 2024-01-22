@@ -4029,7 +4029,10 @@ int NAPIEmitter::emitFunctionDispatcher(Node *n, bool is_member, bool is_async) 
       siblname = Getattr(sibl, "wrap:name");
 
     if (siblname) {
-      bool is_static_case = Equal(Getattr(sibl, "storage"), "static");
+      bool is_static_case = Equal(Getattr(sibl, "storage"), "static") ||
+        // The IS_STATIC flag is present only in the temporary state
+        // of the dispatched case - however its handler sets this field
+        Getattr(sibl, "staticmemberfunctionHandler:name");
       if (is_static_case == is_static_dispatcher || !is_member) {
         // handle function overloading
         Template t_dispatch_case = getTemplate("js_function_dispatch_case");
