@@ -75,7 +75,7 @@ namespace std {
 /* ----------------------*/
 %define ASSERT_STRING_MAP
 static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0type>::type>::type>::value,
-    "This typemap supports only an std::map with an std::string key")
+    "Only a string (or a Symbol) can be an object property name in JavaScript");
 %enddef
 
 
