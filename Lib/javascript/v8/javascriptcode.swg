@@ -176,7 +176,7 @@ static SwigV8ReturnValue $jswrapper(v8::Local<v8::Name> property, const SwigV8Pr
   SWIGV8_VALUE jsresult;
   $jslocals
   $jscode
-  ĵscleanup
+  $jscleanup
   SWIGV8_RETURN_INFO(jsresult, info);
 
   goto fail;
