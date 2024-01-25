@@ -36,6 +36,7 @@
 #endif
   }
   $1 = NULL;
+  $result = VOID_Object;
 }
 %typemap(out) Foo trigger_internal_swig_exception
 {
@@ -44,6 +45,7 @@
 #ifdef SWIG_fail
   SWIG_fail;
 #endif
+  $result = VOID_Object;
 }
 %typemap(out) Foo trigger_internal_swig_exception_c = Foo trigger_internal_swig_exception;
 
