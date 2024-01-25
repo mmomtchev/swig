@@ -22,16 +22,20 @@
   Foo::inc_freearg_count();
   delete $1;
 }
+
+#ifdef SWIG_STD_STRING
 %typemap(freearg) const std::string &
 {
   Foo::inc_freearg_string_count();
   delete $1;
 }
+#endif
 %typemap(freearg) const char *
 {
   Foo::inc_freearg_char_count();
   delete[] $1;
 }
+
 %typemap(out) Foo* trigger_internal_swig_exception
 {
   TYPEMAP_OUT_INIT
