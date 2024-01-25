@@ -19,9 +19,6 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackIn
         : $jsparent_templ<SWIG_OBJ_WRAP>(true, info) {
   Napi::Env env = info.Env();
 
-#ifdef NAPI_CPP_EXCEPTIONS
-  try {
-#endif
   this->info = SWIGTYPE_$jsmangledtype;
   if (info.Length() == 1 && info[0].IsExternal()) {
     // This constructor has been called internally from C++/SWIG
@@ -33,6 +30,9 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackIn
   this->owned = true;
 
   $jslocals
+#ifdef NAPI_CPP_EXCEPTIONS
+  try {
+#endif
   if(static_cast<int>(info.Length()) < $jsargrequired || static_cast<int>(info.Length()) > $jsargcount) {
     SWIG_Error(SWIG_ERROR, "Illegal number of arguments for $jswrapper.");
   }
