@@ -33,4 +33,16 @@ if (typeof print === 'undefined' && typeof exception_memory_leak.Foo.prototype.e
     fail = true;
   } catch { }
   if (fail) throw new Error("Expected an exception");
+
+  // SWIG exception triggered and handled (return by value case).
+  try {
+    exception_memory_leak.trigger_internal_swig_exception_c("null");
+    fail = true;
+  } catch { }
+  if (fail) throw new Error("Expected an exception");
+
+  if (Foo.get_count() != 2) throw new Error("Should have 2 Foo objects");
+  if (Foo.get_freearg_count() != 2) throw new Error("freearg should have been used twice");
+  if (Foo.get_freearg_string_count() != 3) throw new Error("freearg string should have been used three times");
+  if (Foo.get_freearg_char_count() != 1) throw new Error("freearg char should have been used once");
 }
