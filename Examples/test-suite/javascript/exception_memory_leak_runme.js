@@ -3,6 +3,7 @@ var exception_memory_leak = require('exception_memory_leak');
 var { Foo } = exception_memory_leak;
 
 // This test works correctly only in Node-API
+// @ts-ignore
 if (typeof print === 'undefined' && typeof exception_memory_leak.Foo.prototype.equals === 'undefined') {
 
   var a = new Foo;
