@@ -7,42 +7,42 @@ var { Foo } = exception_memory_leak;
 if (typeof print === 'undefined' && typeof exception_memory_leak.Foo.prototype.equals === 'undefined') {
 
   var a = new Foo;
-  if (Foo.get_count() != 1) throw new Error("Should have 1 Foo objects");
+  if (/* await */(Foo.get_count()) != 1) throw new Error("Should have 1 Foo objects");
   var b = new Foo;
-  if (Foo.get_count() != 2) throw new Error("Should have 2 Foo objects");
+  if (/* await */(Foo.get_count()) != 2) throw new Error("Should have 2 Foo objects");
 
   // Normal behaviour
-  exception_memory_leak.trigger_internal_swig_exception("no problem", a);
-  if (Foo.get_count() != 2) throw new Error("Should have 2 Foo objects");
-  if (Foo.get_freearg_count() != 1) throw new Error("freearg should have been used once");
+  /* await */(exception_memory_leak.trigger_internal_swig_exception("no problem", a));
+  if (/* await */(Foo.get_count()) != 2) throw new Error("Should have 2 Foo objects");
+  if (/* await */(Foo.get_freearg_count()) != 1) throw new Error("freearg should have been used once");
 
   // SWIG exception triggered and handled (return new object case).
   var fail = false;
   try {
-    exception_memory_leak.trigger_internal_swig_exception("null", b);
+    /* await */(exception_memory_leak.trigger_internal_swig_exception("null", b));
     fail = true;
   } catch { }
   if (fail) throw new Error("Expected an exception");
 
-  if (Foo.get_count() != 2) throw new Error("Should have 2 Foo objects");
-  if (Foo.get_freearg_count() != 2) throw new Error("freearg should have been used twice");
+  if (/* await */(Foo.get_count()) != 2) throw new Error("Should have 2 Foo objects");
+  if (/* await */(Foo.get_freearg_count()) != 2) throw new Error("freearg should have been used twice");
 
   // SWIG exception triggered and handled (return by value case).
   try {
-    exception_memory_leak.trigger_internal_swig_exception("null");
+    /* await */(exception_memory_leak.trigger_internal_swig_exception("null"));
     fail = true;
   } catch { }
   if (fail) throw new Error("Expected an exception");
 
   // SWIG exception triggered and handled (return by value case).
   try {
-    exception_memory_leak.trigger_internal_swig_exception_c("null");
+    /* await */(exception_memory_leak.trigger_internal_swig_exception_c("null"));
     fail = true;
   } catch { }
   if (fail) throw new Error("Expected an exception");
 
-  if (Foo.get_count() != 2) throw new Error("Should have 2 Foo objects");
-  if (Foo.get_freearg_count() != 2) throw new Error("freearg should have been used twice");
-  if (Foo.get_freearg_string_count() != 3) throw new Error("freearg string should have been used three times");
-  if (Foo.get_freearg_char_count() != 1) throw new Error("freearg char should have been used once");
+  if (/* await */(Foo.get_count()) != 2) throw new Error("Should have 2 Foo objects");
+  if (/* await */(Foo.get_freearg_count()) != 2) throw new Error("freearg should have been used twice");
+  if (/* await */(Foo.get_freearg_string_count()) != 3) throw new Error("freearg string should have been used three times");
+  if (/* await */(Foo.get_freearg_char_count()) != 1) throw new Error("freearg char should have been used once");
 }
