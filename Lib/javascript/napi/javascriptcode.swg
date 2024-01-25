@@ -155,7 +155,6 @@ Napi::Value $jsmangledname_templ<SWIG_OBJ_WRAP>::$jswrapper(const Napi::Callback
   }
   $jscode
   this->self = result;
-  $jscleanup
 
 #ifndef NAPI_CPP_EXCEPTIONS
   goto fail;
