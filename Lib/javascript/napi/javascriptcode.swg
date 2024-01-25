@@ -19,6 +19,9 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackIn
         : $jsparent_templ<SWIG_OBJ_WRAP>(true, info) {
   Napi::Env env = info.Env();
 
+#ifdef NAPI_CPP_EXCEPTIONS
+  try {
+#endif
   this->info = SWIGTYPE_$jsmangledtype;
   if (info.Length() == 1 && info[0].IsExternal()) {
     // This constructor has been called internally from C++/SWIG
@@ -37,10 +40,16 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackIn
   this->self = result;
   $jscleanup
   return;
-  goto fail;
+#ifdef NAPI_CPP_EXCEPTIONS
+  } catch (...) {
+    $jscleanup
+    std::rethrow_exception(std::current_exception());
+  }
+#else
 fail:
   $jscleanup
   return;
+#endif
 }
 
 // This is the bypass constructor to be used from child classes
