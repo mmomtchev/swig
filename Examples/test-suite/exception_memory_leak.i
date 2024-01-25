@@ -4,9 +4,13 @@
 %include <exception.i>
 
 #ifdef SWIGCSHARP
-#define TYPEMAP_OUT_INIT $result = 0;
+  #define TYPEMAP_OUT_INIT $result = 0;
 #else
-#define TYPEMAP_OUT_INIT
+  #ifdef VOID_Object
+    #define TYPEMAP_OUT_INIT $result = VOID_Object;
+  #else
+    #define TYPEMAP_OUT_INIT
+  #endif
 #endif
 
 %typemap(in) Foo* foo
@@ -36,9 +40,6 @@
 #endif
   }
   $1 = NULL;
-#ifdef VOID_Object
-  $result = VOID_Object;
-#endif
 }
 %typemap(out) Foo trigger_internal_swig_exception
 {
@@ -46,9 +47,6 @@
   SWIG_exception(SWIG_RuntimeError, "Let's see how the bindings manage this exception!");
 #ifdef SWIG_fail
   SWIG_fail;
-#endif
-#ifdef VOID_Object
-  $result = VOID_Object;
 #endif
 }
 %typemap(out) Foo trigger_internal_swig_exception_c = Foo trigger_internal_swig_exception;
