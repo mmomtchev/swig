@@ -25,10 +25,12 @@
 %typemap(freearg) const std::string &
 {
   Foo::inc_freearg_string_count();
+  delete $1;
 }
 %typemap(freearg) const char *
 {
   Foo::inc_freearg_char_count();
+  delete[] $1;
 }
 %typemap(out) Foo* trigger_internal_swig_exception
 {
@@ -65,7 +67,6 @@
       static unsigned freearg_char_count;
     public:
       Foo() { ++count; }
-      Foo(const std::string &) { ++count; }
       ~Foo() { --count; }
       static unsigned get_count() { return count; }
       static unsigned get_freearg_count() { return freearg_count; }
