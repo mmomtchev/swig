@@ -51,6 +51,10 @@
 }
 %typemap(out) Foo trigger_internal_swig_exception_c = Foo trigger_internal_swig_exception;
 
+// Throwing constructor
+%catches(int) ThrowingCtorChar;
+%catches(int) ThrowingCtorString;
+
 %inline %{
   #include <string>
 
@@ -61,6 +65,7 @@
       static unsigned freearg_char_count;
     public:
       Foo() { ++count; }
+      Foo(const std::string &) { ++count; }
       ~Foo() { --count; }
       static unsigned get_count() { return count; }
       static unsigned get_freearg_count() { return freearg_count; }
@@ -92,4 +97,11 @@
   {
     return Foo();
   }
+
+  struct ThrowingCtorString {
+    ThrowingCtorString(const std::string &) { throw (int)1; };
+  };
+  struct ThrowingCtorChar {
+    ThrowingCtorChar(const char *) { throw (int)2; };
+  };
 %}
