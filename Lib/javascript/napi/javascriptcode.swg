@@ -8,6 +8,7 @@
  *   - $jsargrequired:    minimum number of arguments
  *   - $jsmangledname:    mangled name of class
  *   - $jsmangledtype:    mangled type of class
+ *   - $jscleanup:        cleanup part of wrapper
  * ----------------------------------------------------------------------------- */
 
 %fragment("js_ctor", "templates") %{
@@ -34,9 +35,11 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackIn
   }
   $jscode
   this->self = result;
+  $jscleanup
   return;
   goto fail;
 fail:
+  $jscleanup
   return;
 }
 
@@ -152,11 +155,13 @@ Napi::Value $jsmangledname_templ<SWIG_OBJ_WRAP>::$jswrapper(const Napi::Callback
   }
   $jscode
   this->self = result;
+  $jscleanup
 
 #ifndef NAPI_CPP_EXCEPTIONS
   goto fail;
 fail:
 #endif
+  $jscleanup
   return Napi::Value();
 }
 %}
