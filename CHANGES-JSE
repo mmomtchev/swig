@@ -19,6 +19,7 @@ Version 5.0.
             [JavaScript] Fix [swig/swig#2563](https://github.com/swig/swig/issues/2563),
             include `freearg` typemaps on the exception path for all
             JavaScript engines
+            **POTENTIALLY BREAKING FOR EXISTING JAVASCRIPT PROJECTS**
 
 Version 5.0.0-rc.3 (22 Jan 2024)
 ===========================
