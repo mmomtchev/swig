@@ -34,7 +34,7 @@
   'targets': [
     {
       'type': 'executable',
-      'target_name': '$testcase',
+      'target_name': '$testcase.js',
       'sources': [ $sources ], 
       'include_dirs': ['../$srcdir/..'],
       'defines': [

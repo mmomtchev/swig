@@ -61,6 +61,7 @@ case "$SWIGLANG" in
       				        $RETRY npm install -g emnapi @emnapi/runtime
                                 fi
 				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript @types/node
+				$RETRY npm install -g karma karma-chrome-launcher
 				;;
 			"jsc")
 				$RETRY sudo apt-get install -qq libjavascriptcoregtk-${VER}-dev

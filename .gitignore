@@ -165,6 +165,9 @@ Examples/test-suite/javascript/*_wrap.cjs
 Examples/test-suite/javascript/*_ts_runme.*
 Examples/test-suite/javascript/*_mjs_runme.*
 Examples/test-suite/javascript/*_wasm_runme.*
+Examples/test-suite/javascript/*_browser_runme.js
+Examples/test-suite/javascript/*_karma.conf.js
+Examples/test-suite/javascript/*_karma_adapter.js
 Examples/test-suite/javascript/resolve.js
 *.gyp
 *.d.ts

@@ -1,0 +1,34 @@
+/**
+ * Karma for the main browser unit tests set
+ */
+
+module.exports = function (config) {
+  config.set({
+    basePath: '',
+    files: [
+      { pattern: '$testcase_karma_adapter.js', included: true },
+      { pattern: '$testcase/build/Release/$testcase.js', included: true, served: true },
+      { pattern: '$testcase/build/Release/*', included: false, served: true },
+      { pattern: '$testcase_browser_runme.js', included: false, served: true, type: 'module' },
+      { pattern: 'resolve.mjs', included: false, served: true, type: 'module' },
+      { pattern: '/usr/lib/node_modules/@emnapi/runtime/dist/emnapi.js', included: true },
+    ],
+    customHeaders: true ? [
+      { name: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+      { name: 'Cross-Origin-Embedder-Policy', value: 'require-corp' }
+    ] : [],
+    exclude: [
+    ],
+    preprocessors: {
+    },
+    reporters: ['progress'],
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: false,
+    browsers: ['Chrome'],
+    singleRun: true,
+    concurrency: Infinity,
+    browserNoActivityTimeout: 0
+  });
+};

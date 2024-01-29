@@ -1,0 +1,48 @@
+(function (win) {
+  function createStartFn(karma) {
+    return function () {
+      win.$testcase()
+        .then((m) => m.emnapiInit({ context: emnapi.getDefaultContext() }))
+        .then((m) => {
+          karma.info({
+            total: 1
+          });
+          win.$testcase = m;
+          return import('./$testcase_browser_runme.js');
+        })
+        .then(() => {
+          karma.result({
+            description: '$testcase',
+            suite: ['$testcase'],
+            success: true,
+            log: [],
+            time: 0
+          });
+        })
+        .catch((e) => {
+          console.error(e);
+          karma.result({
+            description: '$testcase',
+            suite: ['$testcase'],
+            success: false,
+            log: [e.message],
+            time: 0
+          });
+        })
+        .then(() => {
+          karma.complete({ coverage: win.__coverage__ });
+        });
+    };
+  }
+
+  function createDumpFn(karma, serialize) {
+    return function () {
+      karma.info({ dump: [].slice.call(arguments) });
+    };
+  }
+
+  win.__karma__.start = createStartFn(window.__karma__);
+  win.dump = createDumpFn(win.__karma__, function (value) {
+    return value;
+  });
+})(window);
