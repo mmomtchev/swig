@@ -284,8 +284,8 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 				's@\(var\|let\|const\)[[:space:]]*\(.*\)[[:space:]]*=[[:space:]]*require(\("\|\x27\)\(.*\)\("\|\x27\))@@g; \
 				s@import wasm_module.*@@g; ' \
 				$${RUNME} > $*_browser_runme.js && \
-			sed -e 's|$$testcase|$*|g;' wasm_template/karma_adapter.js.in > $*_karma_adapter.js && \
-			sed -e 's|$$testcase|$*|g;' wasm_template/karma.conf.js.in > $*_karma.conf.js && \
+			sed -e 's|$$testcase|$*|g;' $(srcdir)/wasm_template/karma_adapter.js.in > $*_karma_adapter.js && \
+			sed -e 's|$$testcase|$*|g;' $(srcdir)/wasm_template/karma.conf.js.in > $*_karma.conf.js && \
 			karma start $*_karma.conf.js; \
 		fi
 
