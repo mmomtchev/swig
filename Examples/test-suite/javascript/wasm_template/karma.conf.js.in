@@ -10,8 +10,8 @@ module.exports = function (config) {
       { pattern: '$testcase/build/Release/$testcase.js', included: true, served: true },
       { pattern: '$testcase/build/Release/*', included: false, served: true },
       { pattern: '$testcase_browser_runme.js', included: false, served: true, type: 'module' },
-      { pattern: 'resolve.mjs', included: false, served: true, type: 'module' },
-      { pattern: '/usr/lib/node_modules/@emnapi/runtime/dist/emnapi.js', included: true },
+      { pattern: '$srcdir/resolve.mjs', included: false, served: true, type: 'module' },
+      { pattern: require.resolve('$npmprefix/lib/node_modules/@emnapi/runtime/dist/emnapi.js'), included: true },
     ],
     customHeaders: true ? [
       { name: 'Cross-Origin-Opener-Policy', value: 'same-origin' },

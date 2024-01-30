@@ -1419,6 +1419,16 @@ fi
 AC_SUBST(EMNAPI_DIR)
 AC_SUBST(EMNAPI_INC_DIR)
 
+AC_MSG_CHECKING(for @emnapi/runtime)
+EMNAPI_RUNTIME_DIR="${NODENPM_PREFIX}/lib/node_modules/@emnapi/runtime/dist/emnapi.min.mjs"
+EMNAPI_RUNTIME=$(EMNAPI_RUNTIME_DIR=${EMNAPI_RUNTIME_DIR} ${NODEJS} -e 'try { console.log(require.resolve(process.env.EMNAPI_RUNTIME_DIR)); } catch {}')
+if test -r "${EMNAPI_RUNTIME}" ; then
+  AC_MSG_RESULT([found in ${EMNAPI_RUNTIME}])
+else
+  AC_MSG_RESULT(not found)
+fi
+AC_SUBST(EMNAPI_RUNTIME)
+
 #----------------------------------------------------------------
 # Look for Lua
 #----------------------------------------------------------------
