@@ -1409,8 +1409,8 @@ AC_SUBST(EMSDK)
 #----------------------------------------------------------------
 
 AC_MSG_CHECKING(for emnapi)
-if test -r "${NODENPM_PREFIX}/lib/node_modules/emnapi/include/emnapi.h" ; then
-  EMNAPI_DIR="${NODENPM_PREFIX}/lib/node_modules/emnapi"
+EMNAPI_DIR=$(${NODEJS} -e 'try { console.log(require("/usr/lib/node_modules/emnapi").include); } catch {}')
+if test -r "${EMNAPI_DIR}/emnapi.h" ; then
   AC_MSG_RESULT(found in $EMNAPI_DIR)
 else
   AC_MSG_RESULT(not found)
