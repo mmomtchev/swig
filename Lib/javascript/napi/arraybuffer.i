@@ -59,6 +59,10 @@
   if (*$1 != SWIG_NULLPTR) {
     Napi::ArrayBuffer buf = Napi::ArrayBuffer::New(env, *$2);
     memcpy(buf.Data(), *$1, *$2);
+#ifdef __EMSCRIPTEN__
+    napi_value ab_value = (napi_value)buf;
+    emnapi_sync_memory(env, false, &ab_value, 0, NAPI_AUTO_LENGTH);
+#endif
     NAPI_CHECK_RESULT(buf.As<Napi::Value>(), $result);
   } else {
     $result = env.Null();
