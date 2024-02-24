@@ -811,7 +811,7 @@ let last2 = vec2[vec2.length - 1];
 
 <H4><a name="Javascript_Buffer_example">28.4.4.1 Zero-copy <code>ArrayBuffer</code></a></H4>
 
-<p>For applications requiring high efficiency or access to shared memory, a zero-copy <code>ArrayBuffer</code> can be used. This should be avoided when possible because it is error-prone and it is not compatible with some alternative Node-API implementations which define <a href="https://github.com/nodejs/node-addon-api/blob/main/doc/external_buffer.md"><code>NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED</code></a> such as Electron.</p>
+<p>For applications requiring high efficiency or access to shared memory, a zero-copy <code>ArrayBuffer</code> can be used. This should be avoided when possible because it is error-prone and it is not compatible with WASM or some alternative Node-API implementations which define <a href="https://github.com/nodejs/node-addon-api/blob/main/doc/external_buffer.md"><code>NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED</code></a> such as Electron.</p>
 
 <p>A typemap that constructs a JS <code>ArrayBuffer</code> object around an existing memory buffer can be written as follows:</p>
 
