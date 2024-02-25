@@ -218,10 +218,11 @@ void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::JS_veto_set_variable(const Napi:
   SWIG_NAPI_Raise(info.Env(), "Tried to write read-only variable.");
 }
 
-// Instantiaed version of the above CRTP class
+// Instantiated version of the above CRTP class
 class SWIG_NAPI_ObjectWrap_inst : public SWIG_NAPI_ObjectWrap_templ<SWIG_NAPI_ObjectWrap_inst> {
 public:
   using SWIG_NAPI_ObjectWrap_templ::SWIG_NAPI_ObjectWrap_templ;
+  ~SWIG_NAPI_ObjectWrap_inst();
   static Napi::Function GetClass(Napi::Env);
   static void GetMembers(
     Napi::Env,
@@ -229,3 +230,11 @@ public:
     std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &
   );
 };
+
+SWIG_NAPI_ObjectWrap_inst::~SWIG_NAPI_ObjectWrap_inst() {
+  if (this->owned) {
+    delete[] static_cast<uint8_t *>(this->self);
+    this->self = SWIG_NULLPTR;
+    this->owned = false;
+  }
+}
