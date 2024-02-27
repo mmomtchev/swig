@@ -4,6 +4,10 @@
  * Javascript typemaps
  * ----------------------------------------------------------------------------- */
 
+#ifndef __cplusplus
+#define __cplusplus
+#endif
+
 %include <typemaps/swigmacros.swg>
 
 %include <javascripttypemaps.swg>
