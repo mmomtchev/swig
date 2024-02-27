@@ -65,9 +65,12 @@
 # error __STDC__ value not 1 at SWIG-time
 #endif
 
+/* JavaScript is always C++ */
+#ifndef SWIGJAVASCRIPT
 /* Test that __cplusplus isn't defined (this testcase is processed as C). */
 #ifdef __cplusplus
 # error __cplusplus defined in C mode
+#endif
 #endif
 
 /* Test that SWIGxxx is defined at SWIG-time and in the wrapper. */
