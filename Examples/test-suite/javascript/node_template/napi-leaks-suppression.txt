@@ -12,3 +12,4 @@ leak:li_cdata_cpp_wrap.cxx
 leak:li_typemaps_wrap.cxx
 leak:nspace_extend_wrap.cxx
 leak:nspace_wrap.cxx
+leak:reference_global_vars_wrap.cxx
