@@ -18,6 +18,8 @@ leak:rename2_wrap.cxx
 leak:rename3_wrap.cxx
 leak:rename4_wrap.cxx
 leak:template_typemaps_typedef_wrap.cxx
+leak:template_typemaps_typedef2_wrap.cxx
+leak:typedef_struct_wrap.cxx
 leak:typemap_arrays_wrap.cxx
 
 # SWIG design limits
