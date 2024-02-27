@@ -110,7 +110,14 @@ Napi::Function SWIG_NAPI_ObjectWrap_inst::GetClass(Napi::Env env) {
 
 SWIG_NAPI_ObjectWrap_inst::~SWIG_NAPI_ObjectWrap_inst() {
   if (this->owned) {
-    fprintf(stderr, "Warning, SWIG must delete an object and does not know its type, this is a memory leak\n");
+    if (this->info) {
+      fprintf(stderr, "Warning, SWIG cannot delete an object of type %s, "
+                      "it does not have a destructor. This is a memory leak.\n",
+                      this->info->name);
+    } else {
+      fprintf(stderr, "Warning, SWIG must delete an object and does not know "
+                      "its type. This is a memory leak\n");
+    }
   }
 }
 
