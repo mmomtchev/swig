@@ -16,3 +16,10 @@ leak:reference_global_vars_wrap.cxx
 leak:rename1_wrap.cxx
 leak:rename2_wrap.cxx
 leak:rename3_wrap.cxx
+leak:rename4_wrap.cxx
+leak:template_typemaps_typedef_wrap.cxx
+leak:typemap_arrays_wrap.cxx
+
+# SWIG design limits
+# https://www.swig.org/Doc4.2/SWIGDocumentation.html#Python_nn30
+leak:cpp11_null_pointer_constant_wrap.cxx
