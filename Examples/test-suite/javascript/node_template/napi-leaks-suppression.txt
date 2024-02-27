@@ -10,4 +10,5 @@ leak:inherit_missing_wrap.cxx
 leak:li_cdata_wrap.cxx
 leak:li_cdata_cpp_wrap.cxx
 leak:li_typemaps_wrap.cxx
-leak::nspace_extend_wrap.cxx
+leak:nspace_extend_wrap.cxx
+leak:nspace_wrap.cxx
