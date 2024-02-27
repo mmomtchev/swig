@@ -108,6 +108,7 @@ struct EnvInstanceData {
   // Base class per-environment constructor, used to check
   // if a JS object is a SWIG wrapper
   Napi::FunctionReference *SWIG_NAPI_ObjectWrapCtor;
+  Napi::FunctionReference *SWIG_NAPI_PackedObjectWrapCtor;
   // Per-environment wrapper constructors, indexed by the number in
   // swig_type->clientdata
   Napi::FunctionReference **ctor;
@@ -231,10 +232,15 @@ public:
   );
 };
 
-SWIG_NAPI_ObjectWrap_inst::~SWIG_NAPI_ObjectWrap_inst() {
-  if (this->owned) {
-    delete[] static_cast<uint8_t *>(this->self);
-    this->self = SWIG_NULLPTR;
-    this->owned = false;
-  }
-}
+// Special class used for packed (opaque) objects, has a special destructor
+class SWIG_NAPI_PackedObjectWrap_inst : public SWIG_NAPI_ObjectWrap_templ<SWIG_NAPI_PackedObjectWrap_inst> {
+public:
+  using SWIG_NAPI_ObjectWrap_templ::SWIG_NAPI_ObjectWrap_templ;
+  ~SWIG_NAPI_PackedObjectWrap_inst();
+  static Napi::Function GetClass(Napi::Env);
+  static void GetMembers(
+    Napi::Env,
+    std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &,
+    std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &
+  );
+};
