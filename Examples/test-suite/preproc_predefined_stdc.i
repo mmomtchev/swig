@@ -10,12 +10,9 @@
 # error __STDC__ value not 1 at SWIG-time
 #endif
 
-/* JavaScript is always C++ */
-#ifndef SWIGJAVASCRIPT
 // __cplusplus should not be defined.
 #ifdef __cplusplus
 # error __cplusplus defined at SWIG-time but should not be
-#endif
 #endif
 
 // __STDC_VERSION__ should be suitably defined.
