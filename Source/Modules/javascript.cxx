@@ -1130,6 +1130,10 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
 	}
 	Swig_mark_arg(i);
 	engine = JSEmitter::V8;
+        if (!CPlusPlus) {
+          CPlusPlus = 1;
+          Swig_cparse_cplusplus(1);
+        }
       } else if (strcmp(argv[i], "-jsc") == 0) {
 	if (engine != -1) {
 	  Printf(stderr, ERR_MSG_ONLY_ONE_ENGINE_PLEASE);
@@ -1144,6 +1148,10 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
 	}
 	Swig_mark_arg(i);
 	engine = JSEmitter::NodeJS;
+        if (!CPlusPlus) {
+          CPlusPlus = 1;
+          Swig_cparse_cplusplus(1);
+        }
       } else if (strcmp(argv[i], "-napi") == 0) {
 	if (engine != -1) {
 	  Printf(stderr, ERR_MSG_ONLY_ONE_ENGINE_PLEASE);
@@ -1151,6 +1159,10 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
 	}
 	Swig_mark_arg(i);
 	engine = JSEmitter::NAPI;
+        if (!CPlusPlus) {
+          CPlusPlus = 1;
+          Swig_cparse_cplusplus(1);
+        }
       } else if (strcmp(argv[i], "-debug-codetemplates") == 0) {
 	Swig_mark_arg(i);
 	js_template_enable_debug = true;
@@ -1193,10 +1205,6 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
       emitter = swig_javascript_create_V8Emitter();
       Preprocessor_define("SWIG_JAVASCRIPT_V8 1", 0);
       SWIG_library_directory("javascript/v8");
-      // V8 API is C++, so output must be C++ compatible even when wrapping C code
-      if (!cparse_cplusplus) {
-	Swig_cparse_cplusplusout(1);
-      }
       if (engine == JSEmitter::NodeJS) {
 	Preprocessor_define("BUILDING_NODE_EXTENSION 1", 0);
       }
@@ -1215,9 +1223,6 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
       Preprocessor_define("SWIG_JAVASCRIPT_NAPI 1", 0);
       SWIG_library_directory("javascript/napi");
       Preprocessor_define("BUILDING_NODE_EXTENSION 1", 0);
-      if (!cparse_cplusplus) {
-	Swig_cparse_cplusplusout(1);
-      }
       break;
     }
   default:
