@@ -79,15 +79,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
  * ----------------------------------------------------------------------------- */
 %fragment("js_initializer", "templates")
 %{
-  /* initialize the inheritance helpers */
-  Napi::Value jsObjectValue, jsSetProtoValue;
-  Napi::Object jsObject;
-  Napi::Function setProto;
-  NAPI_CHECK_RESULT(env.Global().Get("Object"), jsObjectValue);
-  NAPI_CHECK_RESULT(jsObjectValue.ToObject(), jsObject);
-  NAPI_CHECK_RESULT(jsObject.Get("setPrototypeOf"), jsSetProtoValue);
-  setProto = jsSetProtoValue.As<Napi::Function>();
-
   /* initialize the base SWIG object class */
   Napi::Function SWIG_NAPI_ObjectWrap_ctor = SWIG_NAPI_ObjectWrap_inst::GetClass(env);
   Napi::FunctionReference *SWIG_NAPI_ObjectWrap_ctor_ref = new Napi::FunctionReference();
@@ -100,6 +91,21 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   *SWIG_NAPI_PackedObjectWrap_ctor_ref = Napi::Persistent(SWIG_NAPI_PackedObjectWrap_ctor);
   env.GetInstanceData<EnvInstanceData>()->SWIG_NAPI_PackedObjectWrapCtor = SWIG_NAPI_PackedObjectWrap_ctor_ref;
 
+  /* create objects for namespaces */
+  $jsnapinspaces
+
+  /* register classes */
+  $jsnapiregisterclasses
+
+  /* initialize the inheritance helpers */
+  Napi::Value jsObjectValue, jsSetProtoValue;
+  Napi::Object jsObject;
+  Napi::Function setProto;
+  NAPI_CHECK_RESULT(env.Global().Get("Object"), jsObjectValue);
+  NAPI_CHECK_RESULT(jsObjectValue.ToObject(), jsObject);
+  NAPI_CHECK_RESULT(jsObject.Get("setPrototypeOf"), jsSetProtoValue);
+  setProto = jsSetProtoValue.As<Napi::Function>();
+
   /* setup inheritance between these two */
   do {
     Napi::Value protoBase, protoSub;
@@ -108,12 +114,6 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     NAPI_CHECK_MAYBE(setProto.Call({SWIG_NAPI_PackedObjectWrap_ctor, SWIG_NAPI_ObjectWrap_ctor}));
     NAPI_CHECK_MAYBE(setProto.Call({protoSub, protoBase}));
   } while (0);
-
-  /* create objects for namespaces */
-  $jsnapinspaces
-
-  /* register classes */
-  $jsnapiregisterclasses
 
   /* setup inheritances */
   $jsnapiinitinheritance
