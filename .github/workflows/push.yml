@@ -104,6 +104,13 @@ jobs:
           VER: '18'
           CPPSTD: c++14
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
+          ASAN: 1
+          desc: Async+ASAN
+        - SWIGLANG: javascript
+          ENGINE: napi
+          VER: '18'
+          CPPSTD: c++14
+          SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: Async w/ locking
         - SWIGLANG: javascript
           ENGINE: napi
