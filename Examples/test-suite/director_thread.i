@@ -106,7 +106,7 @@ extern "C" {
     }
 
     void setThreadName() {
-%#if defined(_WIN32) || defined(SWIG_EMSCRIPTEN)
+%#if defined(_WIN32) || defined(__EMSCRIPTEN__)
     // https://github.com/emscripten-core/emscripten/pull/18751
 %#else
 
