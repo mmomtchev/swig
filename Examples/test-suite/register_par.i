@@ -6,7 +6,7 @@ struct swig_tree;
 
 %{
 #if defined(__cplusplus)
-#if __cplusplus >= 201703L || defined(__EMSCRIPTEN__)
+#if __cplusplus >= 201703L || defined(SWIG_EMSCRIPTEN)
 /*
 Fix for languages that compile C tests as C++:
   error: ISO C++17 does not allow ‘register’ storage class specifier [-Werror=register]

@@ -55,7 +55,7 @@
   $1 = &temp_data;
   $2 = &temp_len;
 }
-%typemap(argout) RETURN_NEW_BUFFER_SIGNATURE {
+%typemap(argout) RETURN_NEW_BUFFER_SIGNATURE %{
   if (*$1 != SWIG_NULLPTR) {
     Napi::ArrayBuffer buf = Napi::ArrayBuffer::New(env, *$2);
     memcpy(buf.Data(), *$1, *$2);
@@ -67,7 +67,7 @@
   } else {
     $result = env.Null();
   }
-}
+%}
 
 /**
  * Writable ArrayBuffer in arguments.
