@@ -34,7 +34,7 @@
   }
 }
 
-%typemap(typecheck, precedence=SWIG_TYPECHECK_VOIDPTR) (const void* arraybuffer_data, const size_t arraybuffer_len) {
+%typemap(typecheck, precedence=SWIG_TYPECHECK_VOIDPTR) READONLY_BUFFER_SIGNATURE {
   $1 = $input.IsArrayBuffer();
 }
 
