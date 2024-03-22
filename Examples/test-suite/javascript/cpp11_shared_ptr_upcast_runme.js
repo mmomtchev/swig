@@ -6,8 +6,8 @@ var { Derived, Derived2 } = cpp11_shared_ptr_upcast;
 // Examples/test-suite/ruby/cpp11_shared_ptr_upcast_runme.rb are not working and commented out with:
 // not working:
 
-function swig_assert_equal_simple(expected, got) {
-  if (expected != got)
+/* async */ function swig_assert_equal_simple(expected, got) {
+  if (expected != /* await */(got))
     throw new Error(`Expected: ${expected}. Got: ${got}`);
 }
 
