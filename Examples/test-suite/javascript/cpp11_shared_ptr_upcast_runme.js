@@ -38,16 +38,16 @@ swig_assert_equal_simple(-1, cpp11_shared_ptr_upcast.base_num([new Derived(7)]))
 swig_assert_equal_simple(-1, cpp11_shared_ptr_upcast.base_num({ 0: new Derived(7) }));
 
 // ptr to shared_ptr
-//swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num1(new Derived2(7)));
-//swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num2([Derived2(7)]));
-//swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num3({ 0: Derived2(7) }));
+swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num1(new Derived2(7)));
+swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num2([new Derived2(7)]));
+swig_assert_equal_simple(7, cpp11_shared_ptr_upcast.derived2_num3({ 0: new Derived2(7) }));
 
-//swig_assert_equal_simple(-1, cpp11_shared_ptr_upcast.base2_num1(new Derived2(7)));
+swig_assert_equal_simple(-1, cpp11_shared_ptr_upcast.base2_num1(new Derived2(7)));
 
-//swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.derived2_num1(None));
-//swig_assert_equal_simple(999, cpp11_shared_ptr_upcast.derived2_num2([None])); // although 888 would be more consistent
-//swig_assert_equal_simple(999, cpp11_shared_ptr_upcast.derived2_num3({ 0: None })); // although 888 would be more consistent
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.derived2_num1(null));
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.derived2_num2([null]));
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.derived2_num3({ 0: null }));
 
-//swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.base2_num1(None));
-//swig_assert_equal_simple(999, cpp11_shared_ptr_upcast.base2_num2([None])); // although 888 would be more consistent
-//swig_assert_equal_simple(999, cpp11_shared_ptr_upcast.base2_num3({ 0: None })); // although 888 would be more consistent
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.base2_num1(null));
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.base2_num2([null]));
+swig_assert_equal_simple(888, cpp11_shared_ptr_upcast.base2_num3({ 0: null }));

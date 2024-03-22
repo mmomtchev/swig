@@ -54,4 +54,20 @@
     $1 = std::shared_ptr<TYPE>(plain_ptr, SWIG_null_deleter());
   }
 }
+
+// C++ expects a plain pointer to a shared pointer, JS can have shared_ptr or a plain object
+%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> * (int res, std::shared_ptr<TYPE> ptr) {
+  res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&$1), $descriptor, %convertptr_flags | SWIG_POINTER_NO_NULL);
+  if (!SWIG_IsOK(res)) {
+    TYPE *plain_ptr;
+    res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "TYPE", $symname, $argnum);
+    }
+    $1 = new std::shared_ptr<TYPE>(plain_ptr, SWIG_null_deleter());
+  }
+}
+%typemap(freearg) std::shared_ptr<CONST TYPE> * {
+  delete $1;
+}
 %enddef
