@@ -4,6 +4,12 @@ See the RELEASENOTES file for a summary of changes in each release.
 Issue # numbers mentioned below can be found on Github. For more details, add
 the issue number to the end of the URL: https://github.com/swig/swig/issues/
 
+Version 5.0.4
+===========================
+
+2024-03-22: mmomtchev
+            [JavaScript] Basic `std::shared_ptr` support for Node-API (Node.js and WASM)
+
 Version 5.0.3 (29 Feb 2024)
 ===========================
 
