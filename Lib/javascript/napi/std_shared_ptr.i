@@ -16,7 +16,8 @@
 
 %define SWIG_SHARED_PTR_TYPEMAPS(CONST, TYPE)
 // C++ expects a plain object or a reference, JS can have shared_ptr or a plain object
-%typemap(in) CONST TYPE, CONST TYPE & (int res, std::shared_ptr<CONST TYPE> *ptr) {
+%typemap(in) CONST TYPE (int res, std::shared_ptr<CONST TYPE> *ptr),
+    CONST TYPE & (int res, std::shared_ptr<CONST TYPE> *ptr) {
   res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&ptr), $descriptor(std::shared_ptr<TYPE>), %convertptr_flags | SWIG_POINTER_NO_NULL);
   if (!SWIG_IsOK(res)) {
     res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&$1), $descriptor(TYPE *), %convertptr_flags);
