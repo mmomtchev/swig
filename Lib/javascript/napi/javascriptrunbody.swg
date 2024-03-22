@@ -220,8 +220,11 @@ fail:
 SWIGRUNTIME int SWIG_NAPI_ConvertPtr(Napi::Value valRef, void **ptr, swig_type_info *info, int flags) {
   // special case: JavaScript null => C NULL pointer
   if (valRef.IsNull()) {
+    if ((flags & SWIG_POINTER_NO_NULL) == SWIG_POINTER_NO_NULL) {
+      return SWIG_NullReferenceError;
+    }
     *ptr=0;
-    return (flags & SWIG_POINTER_NO_NULL) ? SWIG_NullReferenceError : SWIG_OK;
+    return SWIG_OK;
   }
 
   if (!valRef.IsObject()) {
