@@ -65,9 +65,10 @@
 
 // C++ expects a plain pointer or a reference to a shared pointer, JS can have shared_ptr or a plain object
 %typemap(in, fragment="SWIG_null_deleter")
-    std::shared_ptr<CONST TYPE> * (int res, std::shared_ptr<CONST TYPE> ptr),
-    std::shared_ptr<CONST TYPE> & (int res, std::shared_ptr<CONST TYPE> ptr) {
+    std::shared_ptr<CONST TYPE> * (int res, std::shared_ptr<CONST TYPE> ptr, bool must_free),
+    std::shared_ptr<CONST TYPE> & (int res, std::shared_ptr<CONST TYPE> ptr, bool must_free) {
   res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&$1), $descriptor, %convertptr_flags | SWIG_POINTER_NO_NULL);
+  must_free = false;
   if (!SWIG_IsOK(res)) {
     TYPE *plain_ptr;
     res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
@@ -75,10 +76,11 @@
       %argument_fail(res, "TYPE", $symname, $argnum);
     }
     $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
+    must_free = true;
   }
 }
-%typemap(freearg) std::shared_ptr<CONST TYPE> * {
-  delete $1;
+%typemap(freearg) std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
+  if (must_free$argnum) delete $1;
 }
 
 #ifdef SWIGTYPESCRIPT
