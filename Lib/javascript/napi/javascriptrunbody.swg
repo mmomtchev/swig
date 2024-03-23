@@ -126,6 +126,7 @@ Napi::Function SWIG_NAPI_PackedObjectWrap_inst::GetClass(Napi::Env env) {
 }
 
 SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {
+  this->SWIG_Finalize();
   if (this->owned) {
     delete[] static_cast<uint8_t *>(this->self);
     this->self = SWIG_NULLPTR;
@@ -284,6 +285,22 @@ SWIGRUNTIME Napi::Value SWIG_NAPI_NewPointerObj(Napi::Env env, void *ptr, swig_t
   goto fail;
 fail:
   return Napi::Value();
+#endif
+}
+
+SWIGRUNTIME int SWIG_NAPI_SetFinalizer(Napi::Env env, Napi::Value val, SWIG_NAPI_Finalizer *finalizer) {
+  Napi::Object obj;
+  NAPI_CHECK_RESULT(val.ToObject(), obj);
+  if (!SWIG_NAPI_IsWrappedObject(env, obj)) {
+    return SWIG_TypeError;
+  }
+  auto unwrapped = Napi::ObjectWrap<SWIG_NAPI_ObjectWrap_inst>::Unwrap(obj);
+  unwrapped->finalizer = finalizer;
+  return SWIG_OK;
+#ifndef NAPI_CPP_EXCEPTIONS
+  goto fail;
+fail:
+  return SWIG_ERROR;
 #endif
 }
 

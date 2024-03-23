@@ -15,79 +15,44 @@
 %include <shared_ptr.i>
 
 %define SWIG_SHARED_PTR_TYPEMAPS(CONST, TYPE)
-%template(shared_ptr_##CONST##_##TYPE##) std::shared_ptr<CONST TYPE>;
 
-// C++ expects a plain object, JS can have shared_ptr or a plain object
-%typemap(in) CONST TYPE (int res, std::shared_ptr<CONST TYPE> *ptr) {
-  res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&ptr), $descriptor(std::shared_ptr<TYPE> *), %convertptr_flags | SWIG_POINTER_NO_NULL);
+%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> {
+  TYPE *plain_ptr;
+  int res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-    $ltype *plain_ptr;
-    res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
-    $1 = *plain_ptr;
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "TYPE", $symname, $argnum);
-    }
-  } else {
-    $1 = *ptr->get();
+    %argument_fail(res, "TYPE", $symname, $argnum);
   }
+  $1 = std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
 }
 
-// C++ expects a pointer or a reference, JS can have shared_ptr or a plain object
-%typemap(in)
-    CONST TYPE * (int res, std::shared_ptr<CONST TYPE> *ptr),
-    CONST TYPE & (int res, std::shared_ptr<CONST TYPE> *ptr) {
-  res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&ptr), $descriptor(std::shared_ptr<TYPE> *), %convertptr_flags | SWIG_POINTER_NO_NULL);
+%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
+  TYPE *plain_ptr;
+  int res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-    res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&$1), $descriptor(TYPE *), %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "TYPE", $symname, $argnum);
-    }
-  } else {
-    $1 = %const_cast(ptr->get(), $ltype);
+    %argument_fail(res, "TYPE", $symname, $argnum);
   }
-}
-
-// C++ expects a shared pointer, JS can have shared_ptr or a plain object
-%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> (int res, std::shared_ptr<CONST TYPE> ptr) {
-  std::shared_ptr<TYPE> *smart_ptr;
-  res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&smart_ptr), $descriptor(std::shared_ptr<TYPE> *), %convertptr_flags | SWIG_POINTER_NO_NULL);
-  if (!SWIG_IsOK(res)) {
-    TYPE *plain_ptr;
-    res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "TYPE", $symname, $argnum);
-    }
-    $1 = std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
-  } else {
-    $1 = *smart_ptr;
-  }
-}
-
-// C++ expects a plain pointer or a reference to a shared pointer, JS can have shared_ptr or a plain object
-%typemap(in, fragment="SWIG_null_deleter")
-    std::shared_ptr<CONST TYPE> * (int res, std::shared_ptr<CONST TYPE> ptr, bool must_free),
-    std::shared_ptr<CONST TYPE> & (int res, std::shared_ptr<CONST TYPE> ptr, bool must_free) {
-  res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&$1), $descriptor, %convertptr_flags | SWIG_POINTER_NO_NULL);
-  must_free = false;
-  if (!SWIG_IsOK(res)) {
-    TYPE *plain_ptr;
-    res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "TYPE", $symname, $argnum);
-    }
-    $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
-    must_free = true;
-  }
+  $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
 }
 %typemap(freearg) std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
-  if (must_free$argnum) delete $1;
+  delete $1;
+}
+
+%typemap(out) std::shared_ptr<CONST TYPE> {
+  %set_output(SWIG_NewPointerObj(const_cast<TYPE *>($1.get()), $descriptor(TYPE *), SWIG_POINTER_OWN | %newpointer_flags));
+  auto finalizer = new SWIG_NAPI_Finalizer([ptr = *&$1](){});
+  SWIG_NAPI_SetFinalizer(env, $result, finalizer);
+}
+
+%typemap (out) std::shared_ptr<CONST TYPE> &, std::shared_ptr<CONST TYPE> * {
+  %set_output(SWIG_NewPointerObj(const_cast<TYPE *>($1->get()), $descriptor(TYPE *), $owner | %newpointer_flags));
+  auto finalizer = new SWIG_NAPI_Finalizer([$1](){
+    delete $1;
+  });
+  SWIG_NAPI_SetFinalizer(env, $result, finalizer);
 }
 
 #ifdef SWIGTYPESCRIPT
-%typemap(ts) CONST TYPE, CONST TYPE *, CONST TYPE &
-    "$jstype | shared_ptr_" #CONST "_" #TYPE
-
-%typemap(ts) std::shared_ptr<CONST TYPE>, std::shared_ptr<CONST TYPE> *
+%typemap(ts) std::shared_ptr<CONST TYPE>, std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> &
     "$typemap(ts, TYPE)"
 #endif
 
