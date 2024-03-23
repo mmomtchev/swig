@@ -176,9 +176,10 @@ SWIGRUNTIME int SWIG_NAPI_ConvertInstancePtr(Napi::Object objRef, void **ptr, sw
     *ptr = ow->self;
   }
 
-  if (((flags & SWIG_POINTER_RELEASE) == SWIG_POINTER_RELEASE) && !ow->owned) {
-    return SWIG_ERROR_RELEASE_NOT_OWNED;
-  } else {
+  if ((flags & SWIG_POINTER_RELEASE) == SWIG_POINTER_RELEASE) {
+    if (!ow->owned || ow->finalizer) {
+      return SWIG_ERROR_RELEASE_NOT_OWNED;
+    }
     if (flags & SWIG_POINTER_DISOWN) {
       ow->owned = false;
     }

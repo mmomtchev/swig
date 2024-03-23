@@ -76,6 +76,8 @@
   delete $1;
 }
 
+%template() std::shared_ptr<CONST TYPE>;
+
 #ifdef SWIGTYPESCRIPT
 %typemap(ts) std::shared_ptr<CONST TYPE>, std::shared_ptr<CONST TYPE> &
     "$typemap(ts, TYPE)"

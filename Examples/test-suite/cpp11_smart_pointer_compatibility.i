@@ -1,4 +1,4 @@
-%module cpp11_li_smart_pointer_compatibility
+%module cpp11_smart_pointer_compatibility
 
 // This test is specific to shared pointers in Node-API
 // In Node-API, an std::shared_ptr behaves an identical way as 
