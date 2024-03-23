@@ -69,9 +69,9 @@ CPP_TEST_CASES += \
 	napi_buffer \
 	napi_li_std_map \
 	napi_li_std_vector \
-	napi_li_std_shared_ptr \
 	cpp11_shared_ptr_const \
-	cpp11_shared_ptr_upcast
+	cpp11_shared_ptr_upcast \
+	cpp11_li_smart_pointer_compatibility.cpptest
 
 # napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
 ifneq (emcc, $(CC))
