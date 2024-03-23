@@ -37,9 +37,16 @@
   delete $1;
 }
 
+// When importing a shared_ptr in JS, the underlying value is wrapped as if it was
+// a plain pointer and the owning shared_ptr is saved in a finalizer lambda that
+// will be called and freed when the JS proxy object is destroyed
+// (the *& trick is needed because $1 is a SwigValueWrapper)
 %typemap(out) std::shared_ptr<CONST TYPE> {
   %set_output(SWIG_NewPointerObj(const_cast<TYPE *>($1.get()), $descriptor(TYPE *), SWIG_POINTER_OWN | %newpointer_flags));
-  auto finalizer = new SWIG_NAPI_Finalizer([ptr = *&$1](){});
+  auto *owner = new std::shared_ptr<CONST TYPE>(*&$1);
+  auto finalizer = new SWIG_NAPI_Finalizer([owner](){
+    delete owner;
+  });
   SWIG_NAPI_SetFinalizer(env, $result, finalizer);
 }
 
