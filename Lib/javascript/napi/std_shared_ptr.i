@@ -50,10 +50,11 @@
   SWIG_NAPI_SetFinalizer(env, $result, finalizer);
 }
 
-%typemap (out) std::shared_ptr<CONST TYPE> &, std::shared_ptr<CONST TYPE> * {
+%typemap(out) std::shared_ptr<CONST TYPE> &, std::shared_ptr<CONST TYPE> * {
   %set_output(SWIG_NewPointerObj(const_cast<TYPE *>($1->get()), $descriptor(TYPE *), $owner | %newpointer_flags));
-  auto finalizer = new SWIG_NAPI_Finalizer([$1](){
-    delete $1;
+  auto owner = new std::shared_ptr<CONST TYPE>(*$1);
+  auto finalizer = new SWIG_NAPI_Finalizer([owner](){
+    delete owner;
   });
   SWIG_NAPI_SetFinalizer(env, $result, finalizer);
 }
