@@ -732,7 +732,7 @@ puts $foo                       ;# Print the value of foo
 
 # Python
 cvar.foo = 3.5                  # Set foo to 3.5
-print cvar.foo                  # Print value of foo
+print(cvar.foo)                 # Print value of foo
 
 # Perl
 $foo = 3.5;                     # Set foo to 3.5
@@ -2161,6 +2161,28 @@ of the expression.
 </pre>
 </div>
 
+<p>Matching on C++11/C23 attributes is also supported:</p>
+<div class="code">
+  <pre>
+// Match [[noreturn]] methods
+%rename("_%s", match$attribute$noreturn=1) "";
+
+// Match [[deprecated]] and [[deprecated("reason")]] but not [[deprecated nodiscard]]
+%rename("__deprecated_%s", match$attribute$deprecated, notmatch$attribute$nodiscard) "";
+
+// Match [[gnu::visibility("hidden")]]
+%rename("$ignore", match$attribute$gnu$visibility="hidden") "";
+</pre>
+</div>
+<p>For the most common attributes, SWIG defines the convenience macros <code>%$isdeprecated</code>, <code>%$isgnuhidden</code> and <code>%$isgnuvisible</code>.</p>
+<p>Using attributes allows to introduce custom marking for symbols that need special handling:</p>
+<div class="code">
+  <pre>
+// Match a custom [[acme::special]] tag that is ignored by the compiler
+%rename("_%s", match$attribute$acme::special=1) "";
+</pre>
+</div>
+
 <p>
 For a comprehensive understanding of how the matching works, the internal
 <a href="Extending.html#Extending_nn8">parse tree</a> needs to be examined using the
@@ -3007,7 +3029,7 @@ this :</p>
 
 <div class="targetlang"><pre>
 &gt;&gt;&gt; v = Vector(3, 4, 0)                 # Create a new vector
-&gt;&gt;&gt; print v.magnitude()                # Print magnitude
+&gt;&gt;&gt; print(v.magnitude())                # Print magnitude
 5.0
 &gt;&gt;&gt; v.print()                  # Print it out
 [ 3, 4, 0 ]
