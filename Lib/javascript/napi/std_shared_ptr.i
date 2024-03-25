@@ -5,7 +5,7 @@
  *
  * It implements a JS proxy wrapper around shared pointers, that allows
  * to use them as they were plain objects of the base type:
- * - to call the methods of the base type object (not yet implemented)
+ * - to call the methods of the base type object
  * - to use it in place of a plain object as a function input argument 
  * - to use a plain object where a shared pointer is expected
  *

@@ -25,6 +25,9 @@ var spp77 = /* await */(cpp11_smart_pointer_compatibility.ProduceSharedPointerRe
 var ar51 = /* await */(cpp11_smart_pointer_compatibility.ProduceUniquePointer(51));
 
 check(i17.get(), 17);
+check(sp42.get(), 42);
+check(spp77.get(), 77);
+check(ar51.get(), 51);
 
 check(cpp11_smart_pointer_compatibility.ConsumePlainObject(i17), 17);
 check(cpp11_smart_pointer_compatibility.ConsumePlainObject(sp42), 42);
