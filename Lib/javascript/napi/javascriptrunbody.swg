@@ -290,11 +290,12 @@ fail:
 
 SWIGRUNTIME int SWIG_NAPI_SetFinalizer(Napi::Env env, Napi::Value val, SWIG_NAPI_Finalizer *finalizer) {
   Napi::Object obj;
+  SWIG_NAPI_ObjectWrap_inst *unwrapped;
   NAPI_CHECK_RESULT(val.ToObject(), obj);
   if (!SWIG_NAPI_IsWrappedObject(env, obj)) {
     return SWIG_TypeError;
   }
-  auto unwrapped = Napi::ObjectWrap<SWIG_NAPI_ObjectWrap_inst>::Unwrap(obj);
+  unwrapped = Napi::ObjectWrap<SWIG_NAPI_ObjectWrap_inst>::Unwrap(obj);
   unwrapped->finalizer = finalizer;
   return SWIG_OK;
 #ifndef NAPI_CPP_EXCEPTIONS
