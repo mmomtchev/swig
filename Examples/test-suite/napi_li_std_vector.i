@@ -10,7 +10,7 @@
 
 // Convert all return values
 %apply(std::vector RETURN)            { std::vector };
-%apply(std::vector *RETURN)           { std::vector *, std::vector & };
+%apply(std::vector &RETURN)           { std::vector *, std::vector & };
 
 // Convert "*output" and "&output" to return values
 %apply(std::vector &OUTPUT)           { std::vector &output, std::vector *output };
@@ -47,5 +47,14 @@ void return_vector_unique_ptr(std::vector<std::unique_ptr<Integer>> &output) {
 }
 int receive_vector_unique_ptr(const std::vector<std::unique_ptr<Integer>> &input) {
   return input[2]->value;
+}
+const std::vector<std::unique_ptr<Integer>> &return_const_vector_unique() {
+  static std::vector<std::unique_ptr<Integer>> const_vector;
+  if (const_vector.size() == 0) {
+    const_vector.emplace_back(new Integer(3));
+    const_vector.emplace_back(new Integer(5));
+    const_vector.emplace_back(new Integer(8));
+  }
+  return const_vector;
 }
 %}

@@ -114,15 +114,13 @@ namespace std {
 %typemap(out)       std::pair RETURN {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    $T0type c_val = SWIG_STD_MOVE($1.first);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=pair first element);
+    $typemap(out, $T0type, 1=$1.first, result=js_val, argnum=pair first element);
     array.Set(static_cast<uint32_t>(0), js_val);
   }
   {
-    $T1type c_val = SWIG_STD_MOVE($1.second);
     Napi::Value js_val;
-    $typemap(out, $T1type, 1=c_val, result=js_val, argnum=pair second element);
+    $typemap(out, $T1type, 1=$1.second, result=js_val, argnum=pair second element);
     array.Set(static_cast<uint32_t>(1), js_val);
   }
   $result = array;
@@ -136,15 +134,13 @@ namespace std {
 %typemap(out)       std::pair &RETURN {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    $T0type c_val = SWIG_STD_MOVE($1->first);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=pair first element);
+    $typemap(out, $T0type, 1=$1->first, result=js_val, argnum=pair first element);
     array.Set(static_cast<uint32_t>(0), js_val);
   }
   {
-    $T1type c_val = SWIG_STD_MOVE($1->second);
     Napi::Value js_val;
-    $typemap(out, $T1type, 1=c_val, result=js_val, argnum=pair second element);
+    $typemap(out, $T1type, 1=$1->second, result=js_val, argnum=pair second element);
     array.Set(static_cast<uint32_t>(1), js_val);
   }
   $result = array;
@@ -168,15 +164,13 @@ namespace std {
 %typemap(argout)  std::pair &OUTPUT {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    $T0type c_val = SWIG_STD_MOVE(_global_temp_pair.first);
     Napi::Value js_val;
-    $typemap(out, $T0type, 1=c_val, result=js_val, argnum=pair first element);
+    $typemap(out, $T0type, 1=_global_temp_pair.first, result=js_val, argnum=pair first element);
     array.Set(static_cast<uint32_t>(0), js_val);
   }
   {
-    $T1type c_val = SWIG_STD_MOVE(_global_temp_pair.second);
     Napi::Value js_val;
-    $typemap(out, $T1type, 1=c_val, result=js_val, argnum=pair second element);
+    $typemap(out, $T1type, 1=_global_temp_pair.second, result=js_val, argnum=pair second element);
     array.Set(static_cast<uint32_t>(1), js_val);
   }
   $result = array;
