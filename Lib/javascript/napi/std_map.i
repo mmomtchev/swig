@@ -176,13 +176,13 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 %typemap(ts)        std::map RETURN = std::map const &INPUT;
 
 /* --------------------*/
-/* std::map *RETURN */
+/* std::map *RETURN    */
 /* --------------------*/
 %apply(std::map &RETURN)    { std::map *RETURN };
 
 
 /* --------------------*/
-/* std::map &OUTPUT */
+/* std::map &OUTPUT    */
 /* --------------------*/
 
 // Return a map in a reference argument
@@ -202,6 +202,6 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 %typemap(tsout)      std::map &OUTPUT "Record<string, $typemap(ts, $T1type)>";
 
 /* --------------------*/
-/* std::map *OUTPUT */
+/* std::map *OUTPUT    */
 /* --------------------*/
 %apply(std::map &OUTPUT)    { std::map *OUTPUT };

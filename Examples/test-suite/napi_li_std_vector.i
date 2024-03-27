@@ -48,6 +48,19 @@ void return_vector_unique_ptr(std::vector<std::unique_ptr<Integer>> &output) {
 int receive_vector_unique_ptr(const std::vector<std::unique_ptr<Integer>> &input) {
   return input[2]->value;
 }
+%}
+
+// A very special case that requires special handling
+%typemap(out)       const std::vector<std::unique_ptr<Integer>> &return_const_vector_unique {
+  Napi::Array array = Napi::Array::New(env, $1->size());
+  for (size_t i = 0; i < $1->size(); i++) {
+    Napi::Value js_val;
+    $typemap(out, std::unique_ptr<Integer> &, 1=($1->at(i)), result=js_val, argnum=array value);
+    array.Set(i, js_val);
+  }
+  $result = array;
+}
+%inline %{
 const std::vector<std::unique_ptr<Integer>> &return_const_vector_unique() {
   static std::vector<std::unique_ptr<Integer>> const_vector;
   if (const_vector.size() == 0) {

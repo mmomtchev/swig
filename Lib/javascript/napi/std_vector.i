@@ -201,7 +201,7 @@ namespace std {
 %typemap(in, numinputs=0)  std::vector &OUTPUT ($*ltype _global_temp_vector) {
   $1 = &_global_temp_vector;
 }
-%typemap(argout)  std::vector &OUTPUT {
+%typemap(argout)     std::vector &OUTPUT {
   Napi::Array array = Napi::Array::New(env, _global_temp_vector.size());
   for (size_t i = 0; i < _global_temp_vector.size(); i++) {
     Napi::Value js_val;

@@ -89,8 +89,7 @@ var { Integer } = napi_li_std_vector;
 }
 
 {
-  // FIXME This is a huge problem, it works only once
-  ///* await */(napi_li_std_vector.return_const_vector_unique());
+  /* await */(napi_li_std_vector.return_const_vector_unique());
   const r = /* await */(napi_li_std_vector.return_const_vector_unique());
   if (r.length !== 3 || !(r[2] instanceof Integer) || r[2].value !== 8)
     throw new Error('return_const_vector_unique failed');
