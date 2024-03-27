@@ -44,6 +44,10 @@ check(/* await */(napi_li_std_pair.product2(intPairPtr)) === 42);
 check(/* await */(napi_li_std_pair.product3(intPairPtr)) === 42);
 
 /* Node-API specific tests */
+check(/* await */(napi_li_std_pair.product1([ 5, 401 ])) === 2005);
+check(/* await */(napi_li_std_pair.product2([ 5, 401 ])) === 2005);
+check(/* await */(napi_li_std_pair.product3([ 401, 5 ])) === 2005);
+
 var p1 = /* await */(napi_li_std_pair.return_pair_in_arg_ref());
 check(p1[0] === 2005);
 check(p1[1] === true);
