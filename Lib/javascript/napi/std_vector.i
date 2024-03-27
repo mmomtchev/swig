@@ -116,7 +116,7 @@ namespace std {
       $T0type c_val;
       Napi::Value js_val = array.Get(i);
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
-      $1->emplace_back(c_val);
+      $1->emplace_back(SWIG_STD_MOVE(c_val));
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
@@ -151,7 +151,7 @@ namespace std {
       $T0type c_val;
       Napi::Value js_val = array.Get(i);
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
-      $1.emplace_back(c_val);
+      $1.emplace_back(SWIG_STD_MOVE(c_val));
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
@@ -166,7 +166,7 @@ namespace std {
 %typemap(out)       std::vector RETURN {
   Napi::Array array = Napi::Array::New(env, $1.size());
   for (size_t i = 0; i < $1.size(); i++) {
-    $T0type c_val = $1.at(i);
+    $T0type c_val = SWIG_STD_MOVE($1.at(i));
     Napi::Value js_val;
     $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);
@@ -181,7 +181,7 @@ namespace std {
 %typemap(out)       std::vector &RETURN {
   Napi::Array array = Napi::Array::New(env, $1->size());
   for (size_t i = 0; i < $1->size(); i++) {
-    $T0type c_val = $1->at(i);
+    $T0type c_val = SWIG_STD_MOVE($1->at(i));
     Napi::Value js_val;
     $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);
@@ -207,7 +207,7 @@ namespace std {
 %typemap(argout)  std::vector &OUTPUT {
   Napi::Array array = Napi::Array::New(env, _global_temp_vector.size());
   for (size_t i = 0; i < _global_temp_vector.size(); i++) {
-    $T0type c_val = _global_temp_vector.at(i);
+    $T0type c_val = SWIG_STD_MOVE(_global_temp_vector.at(i));
     Napi::Value js_val;
     $typemap(out, $T0type, 1=c_val, result=js_val, argnum=array value);
     array.Set(i, js_val);

@@ -96,7 +96,7 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
       Napi::Value js_val = obj.Get(js_key);
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
-      $1->emplace(c_key, c_val);
+      $1->emplace(c_key, SWIG_STD_MOVE(c_val));
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
@@ -136,7 +136,7 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
       Napi::Value js_val = obj.Get(js_key);
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
-      $1.emplace(c_key, c_val);
+      $1.emplace(c_key, SWIG_STD_MOVE(c_val));
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
@@ -151,8 +151,8 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 %typemap(out)       std::map RETURN {
   ASSERT_STRING_MAP;
   Napi::Object obj = Napi::Object::New(env);
-  for (auto const &el : *&$1) {
-    $T1type c_val = el.second;
+  for (auto &el : *&$1) {
+    $T1type c_val = SWIG_STD_MOVE(el.second);
     Napi::Value js_val;
     $typemap(out, $T1type, 1=c_val, result=js_val, argnum=object value);
     obj.Set(el.first, js_val);
@@ -167,8 +167,8 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 %typemap(out)       std::map &RETURN {
   ASSERT_STRING_MAP;
   Napi::Object obj = Napi::Object::New(env);
-  for (auto const &el : *$1) {
-    $T1type c_val = el.second;
+  for (auto &el : *$1) {
+    $T1type c_val = SWIG_STD_MOVE(el.second);
     Napi::Value js_val;
     $typemap(out, $T1type, 1=c_val, result=js_val, argnum=object value);
     obj.Set(el.first, js_val);
@@ -194,8 +194,8 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 %typemap(argout)  std::map &OUTPUT {
   ASSERT_STRING_MAP;
   Napi::Object obj = Napi::Object::New(env);
-  for (auto const &el : _global_temp_map) {
-    $T1type c_val = el.second;
+  for (auto &el : _global_temp_map) {
+    $T1type c_val = SWIG_STD_MOVE(el.second);
     Napi::Value js_val;
     $typemap(out, $T1type, 1=c_val, result=js_val, argnum=object value);
     obj.Set(el.first, js_val);
