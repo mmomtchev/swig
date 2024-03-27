@@ -43,7 +43,7 @@ struct Integer {
 };
 void return_pair_unique_ptr(std::pair<std::string, std::unique_ptr<Integer>> &output) {
   output.first = "answer";
-  output.second = std::make_unique<Integer>(42);
+  output.second = std::unique_ptr<Integer>(new Integer(42));
 }
 int receive_pair_unique_ptr(const std::pair<std::string, std::unique_ptr<Integer>> &input) {
   return input.second->value;
