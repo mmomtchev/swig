@@ -55,7 +55,7 @@ int receive_vector_unique_ptr(const std::vector<std::unique_ptr<Integer>> &input
   Napi::Array array = Napi::Array::New(env, $1->size());
   for (size_t i = 0; i < $1->size(); i++) {
     Napi::Value js_val;
-    $typemap(out, std::unique_ptr<Integer> &, 1=($1->at(i)), result=js_val, argnum=array value);
+    $typemap(out, std::unique_ptr<Integer> &, 1=(&($1->at(i))), result=js_val, argnum=array value);
     array.Set(i, js_val);
   }
   $result = array;
