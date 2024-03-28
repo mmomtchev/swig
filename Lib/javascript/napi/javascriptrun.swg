@@ -102,12 +102,6 @@ void JS_veto_set_variable(const Napi::CallbackInfo &info);
 #define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_NAPI_ConvertPacked(obj, ptr, sz, ty)
 #define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
 
-/* ---------------------------------------------------------------------------
- * Declarations for the Node-API specific calls
- * ---------------------------------------------------------------------------*/
-#define SWIG_SetFinalizer(val, finalizer)               SWIG_NAPI_SetFinalizer(env, val, finalizer)
-#define SWIG_SetInstanceData(data)                      SWIG_NAPI_SetInstanceData(env, data)
-#define SWIG_GetInstanceData()                          SWIG_NAPI_GetInstanceData(env)
 
 /* ---------------------------------------------------------------------------
  * Module data per V8 isolate
