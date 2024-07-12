@@ -22,6 +22,7 @@ var test_string_node = "h\ufffdllo w\u00f6rld";
 var test_string_wasm = "w\u00f6rld";
 
 if (typeof print === 'undefined') {
+    // @ts-ignore
     if (typeof wasm_module === 'undefined') {
       check(/* await */(unicode_strings.non_utf8_c_str()), test_string_node);
       check(/* await */(unicode_strings.non_utf8_std_string()), test_string_node);
