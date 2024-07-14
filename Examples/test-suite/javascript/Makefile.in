@@ -120,7 +120,7 @@ ifeq (emcc, $(CC))
   	long_long_apply.cpptest: GYP_CFLAGS += \"-Wno-self-assign\",
   	overload_template.cpptest: GYP_LDFLAGS += \"-sASSERTIONS=1\",
   	overload_template_fast.cpptest: GYP_LDFLAGS += \"-sASSERTIONS=1\",
-        expressions.cpptest: GYP_CLAGS += \"-Wno-constant-logical-operand\",
+        expressions.cpptest: GYP_CFLAGS += \"-Wno-constant-logical-operand\",
 else
   	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template
