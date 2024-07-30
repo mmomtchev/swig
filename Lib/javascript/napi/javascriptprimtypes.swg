@@ -334,7 +334,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_long_SS_long(Napi::Env env, unsigned long long val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 %#endif
 }
