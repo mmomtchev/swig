@@ -34,6 +34,11 @@ director_using_member_scopes \
 enum_thorough \
 smart_pointer_inherit \
 
+# SWG-JSE exclusive tests
+FAILING_CPP_TESTS += \
+enum_nspace \
+types_directive_nspace \
+
 FAILING_C_TESTS = \
 enums \
 
