@@ -944,7 +944,7 @@ OCAMLMKTOP=$(COMPILETOOL) @OCAMLMKTOP@
 NOLINK ?= false
 OCAMLPP= -pp "camlp4o ./swigp4.cmo"
 OCAMLP4WHERE=`$(COMPILETOOL) @CAMLP4@ -where`
-OCAML_LIBS=-Wl,--allow-multiple-definition
+OCAML_LIBS=-ccopt -Wl,--allow-multiple-definition
 
 ocaml_core:
 	mkdir -p ./localtmp
