@@ -2916,7 +2916,7 @@ AC_CONFIG_FILES([CCache/ccache_swig_config.h])
 # its original source.
 AC_CONFIG_COMMANDS([Examples],[
   # -ef is path equality - which is everything but trivial
-  if test "${srcdir}" -ef "." ; then
+  if ! test "${srcdir}" -ef "." ; then
     AC_MSG_NOTICE([generating Examples build tree])
     for mkfile in `cd ${srcdir} && find Examples/ -type f -name Makefile`; do
       dir=`dirname ${mkfile}`
