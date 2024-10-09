@@ -35,6 +35,11 @@ static bool code_splitting = false;
  */
 static String *js_napi_generate_exports = NULL;
 
+/**
+ * Enable debug
+ */
+static bool js_debug_tstypes = false;
+
 #define ERR_MSG_ONLY_ONE_ENGINE_PLEASE "Only one engine can be specified at a time."
 
 // keywords used for state variables
@@ -400,6 +405,9 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
     SwigType_base(Getattr(target, "type")));
   String *jstype = parent->state.types(ctype);
   String *r = Copy(tm);
+  if (js_debug_tstypes) {
+    Printf(stdout, "TypeScript types, resolving: %s (C/C++) ==> %s ($jstype = %s)\n", ctype, r, jstype ? jstype : "<none>");
+  }
   Replace(r, "$jstype", jstype ? jstype : "any", 0);
   return r;
 }
@@ -1105,7 +1113,8 @@ Javascript Options (available with -javascript)\n\
      -exports <file>        - generate a .cjs exports file that can be used with both require and import,\n\
                                  <file> is the name of shared library binary (NAPI only)\n\
      -split                 - use code splitting, produce multiple compilation units (NAPI only)\n\
-     -debug-codetemplates   - generates information about the origin of code templates\n";
+     -debug-codetemplates   - generates information about the origin of code templates\n\
+     -debug-tstypes         - print debug information about TS types equivalence\n";
 
 /* ---------------------------------------------------------------------
  * main()
@@ -1178,6 +1187,9 @@ void JAVASCRIPT::main(int argc, char *argv[]) {
         } else {
           Swig_arg_error();
         }
+      } else if (strcmp(argv[i], "-debug-tstypes") == 0) {
+        Swig_mark_arg(i);
+        js_debug_tstypes = true;
       } else if (strcmp(argv[i], "-help") == 0) {
         fputs(usage, stdout);
         return;
@@ -1463,6 +1475,9 @@ int JSEmitter::enterClass(Node *n) {
   String *jsname = NewString("");
   String *nspace = currentNamespacePrefix();
   Printf(jsname, "%s%s", nspace, state.clazz(NAME));
+  if (js_debug_tstypes) {
+    Printf(stdout, "TypeScript types, creating new equivalence: %s (C/C++) ==> %s (JS)\n", state.clazz(TYPE), jsname);
+  }
   state.types(Copy(state.clazz(TYPE)), jsname);
 
   return SWIG_OK;
