@@ -406,7 +406,10 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   String *jstype = parent->state.types(ctype);
   String *r = Copy(tm);
   if (js_debug_tstypes) {
-    Printf(stdout, "TypeScript types, resolving: %s (C/C++) ==> %s ($jstype = %s)\n", ctype, r, jstype ? jstype : "<none>");
+    Printf(stdout,
+           "%s:%d -> %s:%d  TypeScript types, resolving: %s (C/C++) ==> %s ($jstype = "
+           "%s)\n",
+           Getfile(target), Getline(target), Getfile(tm), Getline(tm), ctype, r, jstype ? jstype : "<none>");
   }
   Replace(r, "$jstype", jstype ? jstype : "any", 0);
   return r;
@@ -1476,7 +1479,10 @@ int JSEmitter::enterClass(Node *n) {
   String *nspace = currentNamespacePrefix();
   Printf(jsname, "%s%s", nspace, state.clazz(NAME));
   if (js_debug_tstypes) {
-    Printf(stdout, "TypeScript types, creating new equivalence: %s (C/C++) ==> %s (JS)\n", state.clazz(TYPE), jsname);
+    Printf(stdout,
+           "%s:%d TypeScript types, creating new equivalence: %s (C/C++) ==> "
+           "%s (JS)\n",
+           Getfile(n), Getline(n), state.clazz(TYPE), jsname);
   }
   state.types(Copy(state.clazz(TYPE)), jsname);
 
