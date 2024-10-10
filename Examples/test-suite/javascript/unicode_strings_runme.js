@@ -27,6 +27,7 @@ function check(s1, s2) {
 var test_string_node = "h\ufffdllo w\u00f6rld";
 var test_string_wasm = "w\u00f6rld";
 
+// @ts-ignore
 if (typeof print === 'undefined' || typeof version !== 'undefined') {
     // With ENGINE=v8 we have `print` and `version`.
     // With ENGINE=node or ENGINE=napi we don't have either.
