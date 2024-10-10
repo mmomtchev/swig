@@ -372,6 +372,7 @@ public:
   virtual int top(Node *);
   virtual void main(int, char *[]);
   virtual String *expandTSvars(String *, DOH *);
+  virtual void registerType(Node *, bool);
 
 protected:
   virtual String *emitArguments(Node *);
@@ -401,17 +402,29 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm)
     return NULL;
 
-  SwigType *ctype = SwigType_typedef_resolve_all(
-    SwigType_base(Getattr(target, "type")));
-  String *jstype = parent->state.types(ctype);
+  SwigType *ctype =
+      SwigType_typedef_resolve_all(SwigType_base(Getattr(target, "type")));
+  Hash *jstype = parent->state.types(ctype);
+  String *jsname = jstype ? Getattr(jstype, "name") : NULL;
   String *r = Copy(tm);
   if (js_debug_tstypes) {
     Printf(stdout,
-           "%s:%d -> %s:%d  TypeScript types, resolving: %s (C/C++) ==> %s ($jstype = "
-           "%s)\n",
-           Getfile(target), Getline(target), Getfile(tm), Getline(tm), ctype, r, jstype ? jstype : "<none>");
+           "%s:%d resolving TypeScript type for %s\n  Found %s:%d -> %s "
+           "($jstype = %s)%s\n",
+           Getfile(target), Getline(target), ctype, Getfile(tm), Getline(tm), r,
+           jsname ? jsname : "<none> -> any",
+           jstype && GetFlag(jstype, "forward") ? " from forward declaration" : "");
   }
-  Replace(r, "$jstype", jstype ? jstype : "any", 0);
+  if (Strstr(r, "$jstype")) {
+    if (jsname) {
+      Replace(r, "$jstype", jsname, 0);
+      // We mark the types that have actually been used in TypeScript
+      // The explanation is in TYPESCRIPT::top
+      SetFlag(jstype, "ts_used");
+    } else {
+      Replace(r, "$jstype", "any", 0);
+    }
+  }
   return r;
 }
 
@@ -490,6 +503,28 @@ int TYPESCRIPT::top(Node *n) {
     }
     Printf(f_typescript, "%s", namespace_stmts);
   }
+
+  // If there any forward declarations left over, these
+  // are opaque types unknown to SWIG JavaScript -
+  // if they have actually been used, emit types that are symbols
+  //
+  // It is important to omit unused types since they might have been
+  // eliminated - for example including <std_string.i> will add
+  // a forward declaration for std::string, but then this type will
+  // be eliminated as an std::string is not wrapped but rather converted
+  for (it = First(parent->state.types()); it.item; it = Next(it)) {
+    if (!GetFlag(it.item, "forward"))
+      continue;
+    if (!GetFlag(it.item, "ts_used"))
+      continue;
+    String *name = Getattr(it.item, "name");
+    if (js_debug_tstypes) {
+      Printf(stdout, "Emitting a symbol declaration for %s, found only a forward declaration\n", name);
+    }
+    Printf(f_typescript, "declare type %s = symbol;\n", name);
+    empty = false;
+  }
+
   if (empty) {
     // They do this in the TypeScript project as well
     // https://github.com/microsoft/TypeScript/pull/20626
@@ -680,8 +715,9 @@ int TYPESCRIPT::enterClass(Node *n) {
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
   if (jsbase && Getattr(jsbase, "module")) {
-    String *base_name = Getattr(jsbase, "classtype");
-    Printf(jsparent, " extends %s", parent->state.types(base_name));
+    Hash *base_class = Getattr(jsbase, "classtype");
+    String *base_jsname = Getattr(parent->state.types(base_class), "name");
+    Printf(jsparent, " extends %s", base_jsname);
   }
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
@@ -721,6 +757,50 @@ int TYPESCRIPT::constructorHandler(Node *n) {
   return SWIG_OK;
 }
 
+/* ---------------------------------------------------------------------
+ * registerType()
+ *
+ * Track C/C++ types for resolving inverse equivalence
+ * ($jsname in ts/tsout typemaps)
+ * --------------------------------------------------------------------- */
+void TYPESCRIPT::registerType(Node *n, bool forward) {
+  Hash *jsnode = NewHash();
+  String *jsname = NewStringEmpty();
+  String *nspace = parent->currentNamespacePrefix();
+  Printf(jsname, "%s%s", nspace, Getattr(n, "sym:name"));
+  Setattr(jsnode, "name", jsname);
+
+  String *ctype = NULL;
+  if (!forward) {
+    ctype = Copy(Getattr(n, "classtype"));
+  } else {
+    ctype = Copy(Getattr(n, "name"));
+    SetFlag(jsnode, "forward");
+  }
+  if (js_debug_tstypes) {
+    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
+           Getfile(n), Getline(n), ctype, jsname,
+           forward ? "forward declaration" : "definition");
+  }
+  // Definitions replace the forward declaration
+  // when they become available
+  Hash *existing = parent->state.types(ctype);
+  if (existing) {
+    if (!GetFlag(existing, "forward")) {
+      Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
+                   "Redefinition for %s: %s -> %s\n",
+                   ctype, jsname, Getattr(existing, "name"));
+    }
+    if (!Equal(jsname, Getattr(existing, jsname))) {
+      Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
+                   "JS type of definition for %s does not match forward "
+                   "declaration: %s -> %s\n",
+                   ctype, jsname, Getattr(existing, "name"));
+    }
+  }
+  parent->state.types(ctype, jsnode);
+}
+
 /**********************************************************************
  * JAVASCRIPT: SWIG module implementation
  **********************************************************************/
@@ -740,6 +820,7 @@ class JAVASCRIPT:public Language {
   virtual int globalvariableHandler(Node *n);
   virtual int staticmemberfunctionHandler(Node *n);
   virtual int classHandler(Node *n);
+  virtual int classforwardDeclaration(Node *n);
   virtual int enumDeclaration(Node *n);
   virtual int functionWrapper(Node *n);
   virtual int constantWrapper(Node *n);
@@ -822,7 +903,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
           SwigType *ctype = SwigType_base(Getitem(equiv_types, i));
           String *jstype = parent->state.types(ctype);
           if (jstype) {
-            Printf(args, " | %s", jstype);
+            Printf(args, " | %s", Getattr(jstype, "name"));
           }
         }
         Delete(equiv_types);
@@ -1046,6 +1127,8 @@ int JAVASCRIPT::classHandler(Node *n) {
 
   emitter->enterClass(n);
   if (ts_emitter) {
+    /* Remember the mapping for the TypeScript definitions */
+    ts_emitter->registerType(n, false);
     ts_emitter->enterClass(n);
   }
 
@@ -1056,6 +1139,18 @@ int JAVASCRIPT::classHandler(Node *n) {
     ts_emitter->exitClass(n);
   }
   return SWIG_OK;
+}
+
+int JAVASCRIPT::classforwardDeclaration(Node *n) {
+  emitter->switchNamespace(n);
+  if (ts_emitter) {
+    /* In the case of a forward declaration we create
+     * a temporary empty type that will be overwritten
+     * when the full type becomes available
+     */
+    ts_emitter->registerType(n, true);
+  }
+  return Language::classforwardDeclaration(n);
 }
 
 int JAVASCRIPT::fragmentDirective(Node *n) {
@@ -1473,18 +1568,6 @@ int JSEmitter::enterClass(Node *n) {
   // HACK: assume that a class is abstract
   // this is resolved by emitCtor (which is only called for non abstract classes)
   SetFlag(state.clazz(), IS_ABSTRACT);
-
-  /* Remember the mapping for the TypeScript definitions */
-  String *jsname = NewString("");
-  String *nspace = currentNamespacePrefix();
-  Printf(jsname, "%s%s", nspace, state.clazz(NAME));
-  if (js_debug_tstypes) {
-    Printf(stdout,
-           "%s:%d TypeScript types, creating new equivalence: %s (C/C++) ==> "
-           "%s (JS)\n",
-           Getfile(n), Getline(n), state.clazz(TYPE), jsname);
-  }
-  state.types(Copy(state.clazz(TYPE)), jsname);
 
   return SWIG_OK;
 }
