@@ -791,7 +791,7 @@ void TYPESCRIPT::registerType(Node *n, bool forward) {
                    "Redefinition for %s: %s -> %s\n",
                    ctype, jsname, Getattr(existing, "name"));
     }
-    if (!Equal(jsname, Getattr(existing, jsname))) {
+    if (!Equal(jsname, Getattr(existing, "name"))) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
                    "JS type of definition for %s does not match forward "
                    "declaration: %s -> %s\n",
