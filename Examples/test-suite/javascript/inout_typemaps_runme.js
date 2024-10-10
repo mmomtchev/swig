@@ -1,5 +1,10 @@
 var inout_typemaps = require("inout_typemaps");
 
+// FIXME: OUTPUT and INOUT typemaps generate incorrect TypeScript
+// types - this is difficult to fix as it requires very substantial
+// development
+// https://github.com/mmomtchev/swig/issues/68
+// @ts-ignore
 if (/* await */(inout_typemaps.AddOne1(1)) != 2) {
     throw new Error;
 }
