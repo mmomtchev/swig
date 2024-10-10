@@ -4,6 +4,7 @@ var unicode_strings = require("unicode_strings");
 // but AFAIK, it is the V8 handling that is the correct one
 
 function check(s1, s2) {
+    // @ts-ignore
     if (typeof version === 'undefined') {
         /* Fails for ENGINE=v8 with:
          * # Fatal error in v8::ToLocalChecked
