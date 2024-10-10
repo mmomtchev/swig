@@ -1,7 +1,7 @@
 var class_forward2 = require('class_forward2');
 
 var foo = new class_forward2.Foo(2);
-if (class_forward2.fn(foo) !== 2)
+if (/* await */(class_forward2.fn(foo)) !== 2)
   throw new Error('Expected 2');
 
 let fail = true;
@@ -9,7 +9,7 @@ let fail = true;
 // In JS mode, this checks that the exception is thrown (it fails when run)
 try {
   /* @ts-expect-error */
-  class_forward2.fn(12);
+  /* await */(class_forward2.fn(12));
 } catch (e) {
   fail = false;
 }
