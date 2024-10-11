@@ -107,7 +107,7 @@ include $(srcdir)/../common.mk
 # Suppress warnings about experimental status and unsupported features -- there are just too many of those for now for these warnings to be useful.
 SWIGOPT += -w524 -w761
 
-%.ctest: SWIGOPT += -nocxx
+%.ctest: SWIGOPT += -nocxx -namespace $(SWIG_NS)
 
 # Tests for which C++ wrappers currently don't compile.
 contract.cpptest: SWIG_NOCXX = -nocxx # Class derived from a base class with multiple base classes and hence ignored.
