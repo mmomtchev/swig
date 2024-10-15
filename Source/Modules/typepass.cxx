@@ -669,7 +669,14 @@ class TypePass:private Dispatcher {
       String *name = Getattr(n, "name");
       SwigType_typedef_class(name);
       if (nsname && name) {
-        String *nname = NewStringf("%s::%s", nsname, name);
+        String *nname = NULL;
+        /* Nested classes are not supported in SWIG, but nested forward class declarations must work */
+        if (GetFlag(n, "ismember")) {
+          Node *parent = Getattr(n, "parentNode");
+          nname = NewStringf("%s::%s::%s", nsname, Getattr(parent, "name"), name);
+        } else {
+          nname = NewStringf("%s::%s", nsname, name);
+        }
         String *tdname = Getattr(n, "tdname");
         if (tdname) {
           tdname = NewStringf("%s::%s", nsname, tdname);
