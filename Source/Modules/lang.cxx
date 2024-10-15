@@ -2491,13 +2491,15 @@ int Language::classforwardDeclaration(Node *n) {
   if (cplus_mode != PUBLIC)
     return SWIG_NOWRAP;
 
+  String *class_name;
   if (strip) {
-    ClassType = Copy(name);
+    class_name = Copy(name);
   } else {
-    ClassType = NewStringf("%s %s", kind, name);
+    class_name = NewStringf("%s %s", kind, name);
   }
-  Setattr(n, "classtypeobj", Copy(ClassType));
-  Setattr(n, "classtype", SwigType_namestr(ClassType));
+  Setattr(n, "classtypeobj", Copy(class_name));
+  Setattr(n, "classtype", SwigType_namestr(class_name));
+  Delete(class_name);
   return SWIG_OK;
 }
 
