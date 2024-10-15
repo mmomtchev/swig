@@ -3,9 +3,6 @@
 %inline %{
   namespace NS {
     class Foo;
-    struct Garga {
-      int a;
-    };
     int fn(Foo *f);
   }
 %}
