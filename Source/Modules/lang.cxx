@@ -2480,7 +2480,24 @@ int Language::classHandler(Node *n) {
  * ---------------------------------------------------------------------- */
 
 int Language::classforwardDeclaration(Node *n) {
-  (void) n;
+  /* light version of Language::classDeclaration that handles only namespaces */
+  String *kind = Getattr(n, "kind");
+  String *name = Getattr(n, "name");
+  String *tdname = Getattr(n, "tdname");
+  String *unnamed = Getattr(n, "unnamed");
+
+  int strip = CPlusPlus ? 1 : unnamed && tdname;
+
+  if (cplus_mode != PUBLIC)
+    return SWIG_NOWRAP;
+
+  if (strip) {
+    ClassType = Copy(name);
+  } else {
+    ClassType = NewStringf("%s %s", kind, name);
+  }
+  Setattr(n, "classtypeobj", Copy(ClassType));
+  Setattr(n, "classtype", SwigType_namestr(ClassType));
   return SWIG_OK;
 }
 

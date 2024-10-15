@@ -1,10 +1,11 @@
-%module nspace_class_forward2
-
-%nspace;
+%module nspace_class_forward3
 
 %inline %{
   namespace NS {
     class Foo;
+    struct Garga {
+      int a;
+    };
     int fn(Foo *f);
   }
 %}
