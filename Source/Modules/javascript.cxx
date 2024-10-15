@@ -521,7 +521,18 @@ int TYPESCRIPT::top(Node *n) {
     if (js_debug_tstypes) {
       Printf(stdout, "Emitting a symbol declaration for %s, found only a forward declaration\n", name);
     }
-    Printf(f_typescript, "declare type %s = symbol;\n", name);
+    List *namespaces = Split(name, '.', -1);
+    int scopes = 0;
+    for (Iterator n = First(namespaces); n.item; n = Next(n)) {
+      if (Next(n).item) {
+        Printf(f_typescript, "export namespace %s {\n", n.item);
+        scopes++;
+      } else {
+        Printf(f_typescript, "%s type %s = symbol;\n", scopes > 0 ? "" : "declare", n.item);
+      }
+    }
+    for (int i = 0; i < scopes; i++)
+      Printf(f_typescript, "}\n");
     empty = false;
   }
 
