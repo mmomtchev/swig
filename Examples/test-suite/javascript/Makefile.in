@@ -130,24 +130,22 @@ endif
 SWIGOPT += -DV8_VERSION=$(JSV8_VERSION)
 
 _setup = \
-	if [ -f $(SCRIPTDIR)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ]; then	  \
-          INFO="(with run test)" ;                                        \
-          if [ -n "$(ASYNC)" ]; then	                                  \
-            INFO="$$INFO (async mode)" ;                                  \
-          fi;                                                             \
-          if [ -n "$(TYPESCRIPT)" ]; then	                          \
-            INFO="$$INFO (TypeScript mode)" ;                             \
-          fi;                                                             \
-          if [ -n "$(SPLIT)" ]; then	                                  \
-	    INFO="$$INFO (split mode)" ;                                  \
-	  fi;                                                             \
-	  if [ "emcc" = "$(CC)" ]; then	                                  \
-	    INFO="$$INFO (emscripten WASM build)" ;                       \
-	  fi;                                                             \
-	  $(ECHO_PROGRESS) "$(ACTION)ing $(LANGUAGE) ($(JSENGINE)) testcase $* $$INFO" ;  \
-	else								  \
-	  $(ECHO_PROGRESS) "$(ACTION)ing $(LANGUAGE) ($(JSENGINE)) testcase $*" ;         \
-	fi;
+	if [ -f $(SCRIPTDIR)/$(SCRIPTPREFIX)$*$(SCRIPTSUFFIX) ]; then   \
+	  INFO="(with run test)" ;                                      \
+	fi;                                                             \
+	if [ -n "$(ASYNC)" ]; then	                                \
+	  INFO="$$INFO (async mode)" ;                                  \
+	fi;                                                             \
+	if [ -n "$(TYPESCRIPT)" ]; then	                                \
+	  INFO="$$INFO (TypeScript mode)" ;                             \
+	fi;                                                             \
+	if [ -n "$(SPLIT)" ]; then	                                \
+	  INFO="$$INFO (split mode)" ;                                  \
+	fi;                                                             \
+	if [ "emcc" = "$(CC)" ]; then	                                \
+	  INFO="$$INFO (emscripten WASM build)" ;                       \
+	fi;                                                             \
+	$(ECHO_PROGRESS) "$(ACTION)ing $(LANGUAGE) ($(JSENGINE)) testcase $* $$INFO" ;  \
 
 SWIGOPT += -$(JSENGINE)
 
