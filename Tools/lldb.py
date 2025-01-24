@@ -3,6 +3,7 @@
 # This file can be "included" using:
 # > command script import ..path../swig/Tools/lldb.py
 
+import lldb
 import shlex
 
 def swigprint(debugger, command, result, internal_dict):
@@ -15,7 +16,9 @@ def swigprint(debugger, command, result, internal_dict):
         args = shlex.split(command)
         var = args[0]
         expand_count = -1 if args.__len__() < 2 else int(args[1])
-        debugger.HandleCommand(f'p Swig_to_string({var}, {expand_count}))')
+        res = lldb.SBCommandReturnObject()
+        debugger.GetCommandInterpreter().HandleCommand(f'p Swig_to_string({var}, {expand_count}))', res)
+        print(res.GetOutput().replace('\\n', '\n'))
 
 def locswigprint(debugger, command, result, internal_dict):
         """
@@ -27,7 +30,9 @@ def locswigprint(debugger, command, result, internal_dict):
         args = shlex.split(command)
         var = args[0]
         expand_count = -1 if args.__len__() < 2 else int(args[1])
-        debugger.HandleCommand(f'p Swig_to_string_with_location({var}, {expand_count}))')
+        res = lldb.SBCommandReturnObject()
+        debugger.GetCommandInterpreter().HandleCommand(f'p Swig_to_string_with_location({var}, {expand_count}))', res)
+        print(res.GetOutput().replace('\\n', '\n'))
 
 def __lldb_init_module(debugger, internal_dict):
         debugger.HandleCommand("command script add -h \"Displays any SWIG DOH object\" -f " + __name__ + ".swigprint swigprint")
