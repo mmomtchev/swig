@@ -2,6 +2,10 @@
 #
 # This file can be "included" using:
 # > command script import ..path../swig/Tools/lldb.py
+#
+# Then you can use the following commands:
+# > swigprint swigobject [hashexpandcount]
+# > locswigprint swigobject [hashexpandcount]
 
 import lldb
 import shlex
