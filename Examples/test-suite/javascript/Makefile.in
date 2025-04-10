@@ -268,7 +268,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 				sed -E \
 					's@/\* await \*/@await resolve@g; \
 					s@/\* async \*/@async@g; \
-					s@(var|let|const)[[:space:]]*(.*)[[:space:]]*=[[:space:]]*require\(("|\x27)\(.*)("|\x27)\)@import \2 from "'"$(CURDIR)"'/\4/index.js"@g; \
+					s@(var|let|const)[[:space:]]*(.*)[[:space:]]*=[[:space:]]*require\(("|\x27)(.*)("|\x27)\)@import \2 from "'"$(CURDIR)"'/\4/index.js"@g; \
 					1s@^@import resolve from "./'$(srcdir)'/resolve.mjs"; @' \
 					$${RUNME} > $*$(SCRIPTASYNCSUFFIX) \
 				&& \
