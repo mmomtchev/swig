@@ -482,6 +482,10 @@ static void getoptions(int argc, char *argv[]) {
       } else if ((strcmp(argv[i], "-verbose") == 0) || (strcmp(argv[i], "-v") == 0)) {
 	Verbose = 1;
 	Swig_mark_arg(i);
+      } else if (strcmp(argv[i], "-split") == 0) {
+        Swig_mark_arg(i);
+        CodeSplitting = 1;
+        Preprocessor_define("SWIGCODESPLIT", 1);
       } else if (strcmp(argv[i], "-c++") == 0) {
 	CPlusPlus = 1;
 	Swig_cparse_cplusplus(1);
@@ -524,10 +528,6 @@ static void getoptions(int argc, char *argv[]) {
 	    stdc_define = "__STDC_VERSION__ 201710L";
 	  } else if (strcmp(std, "23") == 0) {
 	    stdc_define = "__STDC_VERSION__ 202311L";
-    } else if (strcmp(argv[i], "-split") == 0) {
-      Swig_mark_arg(i);
-      CodeSplitting = 1;
-      Preprocessor_define("SWIGCODESPLIT", 1);
     } else {
 	    Printf(stderr, "Unrecognised C standard version in option '%s'\n", argv[i]);
 	    Exit(EXIT_FAILURE);
