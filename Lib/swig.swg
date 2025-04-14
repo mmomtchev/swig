@@ -590,7 +590,11 @@ namespace std {
  *  Runtime code
  * ----------------------------------------------------------------------------- */
 
-
+#ifdef SWIGCODESPLIT
+%insert("runtime") %{
+#define SWIGCODESPLIT
+%}
+#endif
 %insert("runtime") "swiglabels.swg"
 
 
