@@ -120,7 +120,7 @@ endif
 
 # This is required because most of the tests use %inline
 # which goes to the header file in split mode
-LDFLAGS_MULDEFS=-Wl,-z,muldefs
+LDFLAGS_MULDEFS = @MULTIPLE_DEFS@
 # This one should work w/o it
 napi_extend_noinline.cpptest: LDFLAGS_MULDEFS=
 
