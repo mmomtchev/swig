@@ -120,7 +120,7 @@ endif
 
 # This is required because most of the tests use %inline
 # which goes to the header file in split mode
-LDFLAGS_MULDEFS="-Wl,-z,muldefs"
+LDFLAGS_MULDEFS=-Wl,-z,muldefs
 # This one should work w/o it
 napi_extend_noinline.cpptest: LDFLAGS_MULDEFS=
 
@@ -241,7 +241,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 			s|$$emnapidir|$(EMNAPI_DIR)|g; \
 			s|$$emnapilib|$(EMNAPI_LIB)|g; \
 			s|$$sources|$(SOURCES)|g; \
-			s|$$ldflags_muldefs|$(LDFLAGS_MULDEFS)|g;' \
+			s|$$muldefs|$(LDFLAGS_MULDEFS)|g;' \
 			$(srcdir)/$(GYP_TEMPLATE)/binding.gyp.in > $*/binding.gyp && \
 		sed -e 's|$$testcase|$*|g; s|$$build|$(BUILD)|g; \
 			s|$$npmprefix|$(NPM_PREFIX)|g;' \
