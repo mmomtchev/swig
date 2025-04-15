@@ -16,6 +16,7 @@
 #include "cparse.h"
 
 extern int UseWrapperSuffix;
+extern int CodeSplitting;
 
 static const char *cresult_variable_name = "result";
 
@@ -863,13 +864,12 @@ void Swig_replace_special_variables(Node *n, Node *parentnode, String *code) {
  *        return_type function_name(parms) code
  *
  * ----------------------------------------------------------------------------- */
-static Hash *extension_code(Node *n, const String *function_name, ParmList *parms, SwigType *return_type, const String *code, int cplusplus, const String *self) {
-  String *parms_str = cplusplus ? ParmList_str_defaultargs(parms) : ParmList_str(parms);
+static String *extension_code(Node *n, const String *function_name, ParmList *parms, SwigType *return_type,
+                              const String *code, int cplusplus, const String *self) {
+  String *parms_str = (cplusplus && !CodeSplitting) ? ParmList_str_defaultargs(parms) : ParmList_str(parms);
   String *sig = NewStringf("%s(%s)", function_name, (cplusplus || Len(parms_str)) ? parms_str : "void");
   String *rt_sig = SwigType_str(return_type, sig);
-  String *decl = NewStringf("SWIGINTERN %s;", rt_sig);
   String *body = NewStringf("SWIGINTERN %s", rt_sig);
-  Hash *result = NewHash();
   Printv(body, code, "\n", NIL);
   if (Strchr(body, '$')) {
     Swig_replace_special_variables(n, parentNode(parentNode(n)), body);
@@ -879,9 +879,28 @@ static Hash *extension_code(Node *n, const String *function_name, ParmList *parm
   Delete(parms_str);
   Delete(sig);
   Delete(rt_sig);
-  Setattr(result, "code", body);
-  Setattr(result, "declaration", decl);
-  return result;
+  return body;
+}
+
+/* -----------------------------------------------------------------------------
+ * extension_code()
+ *
+ * Generates an extension function declaration (a function defined in %extend)
+ *
+ *        return_type function_name(parms);
+ *
+ * ----------------------------------------------------------------------------- */
+static String *extension_signature(Node *n, const String *function_name, ParmList *parms, SwigType *return_type,
+                              int cplusplus) {
+  (void)n;
+  String *parms_str = cplusplus ? ParmList_str_defaultargs(parms) : ParmList_str(parms);
+  String *sig = NewStringf("%s(%s)", function_name, (cplusplus || Len(parms_str)) ? parms_str : "void");
+  String *rt_sig = SwigType_str(return_type, sig);
+  String *body = NewStringf("SWIGINTERN %s;", rt_sig);
+  Delete(parms_str);
+  Delete(sig);
+  Delete(rt_sig);
+  return body;
 }
 
 /* -----------------------------------------------------------------------------
@@ -894,16 +913,16 @@ static Hash *extension_code(Node *n, const String *function_name, ParmList *parm
  *
  * ----------------------------------------------------------------------------- */
 int Swig_add_extension_code(Node *n, const String *function_name, ParmList *parms, SwigType *return_type, const String *code, int cplusplus, const String *self) {
-  Hash *ext = extension_code(n, function_name, parms, return_type, code, cplusplus, self);
-  String *body = Getattr(ext, "code");
-  String *decl = Getattr(ext, "declaration");
+  String *body = extension_code(n, function_name, parms, return_type, code, cplusplus, self);
+  String *decl;
+
   Setattr(n, "wrap:code", body);
-  if (decl) {
+  if (CodeSplitting) {
+    decl = extension_signature(n, function_name, parms, return_type, cplusplus);
     Setattr(n, "wrap:declaration", decl);
     Delete(decl);
   }
   Delete(body);
-  Delete(ext);
   return SWIG_OK;
 }
 
