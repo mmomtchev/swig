@@ -4,8 +4,7 @@
 %define %std_string_asptr(String, Char, SWIG_AsCharPtrAndSize, Frag)
 %fragment(SWIG_AsPtr_frag(String),"header",
           fragment="run_" SWIG_AsPtr_frag(String)) {
-SWIGCLINKAGE int
-SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val);
+SWIGCLINKAGE int SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val);
 }
 %fragment("run_" SWIG_AsPtr_frag(String),"wrapper",fragment=Frag) {
 SWIGCLINKAGE int
@@ -37,7 +36,10 @@ SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val)
 %enddef
 
 %define %std_string_from(String, SWIG_FromCharPtrAndSize, Frag)
-%fragment(SWIG_From_frag(String),"header",fragment=Frag) {
+%fragment(SWIG_From_frag(String),"header",fragment="run_" SWIG_From_frag(String)) {
+SWIGCLINKAGE SWIG_Object SWIG_From_dec(String)(const String& s);
+}
+%fragment("run_" SWIG_From_frag(String),"header",fragment=Frag) {
 SWIGINTERNINLINE SWIG_Object
 SWIG_From_dec(String)(const String& s)
 {
@@ -47,7 +49,10 @@ SWIG_From_dec(String)(const String& s)
 %enddef
 
 %define %std_string_view_from(String, SWIG_FromCharPtrAndSize, Frag)
-%fragment(SWIG_From_frag(String),"header",fragment=Frag) {
+%fragment(SWIG_From_frag(String),"header",fragment="run_" SWIG_From_frag(String)) {
+SWIGCLINKAGE SWIG_Object SWIG_From_dec(String)(const String& s);
+}
+%fragment("run_" SWIG_From_frag(String),"wrapper",fragment=Frag) {
 SWIGINTERNINLINE SWIG_Object
 SWIG_From_dec(String)(const String& s)
 {
@@ -59,8 +64,7 @@ SWIG_From_dec(String)(const String& s)
 %define %std_string_asval(String)
 %fragment(SWIG_AsVal_frag(String),"header",
           fragment="run_" SWIG_AsVal_frag(String)) {
-SWIGCLINKAGE int
-SWIG_AsVal_dec(String)(SWIG_Object obj, String *val);
+SWIGCLINKAGE int SWIG_AsVal_dec(String)(SWIG_Object obj, String *val);
 }
 %fragment("run_" SWIG_AsVal_frag(String),"wrapper", fragment=SWIG_AsPtr_frag(String)) {
 SWIGCLINKAGE int
