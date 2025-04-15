@@ -3941,7 +3941,8 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
   String *guard = emitGuard(n);
   String *locking = emitLocking(n, params, wrapper);
 
-  Hash *action = emit_action_hash(n);
+  Hash *action = emit_action_hash(n, CodeSplitting ? "wrapper" : NULL,
+                                  CodeSplitting ? "header" : NULL);
 
   String *rethrow = NewStringEmpty();
   if (is_async) {

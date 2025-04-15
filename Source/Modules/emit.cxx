@@ -465,7 +465,7 @@ String* emit_action(Node *n) {
  * }
  * -----------------------------------------------------------------------------
  */
-Hash *emit_action_hash(Node *n) {
+Hash *emit_action_hash(Node *n, const char *action_section, const char *declaration_section) {
   Hash *output = NewHash();
   String *pre_try = NewStringEmpty();
   String *tm;
@@ -495,10 +495,19 @@ Hash *emit_action_hash(Node *n) {
 
   /* Emit wrapper code (if any) */
   wrap = Getattr(n, "wrap:code");
-  if (wrap && Swig_filebyname("header") != Getattr(n, "wrap:code:done")) {
-    File *f_code = Swig_filebyname("header");
+  if (!action_section)
+    action_section = "header";
+  if (wrap && Swig_filebyname(action_section) != Getattr(n, "wrap:code:done")) {
+    File *f_code = Swig_filebyname(action_section);
     if (f_code) {
       Printv(f_code, wrap, NIL);
+    }
+    String *declaration = Getattr(n, "wrap:declaration");
+    if (declaration && declaration_section) {
+      File *f_declaration = Swig_filebyname(declaration_section);
+      if (f_declaration) {
+        Printv(f_declaration, declaration, NIL);
+      }
     }
     Setattr(n, "wrap:code:done", f_code);
   }
