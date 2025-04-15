@@ -43,12 +43,7 @@ SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val)
 %enddef
 
 %define %std_string_from(String, SWIG_FromCharPtrAndSize, Frag)
-%fragment(SWIG_From_frag(String),"header",fragment="run_" SWIG_From_frag(String)) {
-#ifdef SWIGCODESPLIT
-SWIGINTERNINLINE SWIG_Object SWIG_From_dec(String)(const String& s);
-#endif
-}
-%fragment("run_" SWIG_From_frag(String),STD_STRINGS_BODY_SECTION,fragment=Frag) {
+%fragment(SWIG_From_frag(String),"header",fragment=Frag) {
 SWIGINTERNINLINE SWIG_Object
 SWIG_From_dec(String)(const String& s)
 {
@@ -58,12 +53,7 @@ SWIG_From_dec(String)(const String& s)
 %enddef
 
 %define %std_string_view_from(String, SWIG_FromCharPtrAndSize, Frag)
-%fragment(SWIG_From_frag(String),"header",fragment="run_" SWIG_From_frag(String)) {
-#ifdef SWIGCODESPLIT
-SWIGINTERNINLINE SWIG_Object SWIG_From_dec(String)(const String& s);
-#endif
-}
-%fragment("run_" SWIG_From_frag(String),STD_STRINGS_BODY_SECTION,fragment=Frag) {
+%fragment(SWIG_From_frag(String),"header",fragment=Frag) {
 SWIGINTERNINLINE SWIG_Object
 SWIG_From_dec(String)(const String& s)
 {
