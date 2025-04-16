@@ -1665,7 +1665,7 @@ int JSEmitter::emitCtor(Node *n) {
   Printf(wrapper->locals, "%sresult;", SwigType_str(Getattr(n, "type"), 0));
 
   marshalInputArgs(n, params, wrapper, Ctor, true, false);
-  String *action = emit_action(n);
+  String *action = emit_action(n, CodeSplitting ? "wrapper" : NULL, CodeSplitting ? "header" : NULL);
   Printv(wrapper->code, action, "\n", 0);
 
   String *cleanup = emitCleanupCode(n, params);
