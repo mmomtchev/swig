@@ -386,7 +386,7 @@ int emit_isvarargs(ParmList *p);
 bool emit_isvarargs_function(Node *n);
 void emit_attach_parmmaps(ParmList *, Wrapper *f);
 void emit_mark_varargs(ParmList *l);
-String *emit_action(Node *n);
+String *emit_action(Node *n, const char *action_section = NULL, const char *declaration_section = NULL);
 Hash *emit_action_hash(Node *n, const char *action_section = NULL, const char *declaration_section = NULL);
 int emit_action_code(Node *n, String *wrappercode, String *action);
 void Swig_overload_check(Node *n);

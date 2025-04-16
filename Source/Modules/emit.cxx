@@ -416,10 +416,10 @@ int emit_action_code(Node *n, String *wrappercode, String *eaction) {
  * Emits the call to the wrapped function. 
  * Adds in exception specification exception handling and %exception code.
  * ----------------------------------------------------------------------------- */
-String* emit_action(Node *n) {
+String* emit_action(Node *n, const char *action_section, const char *declaration_section) {
   String *code = NewStringEmpty();
 
-  Hash *action = emit_action_hash(n);
+  Hash *action = emit_action_hash(n, action_section, declaration_section);
 
   String *preaction = Getattr(action, "preaction");
   if (preaction) {
@@ -506,7 +506,7 @@ Hash *emit_action_hash(Node *n, const char *action_section, const char *declarat
     if (declaration && declaration_section) {
       File *f_declaration = Swig_filebyname(declaration_section);
       if (f_declaration) {
-        Printv(f_declaration, declaration, NIL);
+        Printv(f_declaration, declaration, "\n", NIL);
       }
     }
     Setattr(n, "wrap:code:done", f_code);
