@@ -29,12 +29,12 @@
 #ifndef SWIGUNUSED
 # if defined(__GNUC__)
 #   if !(defined(__cplusplus)) || (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
-#     define SWIGUNUSED __attribute__ ((__unused__))
+#     define SWIGUNUSED
 #   else
 #     define SWIGUNUSED
 #   endif
 # elif defined(__ICC)
-#   define SWIGUNUSED __attribute__ ((__unused__))
+#   define SWIGUNUSED
 # else
 #   define SWIGUNUSED
 # endif
@@ -100,7 +100,7 @@
 
 /* internal inline SWIG method */
 #ifndef SWIGINTERNINLINE
-# define SWIGINTERNINLINE static
+# define SWIGINTERNINLINE static inline
 #endif
 
 /* exporting methods */
