@@ -28,6 +28,7 @@ jobs:
       matrix:
         include:
         - SWIGLANG: r
+        - SWIGLANG: r
           CPPSTD: c++11
         - SWIGLANG: r
           CPPSTD: c++14
