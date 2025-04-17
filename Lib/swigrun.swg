@@ -222,41 +222,6 @@ typedef struct swig_module_info {
 } swig_module_info;
 
 /*
-  Compare two type names skipping the space characters, therefore
-  "char*" == "char *" and "Class<int>" == "Class<int >", etc.
-
-  Return 0 when the two name types are equivalent, as in
-  strncmp, but skipping ' '.
-*/
-SWIGRUNTIME int
-SWIG_TypeNameComp(const char *f1, const char *l1,
-		  const char *f2, const char *l2);
-/*
-  Check type equivalence in a name list like <name1>|<name2>|...
-  Return 0 if equal, -1 if nb < tb, 1 if nb > tb
-*/
-SWIGRUNTIME int
-SWIG_TypeCmp(const char *nb, const char *tb);
-
-/*
-  Check type equivalence in a name list like <name1>|<name2>|...
-  Return 0 if not equal, 1 if equal
-*/
-SWIGRUNTIME int
-SWIG_TypeEquiv(const char *nb, const char *tb);
-/*
-  Check the typename
-*/
-SWIGRUNTIME swig_cast_info *
-SWIG_TypeCheck(const char *c, swig_type_info *ty);
-
-/*
-  Identical to SWIG_TypeCheck, except strcmp is replaced with a pointer comparison
-*/
-SWIGRUNTIME swig_cast_info *
-SWIG_TypeCheckStruct(const swig_type_info *from, swig_type_info *ty);
-
-/*
   Cast a pointer up an inheritance hierarchy
 */
 SWIGRUNTIMEINLINE void *
@@ -265,81 +230,12 @@ SWIG_TypeCast(swig_cast_info *ty, void *ptr, int *newmemory) {
 }
 
 /*
-   Dynamic pointer casting. Down an inheritance hierarchy
-*/
-SWIGRUNTIME swig_type_info *
-SWIG_TypeDynamicCast(swig_type_info *ty, void **ptr);
-
-/*
   Return the name associated with this type
 */
 SWIGRUNTIMEINLINE const char *
 SWIG_TypeName(const swig_type_info *ty) {
   return ty->name;
 }
-
-/*
-  Return the pretty name associated with this type,
-  that is an unmangled type name in a form presentable to the user.
-*/
-SWIGRUNTIME const char *
-SWIG_TypePrettyName(const swig_type_info *type);
-
-/*
-   Set the clientdata field for a type
-*/
-SWIGRUNTIME void
-SWIG_TypeClientData(swig_type_info *ti, void *clientdata);
-SWIGRUNTIME void
-SWIG_TypeNewClientData(swig_type_info *ti, void *clientdata);
-
-/*
-  Search for a swig_type_info structure only by mangled name
-  Search is a O(log #types)
-
-  We start searching at module start, and finish searching when start == end.
-  Note: if start == end at the beginning of the function, we go all the way around
-  the circular list.
-*/
-SWIGRUNTIME swig_type_info *
-SWIG_MangledTypeQueryModule(swig_module_info *start,
-                            swig_module_info *end,
-		            const char *name);
-
-/*
-  Search for a swig_type_info structure for either a mangled name or a human readable name.
-  It first searches the mangled names of the types, which is a O(log #types)
-  If a type is not found it then searches the human readable names, which is O(#types).
-
-  We start searching at module start, and finish searching when start == end.
-  Note: if start == end at the beginning of the function, we go all the way around
-  the circular list.
-*/
-SWIGRUNTIME swig_type_info *
-SWIG_TypeQueryModule(swig_module_info *start,
-                     swig_module_info *end,
-		     const char *name);
-/*
-   Pack binary data into a string
-*/
-SWIGRUNTIME char *
-SWIG_PackData(char *c, void *ptr, size_t sz);
-/*
-   Unpack binary data from a string
-*/
-SWIGRUNTIME const char *
-SWIG_UnpackData(const char *c, void *ptr, size_t sz);
-/*
-   Pack 'void *' into a string buffer.
-*/
-SWIGRUNTIME char *
-SWIG_PackVoidPtr(char *buff, void *ptr, const char *name, size_t bsz);
-SWIGRUNTIME const char *
-SWIG_UnpackVoidPtr(const char *c, void **ptr, const char *name);
-SWIGRUNTIME char *
-SWIG_PackDataName(char *buff, void *ptr, size_t sz, const char *name, size_t bsz);
-SWIGRUNTIME const char *
-SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name);
 
 #ifdef __cplusplus
 }
