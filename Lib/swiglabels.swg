@@ -29,12 +29,12 @@
 #ifndef SWIGUNUSED
 # if defined(__GNUC__)
 #   if !(defined(__cplusplus)) || (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
-#     define SWIGUNUSED
+#     define SWIGUNUSED __attribute__ ((__unused__))
 #   else
 #     define SWIGUNUSED
 #   endif
 # elif defined(__ICC)
-#   define SWIGUNUSED
+#   define SWIGUNUSED __attribute__ ((__unused__))
 # else
 #   define SWIGUNUSED
 # endif
