@@ -100,7 +100,7 @@
 
 /* internal inline SWIG method */
 #ifndef SWIGINTERNINLINE
-# define SWIGINTERNINLINE static inline
+# define SWIGINTERNINLINE static
 #endif
 
 /* exporting methods */
