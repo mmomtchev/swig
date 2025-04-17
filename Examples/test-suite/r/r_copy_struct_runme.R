@@ -13,12 +13,7 @@ unittest(A_d_get(r), 42)
 unittest(r$d, 42)
 unittest(r$i, 20)
 
-# The following test is disabled following the code splitting integration
-# because now it is extremely flaky.
-# It seems to be a problem that the community is aware of:
-# https://github.com/SuperElastix/SimpleElastix/issues/6
-# Simply reordering the functions may make it work but it is something
-# which should be fixed properly.
+# This seems to be broken by the new R version
 
 # An error in trying to access a field that doesn't exist.
 # try(r$foo) 
