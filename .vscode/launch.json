@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(lldb) swig JavaScript Test-Suite",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/swig",
+      "args": [
+        "-c++",
+        "-javascript",
+        "-outcurrentdir",
+        "-I../../../Examples/test-suite",
+        "-Werror",
+        "-DV8_VERSION=0x031110",
+        "-napi",
+        "-DBUILDING_NODE_EXTENSION=1",
+        "-split",
+        "${file}"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/Examples/test-suite/javascript",
+      "environment": [
+        {
+          "name": "SWIG_LIB",
+          "value": "${workspaceFolder}/Lib"
+        }
+      ],
+      "setupCommands": [
+        {
+          "description": "Load SWIG commands",
+          "text": "command script import ${workspaceFolder}/Tools/lldb.py",
+          "ignoreFailures": false
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "lldb"
+    }
+  ]
+}
