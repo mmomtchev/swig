@@ -13,10 +13,8 @@ unittest(A_d_get(r), 42)
 unittest(r$d, 42)
 unittest(r$i, 20)
 
-# This seems to be broken by the new R version
-
 # An error in trying to access a field that doesn't exist.
-# try(r$foo) 
+try(r$foo) 
 
 r$d <- pi
 unittesttol(r$d, 3.141593, 0.0001)
