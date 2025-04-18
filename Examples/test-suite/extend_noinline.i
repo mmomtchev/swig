@@ -1,4 +1,6 @@
-%module napi_extend_noinline
+%module extend_noinline
+// Test %extend with code splitting
+// This test should work w/o multiple definitions in the linker
 
 %extend Object {
   int get() {
