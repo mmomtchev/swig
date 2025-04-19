@@ -8,18 +8,13 @@
   }
 }
 
-%insert("header") {
-  struct Object {
-    int v;
-    Object(int x);
-  };
+%inline {
+struct Object {
+  int v;
+  Object(int x);
+};
 }
 
 %insert("wrapper") {
   Object::Object(int x) : v(x) {}
 }
-
-struct Object {
-  int v;
-  Object(int x);
-};
