@@ -1,4 +1,4 @@
-%module extend_noinline
+%module extend_splitting
 // Test %extend with code splitting
 // This test should work w/o multiple definitions in the linker
 
