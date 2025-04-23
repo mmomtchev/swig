@@ -23,6 +23,18 @@ EnvInstanceData::EnvInstanceData(Napi::Env env, swig_module_info *swig_module) :
   for (size_t i = 0; i <= swig_module->size; i++) {
     ctor[i] = SWIG_NULLPTR;
   }
+
+  // Init the mechanism for scheduling jobs on the JS main thread
+  js_main_thread.main_thread_id = std::this_thread::get_id();
+  js_main_thread.handle = new uv_async_t;
+  uv_loop_t *event_loop;
+  napi_status r = napi_get_uv_event_loop(env, &event_loop);
+  if (r != napi_ok) throw Napi::Error::New(env, "Failed retrieving libuv event loop");
+  if (uv_async_init(event_loop, js_main_thread.handle, SWIG_NAPI_RunMainThreadQueue) != 0)
+    throw Napi::Error::New(env, "Failed initializing libuv queue");
+  // The initial status of the async handle is inactive
+  uv_unref(reinterpret_cast<uv_handle_t *>(js_main_thread.handle));
+  js_main_thread.handle->data = static_cast<void*>(this);
 }
 
 EnvInstanceData::~EnvInstanceData() {

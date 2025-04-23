@@ -2,6 +2,11 @@
  * SWIG Node-API runtime : declarations
  * ---------------------------------------------------------------------------*/
 
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <uv.h>
+
 /*
  * We support several forms:
  *
@@ -121,9 +126,22 @@ struct EnvInstanceData {
   Napi::FunctionReference **ctor;
   swig_module_info *swig_module;
   void *module_instance_data;
+  // Queue for running jobs on the JS main thread from
+  // background threads
+  struct {
+    uv_async_t *handle;
+    std::thread::id main_thread_id;
+    std::queue<std::function<void()>> jobs;
+    std::mutex lock;
+  } js_main_thread;
   EnvInstanceData(Napi::Env, swig_module_info *);
   ~EnvInstanceData();
 };
+
+// Execute the jobs on the queue on the main thread
+void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *, std::function<void()> &&);
+// Schedule a job to run on the main thread
+void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
 
 typedef size_t SWIG_NAPI_ClientData;
 

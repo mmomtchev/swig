@@ -34,8 +34,12 @@
   if (!$input.IsNull()) {
     *persistent = Napi::Persistent($input);
   }
-  $1 = std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
-    delete persistent;
+  auto env_data = env.GetInstanceData<EnvInstanceData>();
+  $1 = std::shared_ptr<CONST TYPE>(plain_ptr, [persistent, env_data](void *){
+    SWIG_NAPI_RunOnJSMainThread(env_data, [persistent](){
+      printf("Releasing pointer\n");
+      delete persistent;
+    });
   });
 }
 
@@ -49,8 +53,12 @@
   if (!$input.IsNull()) {
     *persistent = Napi::Persistent($input);
   }
-  $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
-    delete persistent;
+  auto env_data = env.GetInstanceData<EnvInstanceData>();
+  $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, [persistent, env_data](void *){
+    SWIG_NAPI_RunOnJSMainThread(env_data, [persistent](){
+      printf("Releasing pointer\n");
+      delete persistent;
+    });
   });
 }
 %typemap(freearg) std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {

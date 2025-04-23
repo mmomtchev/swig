@@ -8,7 +8,8 @@ Version next
 ===========================
 
 2025-04-23: mmomtchev
-            Integrate `std::shared_ptr` with the JavaScript reference counting of the GC
+            [JavaScript] Integrate `std::shared_ptr` with the JavaScript reference counting
+            of the GC
             [mmomtchev/swig#92](https://github.com/mmomtchev/swig/issues/92), 
             [mmomtchev/swig#95](https://github.com/mmomtchev/swig/issues/95)
 
