@@ -9,6 +9,11 @@
  * - to use it in place of a plain object as a function input argument 
  * - to use a plain object where a shared pointer is expected
  *
+ * Additionally, shared_ptr to JS created objects passed to C++
+ * are counted as references to the JS objects protecting them
+ * from the GC. This means that C++ can keep a copy of a passed
+ * shared_ptr.
+ *
  * ----------------------------------------------------------------------------- */
 
 #define SWIG_SHARED_PTR_NAMESPACE std
@@ -16,22 +21,33 @@
 
 %define SWIG_SHARED_PTR_TYPEMAPS(CONST, TYPE)
 
-%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> {
+// These typemaps obtain a JS persistent reference
+// that is freed when the shared_ptr is destroyed,
+// signaling the GC that C++ has released the value
+%typemap(in) std::shared_ptr<CONST TYPE> {
   TYPE *plain_ptr;
   int res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     %argument_fail(res, "TYPE", $symname, $argnum);
   }
-  $1 = std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
+  Napi::Reference<Napi::Value> *persistent = new Napi::Reference<Napi::Value>;
+  *persistent = Napi::Persistent($input);
+  $1 = std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
+    delete persistent;
+  });
 }
 
-%typemap(in, fragment="SWIG_null_deleter") std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
+%typemap(in) std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
   TYPE *plain_ptr;
   int res = SWIG_ConvertPtr($input, reinterpret_cast<void**>(&plain_ptr), $descriptor(TYPE *), %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     %argument_fail(res, "TYPE", $symname, $argnum);
   }
-  $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, SWIG_null_deleter());
+  Napi::Reference<Napi::Value> *persistent = new Napi::Reference<Napi::Value>;
+  *persistent = Napi::Persistent($input);
+  $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
+    delete persistent;
+  });
 }
 %typemap(freearg) std::shared_ptr<CONST TYPE> *, std::shared_ptr<CONST TYPE> & {
   delete $1;
