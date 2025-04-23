@@ -37,7 +37,9 @@
   auto env_data = env.GetInstanceData<EnvInstanceData>();
   $1 = std::shared_ptr<CONST TYPE>(plain_ptr, [persistent, env_data](void *){
     SWIG_NAPI_RunOnJSMainThread(env_data, [persistent](){
-      printf("Releasing pointer\n");
+#ifdef SWIGRUNTIME_DEBUG
+      printf("Releasing persistent reference for shared_ptr\n");
+#endif
       delete persistent;
     });
   });
@@ -56,7 +58,9 @@
   auto env_data = env.GetInstanceData<EnvInstanceData>();
   $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, [persistent, env_data](void *){
     SWIG_NAPI_RunOnJSMainThread(env_data, [persistent](){
-      printf("Releasing pointer\n");
+#ifdef SWIGRUNTIME_DEBUG
+      printf("Releasing persistent reference for shared_ptr\n");
+#endif
       delete persistent;
     });
   });

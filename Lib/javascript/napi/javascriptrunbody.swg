@@ -399,7 +399,9 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
  * ---------------------------------------------------------------------------*/
 #if NAPI_HAS_THREADS
 void SWIG_NAPI_RunMainThreadQueue(uv_async_t *async) {
-  printf("Running on the main thread\n");
+#ifdef SWIGRUNTIME_DEBUG
+  printf("Running scheduled tasks on main thread\n");
+#endif
   auto env_data = reinterpret_cast<EnvInstanceData *>(async->data);
 
   // As the lambdas are very light, it is better to not release the lock at all
@@ -423,10 +425,14 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *async) {
 void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()> &&job) {
 #if NAPI_HAS_THREADS
   if (env_data->js_main_thread.main_thread_id == std::this_thread::get_id()) {
-    printf("Synchronously running on the main thread\n");
+#ifdef SWIGRUNTIME_DEBUG
+    printf("Running scheduled task synchronously on the main thread\n");
+#endif
     job();
   } else {
-    printf("Scheduling on the main thread\n");
+#ifdef SWIGRUNTIME_DEBUG
+    printf("Scheduling a task on the main thread\n");
+#endif
     std::lock_guard<std::mutex> lock(env_data->js_main_thread.lock);
     env_data->js_main_thread.jobs.emplace(std::move(job));
     assert(uv_async_send(env_data->js_main_thread.handle) == 0);
@@ -435,7 +441,9 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
 #endif
   }
 #else
-  printf("Running on the main thread w/o threads\n");
+#ifdef SWIGRUNTIME_DEBUG
+  printf("Running a task on the main thread w/o thread support\n");
+#endif
   job();
 #endif
 }
