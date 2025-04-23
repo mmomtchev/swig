@@ -397,6 +397,7 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
 /* ---------------------------------------------------------------------------
  * Execute the jobs on the queue on the main thread
  * ---------------------------------------------------------------------------*/
+#if NAPI_HAS_THREADS
 void SWIG_NAPI_RunMainThreadQueue(uv_async_t *async) {
   printf("Running on the main thread\n");
   auto env_data = reinterpret_cast<EnvInstanceData *>(async->data);
@@ -411,12 +412,14 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *async) {
   // (we do not want to block Node from exiting)
   uv_unref(reinterpret_cast<uv_handle_t *>(env_data->js_main_thread.handle));
 }
+#endif
 
 
 /* ---------------------------------------------------------------------------
  * Schedule a job to run on the main thread
  * ---------------------------------------------------------------------------*/
 void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()> &&job) {
+#if NAPI_HAS_THREADS
   if (env_data->js_main_thread.main_thread_id == std::this_thread::get_id()) {
     printf("Synchronously running on the main thread\n");
     job();
@@ -427,4 +430,8 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
     assert(uv_async_send(env_data->js_main_thread.handle) == 0);
     uv_ref(reinterpret_cast<uv_handle_t *>(env_data->js_main_thread.handle));
   }
+#else
+  printf("Running on the main thread w/o threads\n");
+  job();
+#endif
 }

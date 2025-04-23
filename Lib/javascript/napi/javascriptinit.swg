@@ -24,6 +24,7 @@ EnvInstanceData::EnvInstanceData(Napi::Env env, swig_module_info *swig_module) :
     ctor[i] = SWIG_NULLPTR;
   }
 
+#if NAPI_HAS_THREADS
   // Init the mechanism for scheduling jobs on the JS main thread
   js_main_thread.main_thread_id = std::this_thread::get_id();
   js_main_thread.handle = new uv_async_t;
@@ -35,6 +36,7 @@ EnvInstanceData::EnvInstanceData(Napi::Env env, swig_module_info *swig_module) :
   // The initial status of the async handle is inactive
   uv_unref(reinterpret_cast<uv_handle_t *>(js_main_thread.handle));
   js_main_thread.handle->data = static_cast<void*>(this);
+#endif
 }
 
 EnvInstanceData::~EnvInstanceData() {
