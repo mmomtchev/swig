@@ -410,7 +410,9 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *async) {
   }
   // Disable the async because the queue is empty
   // (we do not want to block Node from exiting)
+#ifndef __EMSCRIPTEN__
   uv_unref(reinterpret_cast<uv_handle_t *>(env_data->js_main_thread.handle));
+#endif
 }
 #endif
 
@@ -428,7 +430,9 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
     std::lock_guard<std::mutex> lock(env_data->js_main_thread.lock);
     env_data->js_main_thread.jobs.emplace(std::move(job));
     assert(uv_async_send(env_data->js_main_thread.handle) == 0);
+#ifndef __EMSCRIPTEN__
     uv_ref(reinterpret_cast<uv_handle_t *>(env_data->js_main_thread.handle));
+#endif
   }
 #else
   printf("Running on the main thread w/o threads\n");
