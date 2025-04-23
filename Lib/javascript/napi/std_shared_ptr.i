@@ -31,7 +31,9 @@
     %argument_fail(res, "TYPE", $symname, $argnum);
   }
   Napi::Reference<Napi::Value> *persistent = new Napi::Reference<Napi::Value>;
-  *persistent = Napi::Persistent($input);
+  if (!$input.IsNull()) {
+    *persistent = Napi::Persistent($input);
+  }
   $1 = std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
     delete persistent;
   });
@@ -44,7 +46,9 @@
     %argument_fail(res, "TYPE", $symname, $argnum);
   }
   Napi::Reference<Napi::Value> *persistent = new Napi::Reference<Napi::Value>;
-  *persistent = Napi::Persistent($input);
+  if (!$input.IsNull()) {
+    *persistent = Napi::Persistent($input);
+  }
   $1 = new std::shared_ptr<CONST TYPE>(plain_ptr, [persistent](void *){
     delete persistent;
   });
