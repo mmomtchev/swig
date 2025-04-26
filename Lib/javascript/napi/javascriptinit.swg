@@ -30,9 +30,8 @@ EnvInstanceData::EnvInstanceData(Napi::Env env, swig_module_info *swig_module) :
   js_main_thread.handle = new uv_async_t;
   uv_loop_t *event_loop;
   napi_status r = napi_get_uv_event_loop(env, &event_loop);
-  if (r != napi_ok) throw Napi::Error::New(env, "Failed retrieving libuv event loop");
-  if (uv_async_init(event_loop, js_main_thread.handle, SWIG_NAPI_RunMainThreadQueue) != 0)
-    throw Napi::Error::New(env, "Failed initializing libuv queue");
+  assert(r == napi_ok);
+  assert(uv_async_init(event_loop, js_main_thread.handle, SWIG_NAPI_RunMainThreadQueue) == 0);
   // The initial status of the async handle is inactive
 #ifndef __EMSCRIPTEN__
   uv_unref(reinterpret_cast<uv_handle_t *>(js_main_thread.handle));
