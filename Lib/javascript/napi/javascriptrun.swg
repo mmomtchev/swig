@@ -6,8 +6,10 @@
 #include <thread>
 #include <queue>
 #include <mutex>
+#include <condition_variable>
 #include <uv.h>
 #endif
+#include <exception>
 
 /*
  * We support several forms:
@@ -108,6 +110,30 @@ void JS_veto_set_variable(const Napi::CallbackInfo &info);
 #define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_NAPI_ConvertPacked(obj, ptr, sz, ty)
 #define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
 
+// Helpers to avoid declaring void variables
+template <class T> struct SWIG_remove_void { using type = T; };
+template <> struct SWIG_remove_void<void> { using type = int; };
+
+/**
+ * This is an implementation of a generic std::function factory that can produce
+ * C++ functions from JS functions.
+ *
+ * It is used by the function pointer typemaps.
+ *
+ * The C++ functions support being called both synchronously and asynchronously.
+ *
+ * When called asynchronously, they support automatically resolving Promises returned from
+ * JavaScript async callbacks.
+ */
+template <typename RET, typename ...ARGS>
+std::function<RET(ARGS...)> SWIG_NAPI_Callback(
+  Napi::Value js_callback,
+  // These perform argument and return value conversions and
+  // can be called only on the JS thread
+  std::function<void(Napi::Env, std::vector<napi_value> &, ARGS...)> tmaps_in,
+  std::function<RET(Napi::Env, Napi::Value)> tmap_out,
+  Napi::Value this_value
+);
 
 /* ---------------------------------------------------------------------------
  * Module data per V8 isolate
