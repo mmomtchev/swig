@@ -597,7 +597,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
                 (const Napi::CallbackInfo &info) {
                 // Handle the JS return value
                 try {
-                  if constexpr (!std::is_void<RET>::value)
+                  if SWIG_CONSTEXPR (!std::is_void<RET>::value)
                     c_ret = tmap_out(env, info[0]);
                   else {
                     (void)env;
@@ -640,7 +640,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
           }
 
           // Handle the JS return value
-          if constexpr (!std::is_void<RET>::value)
+          if SWIG_CONSTEXPR (!std::is_void<RET>::value)
             c_ret = tmap_out(env, js_ret);
         } catch (const std::exception &err) {
           // Handle exceptions
@@ -675,7 +675,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     cv.wait(lock, [&ready]{ return ready; });
 
     if (error) throw std::runtime_error{error_msg};
-    if constexpr (!std::is_void<RET>::value)
+    if SWIG_CONSTEXPR (!std::is_void<RET>::value)
       return c_ret;
     else
       return;

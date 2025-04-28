@@ -158,3 +158,9 @@
 #else
 # define SWIG_NULLPTR NULL
 #endif 
+
+#if defined(__cplusplus) && __cplusplus >=201703L
+# define SWIG_CONSTEXPR constexpr
+#else
+# define SWIG_CONSTEXPR
+#endif 
