@@ -23,3 +23,27 @@ x = global_vars.x;
 if (x != 9876) {
     throw new Error("Unexpected string: " + x.toString());
 }
+
+// check for symbol leaks
+var symbols = [
+  'A',
+  'b',
+  'a',
+  'ap',
+  'cap',
+  'ar',
+  'x',
+  'xp',
+  'c_member',
+  'vp',
+  'Hi',
+  'Hola',
+  'h',
+  'hp',
+  'hr',
+  'init',
+  'read_x',
+  'read_b'
+];
+if (JSON.stringify(symbols) != JSON.stringify(Object.getOwnPropertyNames(global_vars)))
+    throw new Error(`Unexpected symbols: ` + Object.getOwnPropertyNames(global_vars));
