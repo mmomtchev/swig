@@ -111,8 +111,15 @@ void JS_veto_set_variable(const Napi::CallbackInfo &info);
 #define SWIG_NewMemberObj(ptr, sz, type)                SWIG_NAPI_NewPackedObj(env, ptr, sz, type)
 
 // Helpers to avoid declaring void variables
-template <class T> struct SWIG_remove_void { using type = T; };
+template <typename T> struct SWIG_remove_void { using type = T; };
 template <> struct SWIG_remove_void<void> { using type = int; };
+
+template <typename RET, typename ...ARGS> inline void SWIG_novoid_tm_call(const std::function<RET(ARGS...)> &fn, RET &ret, const Napi::Env &env, const Napi::Value &val) {
+  ret = fn(env, val);
+}
+template <typename ...ARGS> inline void SWIG_novoid_tm_call(const std::function<void(ARGS...)> &fn, int &ret, const Napi::Env &env, const Napi::Value &val) {
+  return;
+}
 
 /**
  * This is an implementation of a generic std::function factory that can produce
