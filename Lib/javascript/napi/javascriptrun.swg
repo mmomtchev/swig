@@ -114,11 +114,11 @@ void JS_veto_set_variable(const Napi::CallbackInfo &info);
 template <typename T> struct SWIG_remove_void { using type = T; };
 template <> struct SWIG_remove_void<void> { using type = int; };
 
-template <typename RET, typename ...ARGS> inline void SWIG_novoid_tm_call(const std::function<RET(ARGS...)> &fn, RET &ret, const Napi::Env &env, const Napi::Value &val) {
-  ret = fn(env, val);
+template <typename RET, typename ...ARGS> inline void SWIG_novoid_assignment_call(const std::function<RET(ARGS...)> &fn, RET &ret, const ARGS & ...args) {
+  ret = fn(args...);
 }
-template <typename ...ARGS> inline void SWIG_novoid_tm_call(const std::function<void(ARGS...)> &fn, int &ret, const Napi::Env &env, const Napi::Value &val) {
-  return;
+template <typename ...ARGS> inline void SWIG_novoid_assignment_call(const std::function<void(ARGS...)> &fn, int &, const ARGS & ...args) {
+  fn(args...);
 }
 
 /**

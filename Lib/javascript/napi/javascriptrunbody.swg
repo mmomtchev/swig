@@ -604,7 +604,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
                 (const Napi::CallbackInfo &info) {
                 // Handle the JS return value
                 try {
-                  SWIG_novoid_tm_call(tmap_out, c_ret, env, info[0]);
+                  SWIG_novoid_assignment_call(tmap_out, c_ret, env, info[0]);
                 } catch (const std::exception &e) {
                   error = true;
                   error_msg = e.what();
@@ -642,7 +642,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
           }
 
           // Handle the JS return value
-          SWIG_novoid_tm_call(tmap_out, c_ret, env, js_ret);
+          SWIG_novoid_assignment_call(tmap_out, c_ret, env, js_ret);
         } catch (const std::exception &err) {
           // Handle exceptions
           error = true;
