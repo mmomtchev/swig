@@ -683,10 +683,10 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     cv.wait(lock, [&ready]{ return ready; });
 
     if (error) throw std::runtime_error{error_msg};
-    if SWIG_CONSTEXPR (!std::is_void<RET>::value)
-      return c_ret;
-    else
-      return;
+
+    // This trick allows to handle void as a return type without constexpr
+    // https://stackoverflow.com/questions/3305876/using-template-for-return-value-how-to-handle-void-return
+    return static_cast<RET>(c_ret);
   };
 };
 #endif
