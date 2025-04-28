@@ -572,7 +572,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 
     // This is the actual trampoline that allows call into JS
     auto do_call = [&c_ret, &error_msg, &m, &cv, &ready, &error,
-                    context = context.get(), worker_thread_id,
+                    &context, worker_thread_id,
                     tmaps_in, tmap_out, env_data,
                     &args...] (Napi::Env env, Napi::Function js_callback) {
       {
