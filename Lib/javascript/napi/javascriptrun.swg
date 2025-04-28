@@ -124,7 +124,10 @@ template <> struct SWIG_remove_void<void> { using type = int; };
  *
  * When called asynchronously, they support automatically resolving Promises returned from
  * JavaScript async callbacks.
+ *
+ * Callbacks require exceptions!
  */
+#ifdef NAPI_CPP_EXCEPTIONS
 template <typename RET, typename ...ARGS>
 std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   Napi::Value js_callback,
@@ -134,6 +137,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   std::function<RET(Napi::Env, Napi::Value)> tmap_out,
   Napi::Value this_value
 );
+#endif
 
 /* ---------------------------------------------------------------------------
  * Module data per V8 isolate

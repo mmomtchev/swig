@@ -448,6 +448,8 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
 #endif
 }
 
+// SWIG_NAPI_Callback requires exceptions!
+#ifdef NAPI_CPP_EXCEPTIONS
 // A JS trampoline is an std::function with a custom destructor
 // implemented a custom deleter of a std::unique_ptr.
 // It can be kept on the C++ side, can be called and destroyed both
@@ -681,3 +683,4 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
       return;
   };
 };
+#endif
