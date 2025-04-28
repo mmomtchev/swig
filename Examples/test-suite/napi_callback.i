@@ -94,12 +94,14 @@ std::string GiveMeFive_C_wrapper(std::function<std::string(int, const std::strin
   auto *cb = new cb_t{giver};
   return GiveMeFive_C(
       [](void *data, int arg1, const std::string &arg2) -> std::string {
-        auto giver_ = reinterpret_cast<cb_t*>(data);
+        // This code supposes that C++ won't keep the function pointer
+        // and deletes the std::function after the first call
+        // If the function will be called repeatedly, there must be
+        // some mechanism to free this object after the last call
+        // Transferring the ownership to a unique_ptr allows to handle
+        // the exception case
+        auto giver_ = std::unique_ptr<cb_t>(reinterpret_cast<cb_t*>(data));
         auto result = (*giver_)(arg1, arg2);
-        // If the underlying code will continue calling this function
-        // it should not be deleted, in this case example it is used
-        // for a single call
-        delete giver_;
         return result;
       },
       cb);
