@@ -538,6 +538,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 
   // The custom unique_ptr deleter
   static const auto destroy_context = [env_data](NAPIContext *context) {
+#if NAPI_HAS_THREADS
     if (std::this_thread::get_id() == env_data->js_main_thread.main_thread_id) {
 #ifdef SWIGRUNTIME_DEBUG
       printf("SWIG_NAPI_Callback: sync deletion %p\n", context);
@@ -549,11 +550,15 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 #ifdef SWIGRUNTIME_DEBUG
       printf("SWIG_NAPI_Callback: async deletion %p\n", context);
 #endif
-#if NAPI_HAS_THREADS
       // Async deletion - reschedule on the JS thread
       context->tsfn.BlockingCall(context, destroy_context_bottom_half);
-#endif
     }
+#else
+#ifdef SWIGRUNTIME_DEBUG
+      printf("SWIG_NAPI_Callback: deletion %p\n", context);
+#endif
+      delete context;
+#endif
   };
 
   // This is the function that will be returned to the C++ code
@@ -659,19 +664,20 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 
     // Are we in the thread pool background thread (V8 is not accessible) or not?
     // (this is what allows this typemap to work in both sync and async mode)
+#if NAPI_HAS_THREADS
     if (worker_thread_id == env_data->js_main_thread.main_thread_id) {
       // Synchronous call
       Napi::Function js_cb = context->jsfn_ref.Value();
       do_call(js_cb.Env(), js_cb);
     } else {
-#if NAPI_HAS_THREADS
       // Asynchronous call
       context->tsfn.BlockingCall(do_call);
-#else
-      throw std::runtime_error{"No multithreading support"};
-#endif
     }
-
+#else
+    // Synchronous call
+    Napi::Function js_cb = context->jsfn_ref.Value();
+    do_call(js_cb.Env(), js_cb);
+#endif
     // This is a barrier
     std::unique_lock<std::mutex> lock{m};
     cv.wait(lock, [&ready]{ return ready; });
