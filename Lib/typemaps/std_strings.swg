@@ -1,9 +1,11 @@
 
 /* defining the String asptr/from methods */
 #ifdef SWIGCODESPLIT
-#define STD_STRINGS_BODY_SECTION "wrapper"
+%define STD_STRINGS_BODY_SECTION "wrapper"
+%enddef
 #else
-#define STD_STRINGS_BODY_SECTION "header"
+%define STD_STRINGS_BODY_SECTION "header"
+%enddef
 #endif
 
 %define %std_string_asptr(String, Char, SWIG_AsCharPtrAndSize, Frag)
