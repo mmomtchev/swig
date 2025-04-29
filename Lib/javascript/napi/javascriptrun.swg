@@ -370,7 +370,6 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
   Napi::Function js_callback,
   Napi::Reference<Napi::Value> *js_context,
   SWIG_NAPI_Callback_Context<RET> *swig_context) {
-  printf("My CallJS\n");
   // Here we are back in the main V8 thread, potentially from an async context
   Napi::HandleScope store{env};
 
@@ -502,19 +501,8 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   printf("SWIG_NAPI_Callback: create context %p\n", napi_context);
 #endif
 
-#if NAPI_HAS_THREADS
-  // The bottom half of the deleter that runs on the main thread
-  static const auto destroy_context_bottom_half = [napi_context]() {
-#ifdef SWIGRUNTIME_DEBUG
-    printf("SWIG_NAPI_Callback: async deletion bottom half %p\n", context);
-#endif
-    napi_context->tsfn.Release();
-    delete napi_context;
-  };
-#endif
-
   // The custom unique_ptr deleter
-  static const auto destroy_context = [env_data](SWIG_NAPI_Callback_Context<RET> *context) {
+  const auto destroy_context = [env_data](SWIG_NAPI_Callback_Context<RET> *context) {
 #if NAPI_HAS_THREADS
     if (context->calling_thread_id == env_data->js_main_thread.main_thread_id) {
 #ifdef SWIGRUNTIME_DEBUG
@@ -528,7 +516,13 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
       printf("SWIG_NAPI_Callback: async deletion %p\n", context);
 #endif
       // Async deletion - reschedule on the JS thread
-      SWIG_NAPI_RunOnJSMainThread(env_data, destroy_context_bottom_half);
+      SWIG_NAPI_RunOnJSMainThread(env_data, [context]() {
+#ifdef SWIGRUNTIME_DEBUG
+        printf("SWIG_NAPI_Callback: async deletion bottom half %p\n", context);
+#endif
+        context->tsfn.Release();
+        delete context;
+      });
     }
 #else // NAPI_HAS_THREADS
 #ifdef SWIGRUNTIME_DEBUG
@@ -543,7 +537,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   napi_context->env_data = env_data;
 
    // This is the function that will be returned to the C++ code
-  return [napi_context, env_data, tmaps_in](ARGS&&... args) -> RET {
+  return [napi_context, destroy_context, env_data, tmaps_in](ARGS&&... args) -> RET {
     // Here we are called by the C++ code - we might be in a the main thread (synchronous call)
     // or a background thread (asynchronous call).
     napi_context->calling_thread_id = std::this_thread::get_id();
