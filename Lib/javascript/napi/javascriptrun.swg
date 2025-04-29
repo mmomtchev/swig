@@ -352,7 +352,9 @@ public:
 //     the local variables is destroyed
 //
 template <typename RET, typename ...ARGS>
-std::function<RET(ARGS...)> SWIGRUNTIME SWIG_NAPI_Callback(
+// TODO: Update the SWIG build process with the new node-addon-api
+// gyp files, they define now the default visibility
+std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   Napi::Value js_callback,
   // These perform argument and return value conversions and
   // can be called only on the JS thread
@@ -422,12 +424,12 @@ std::function<RET(ARGS...)> SWIGRUNTIME SWIG_NAPI_Callback(
       // Async deletion - reschedule on the JS thread
       context->tsfn.BlockingCall(context, destroy_context_bottom_half);
     }
-#else
+#else // NAPI_HAS_THREADS
 #ifdef SWIGRUNTIME_DEBUG
       printf("SWIG_NAPI_Callback: deletion %p\n", context);
 #endif
       delete context;
-#endif
+#endif // NAPI_HAS_THREADS
   };
 
   // This is the function that will be returned to the C++ code
