@@ -338,11 +338,12 @@ struct SWIG_NAPI_Callback_Context {
   // The this value inside the JS callback
   Napi::Reference<Napi::Value> this_value_ref;
   // The async context
+  #if NAPI_HAS_THREADS
+  std::thread::id calling_thread_id;
   Napi::AsyncContext js_async_context;
+  #endif
 
   EnvInstanceData *env_data;
-
-  std::thread::id calling_thread_id;
 
   // The SWIG typemaps
   std::function<std::vector<napi_value>(Napi::Env)> tmaps_in;
@@ -357,7 +358,9 @@ struct SWIG_NAPI_Callback_Context {
   bool error;
 
   SWIG_NAPI_Callback_Context(Napi::Env env):
+#if NAPI_HAS_THREADS
     js_async_context(env, "SWIG_NAPI_Callback_Task"),
+#endif
     env_data(env.GetInstanceData<EnvInstanceData>()),
     ready(false), error(false) {}
 };
@@ -383,7 +386,11 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
 
   // Call the JS callback
   try {
+#if NAPI_HAS_THREADS
     Napi::Value js_ret = js_callback.MakeCallback(swig_context->this_value_ref.Value(), js_args, swig_context->js_async_context);
+#else
+    Napi::Value js_ret = js_callback.Call(swig_context->this_value_ref.Value(), js_args);
+#endif
 
     // Handle the Promise in case the function was async
     if (js_ret.IsPromise()) {
@@ -421,8 +428,13 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
           swig_context->ready = true;
           swig_context->cv.notify_one();
         });
+#if NAPI_HAS_THREADS
       js_ret.ToObject().Get("then").As<Napi::Function>().MakeCallback(js_ret, 1, &on_resolve, swig_context->js_async_context);
       js_ret.ToObject().Get("catch").As<Napi::Function>().MakeCallback(js_ret, 1, &on_reject, swig_context->js_async_context);
+#else
+      js_ret.ToObject().Get("then").As<Napi::Function>().Call(js_ret, 1, &on_resolve);
+      js_ret.ToObject().Get("catch").As<Napi::Function>().Call(js_ret, 1, &on_reject);
+#endif
       return;
 #else
       throw std::runtime_error{"No multithreading support"};
@@ -543,7 +555,9 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   return [napi_context, tmaps_in](ARGS&&... args) -> RET {
     // Here we are called by the C++ code - we might be in a the main thread (synchronous call)
     // or a background thread (asynchronous call).
+#if NAPI_HAS_THREADS
     napi_context->calling_thread_id = std::this_thread::get_id();
+#endif
     
     // This is what allows to have a custom destructor for the lambda which
     // is otherwise trivially copy-constructible
@@ -570,7 +584,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 #else // NAPI_HAS_THREADS
     // Only synchronous call
     Napi::Function js_cb = context->jsfn_ref.Value();
-    do_call(js_cb.Env(), js_cb);
+    SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, napi_context);
 #endif // NAPI_HAS_THREADS
 
     // This is the main thread barrier
