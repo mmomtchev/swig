@@ -337,6 +337,8 @@ struct SWIG_NAPI_Callback_Context {
   Napi::Reference<Napi::Function> jsfn_ref;
   // The this value inside the JS callback
   Napi::Reference<Napi::Value> this_value_ref;
+  // The async context
+  Napi::AsyncContext js_async_context;
 
   EnvInstanceData *env_data;
 
@@ -354,7 +356,10 @@ struct SWIG_NAPI_Callback_Context {
   bool ready;
   bool error;
 
-  SWIG_NAPI_Callback_Context(): ready(false), error(false) {}
+  SWIG_NAPI_Callback_Context(Napi::Env env):
+    js_async_context(env, "SWIG_NAPI_Callback_Task"),
+    env_data(env.GetInstanceData<EnvInstanceData>()),
+    ready(false), error(false) {}
 };
 
 // This is the actual trampoline, it
@@ -378,7 +383,7 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
 
   // Call the JS callback
   try {
-    Napi::Value js_ret = js_callback.Call(swig_context->this_value_ref.Value(), js_args);
+    Napi::Value js_ret = js_callback.MakeCallback(swig_context->this_value_ref.Value(), js_args, swig_context->js_async_context);
 
     // Handle the Promise in case the function was async
     if (js_ret.IsPromise()) {
@@ -416,8 +421,8 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
           swig_context->ready = true;
           swig_context->cv.notify_one();
         });
-      js_ret.ToObject().Get("then").As<Napi::Function>().Call(js_ret, 1, &on_resolve);
-      js_ret.ToObject().Get("catch").As<Napi::Function>().Call(js_ret, 1, &on_reject);
+      js_ret.ToObject().Get("then").As<Napi::Function>().MakeCallback(js_ret, 1, &on_resolve, swig_context->js_async_context);
+      js_ret.ToObject().Get("catch").As<Napi::Function>().MakeCallback(js_ret, 1, &on_reject, swig_context->js_async_context);
       return;
 #else
       throw std::runtime_error{"No multithreading support"};
@@ -484,8 +489,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   Napi::Env env{js_callback.Env()};
   if (!js_callback.IsFunction()) throw Napi::Error::New(js_callback.Env(), "Passed argument is not a function");
 
-  auto *napi_context = new SWIG_NAPI_Callback_Context<RET>;
-  auto *env_data = env.GetInstanceData<EnvInstanceData>();
+  auto *napi_context = new SWIG_NAPI_Callback_Context<RET>(env);
 #if NAPI_HAS_THREADS
   napi_context->tsfn = Napi::TypedThreadSafeFunction<Napi::Reference<Napi::Value>, SWIG_NAPI_Callback_Context<RET>, SWIG_NAPI_Callback_CallJS<RET>>::New(env,
     js_callback.As<Napi::Function>(),
@@ -502,9 +506,9 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 #endif
 
   // The custom unique_ptr deleter
-  const auto destroy_context = [env_data](SWIG_NAPI_Callback_Context<RET> *context) {
+  static const auto destroy_context = [](SWIG_NAPI_Callback_Context<RET> *context) {
 #if NAPI_HAS_THREADS
-    if (context->calling_thread_id == env_data->js_main_thread.main_thread_id) {
+    if (context->calling_thread_id == context->env_data->js_main_thread.main_thread_id) {
 #ifdef SWIGRUNTIME_DEBUG
       printf("SWIG_NAPI_Callback: sync deletion %p\n", context);
 #endif
@@ -516,7 +520,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
       printf("SWIG_NAPI_Callback: async deletion %p\n", context);
 #endif
       // Async deletion - reschedule on the JS thread
-      SWIG_NAPI_RunOnJSMainThread(env_data, [context]() {
+      SWIG_NAPI_RunOnJSMainThread(context->env_data, [context]() {
 #ifdef SWIGRUNTIME_DEBUG
         printf("SWIG_NAPI_Callback: async deletion bottom half %p\n", context);
 #endif
@@ -534,10 +538,9 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 
   napi_context->tmap_out = tmap_out;
   napi_context->this_value_ref = Napi::Reference<Napi::Value>::New(this_value);
-  napi_context->env_data = env_data;
 
    // This is the function that will be returned to the C++ code
-  return [napi_context, destroy_context, env_data, tmaps_in](ARGS&&... args) -> RET {
+  return [napi_context, tmaps_in](ARGS&&... args) -> RET {
     // Here we are called by the C++ code - we might be in a the main thread (synchronous call)
     // or a background thread (asynchronous call).
     napi_context->calling_thread_id = std::this_thread::get_id();
@@ -556,7 +559,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     // Are we in the thread pool background thread (V8 is not accessible) or not?
     // (this is what allows this typemap to work in both sync and async mode)
 #if NAPI_HAS_THREADS
-    if (napi_context->calling_thread_id == env_data->js_main_thread.main_thread_id) {
+    if (napi_context->calling_thread_id == napi_context->env_data->js_main_thread.main_thread_id) {
       // Synchronous call
       Napi::Function js_cb = context->jsfn_ref.Value();
       SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, napi_context);
