@@ -932,11 +932,10 @@ This allows for more seamless integration at the price of copying the array at e
     // This will be the value of the 'this' value inside the JavaScript function
     env.Global()
   );
-}
-  </pre>
+}</pre>
 </div>
 
-<p>Asynchronous JavaScript callbacks are supported only if the multithreading support is enabled - ie everywhere except the special monothreaded WASM build that does not require COOP/COEP. In the returned value is a <code>Promise</code> it will be automatically resolved while the C++ code waits on a semaphore.</p>
+<p>Asynchronous JavaScript callbacks are supported only if the multithreading support is enabled - ie everywhere except the special monothreaded WASM build that does not require COOP/COEP. If the returned value is a <code>Promise</code> it will be automatically resolved while the C++ code waits on a semaphore.</p>
 
 <H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
 
