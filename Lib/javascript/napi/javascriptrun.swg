@@ -338,10 +338,12 @@ struct SWIG_NAPI_Callback_Context {
   // The this value inside the JS callback
   Napi::Reference<Napi::Value> this_value_ref;
   // The async context
-  #if NAPI_HAS_THREADS
+#if NAPI_HAS_THREADS
   std::thread::id calling_thread_id;
+#ifndef __EMSCRIPTEN__
   Napi::AsyncContext js_async_context;
-  #endif
+#endif
+#endif
 
   EnvInstanceData *env_data;
 
@@ -358,7 +360,7 @@ struct SWIG_NAPI_Callback_Context {
   bool error;
 
   SWIG_NAPI_Callback_Context(Napi::Env env):
-#if NAPI_HAS_THREADS
+#if NAPI_HAS_THREADS && !defined(__EMSCRIPTEN__)
     js_async_context(env, "SWIG_NAPI_Callback_Task"),
 #endif
     env_data(env.GetInstanceData<EnvInstanceData>()),
@@ -386,7 +388,7 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
 
   // Call the JS callback
   try {
-#if NAPI_HAS_THREADS
+#if NAPI_HAS_THREADS && !defined(__EMSCRIPTEN__)
     Napi::Value js_ret = js_callback.MakeCallback(swig_context->this_value_ref.Value(), js_args, swig_context->js_async_context);
 #else
     Napi::Value js_ret = js_callback.Call(swig_context->this_value_ref.Value(), js_args);
@@ -428,7 +430,7 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
           swig_context->ready = true;
           swig_context->cv.notify_one();
         });
-#if NAPI_HAS_THREADS
+#if NAPI_HAS_THREADS && !defined(__EMSCRIPTEN__)
       js_ret.ToObject().Get("then").As<Napi::Function>().MakeCallback(js_ret, 1, &on_resolve, swig_context->js_async_context);
       js_ret.ToObject().Get("catch").As<Napi::Function>().MakeCallback(js_ret, 1, &on_reject, swig_context->js_async_context);
 #else
