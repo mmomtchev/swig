@@ -40,6 +40,7 @@
 <li><a href="#Javascript_Buffer_example"><code>Buffer</code> and <code>ArrayBuffer</code></a>
 <li><a href="#Javascript_C_arrays_example"><code>C</code> (flat pointer) arrays</a>
 <li><a href="#Javascript_smart_pointer_example">Smart pointers</a>
+<li><a href="#Javascript_function_example"><code>std::function</code> and plain C functions pointers</a>
 </ul>
 <li><a href="#Javascript_exceptions">Exceptions</a>
 <ul>
@@ -888,6 +889,54 @@ This allows for more seamless integration at the price of copying the array at e
 <p>SWIG for JavaScript supports natively smart pointers with the usual <a href="CPlusPlus11.html#CPlusPlus11_general_purpose_smart_pointers">SWIG semantics</a>. Support for <code>std::shared_ptr</code> is complete, while <code>std::unique_ptr</code> has some caveats since in JavaScript it is impossible to express the fact the a function can take the ownership of a passed object, leaving the original object in an inconsistent state.</p>
 
 <p>Additionally, SWIG Node-API is the only engine which provides an integration of the reference counting of a <code>std::shared_ptr</code> with the reference counting of the GC. This means that Node-API allows C++ to keep a copy of a passed <code>std::shared_ptr</code> and the GC won't destroy this object until C++ has deleted its last copy.</p>
+
+<H3><a name="Javascript_function_example">28.4.7 <code>std::function</code> and plain C functions pointers</a></H3>
+
+<p>SWIG Node-API provides built-in typemaps that can transform JavaScript functions passed as arguments into <code>std::function</code> or - with some quirks and limitations - to a plain C function pointer.</p>
+
+<p>Currently, SWIG does not provide the necessary language features needed to implement a generic function typemap and a separate user typemap must be declared for each function signature. There is a built-in helper <code>SWIG_NAPI_Callback</code> that takes care of most of the complexity required in order to generate the trampoline. <code>SWIG_NAPI_Callback</code> returns a <code>std::function</code> which when called from C++ will convert the arguments, invoke the JavaScript callback and convert back the returned value. It also automatically handles asynchronous execution, including async callbacks. The function returned is trivially copy-constructible and can be copied and kept on the C++ side. Deleting its last copy will release the resources that it holds.</p>
+
+<p><em>Current versions of Node.js have an <a hrefi="https://github.com/nodejs/node-addon-api/issues/1658">issue</a> that results a false positive of the unhandled rejection check if the callback is an asynchronous function that throws or otherwise returns a rejected <code>Promise</code>. Disabling this check - by using the CLI option or by registering an <code>unhandledRejection</code> event handler will solve the issue.</em></p>
+
+<p><em>Converting functions to a plain C function pointer has some limitations. It is possible only if the C callback mechanism supports accepting and passing back a <code>void*</code> context pointer - which is the usual way of implementing callbacks in C. Additionally, plain C function pointers do not have a destructor, which means that releasing the resources held by the function must be done manually.</em></p>
+
+<p>The following is an example typemap that converts <code>std::function<std::string(int, const std::string &)></code></p>.
+
+<div class="code">
+  <pre>%typemap(in) std::function<std::string(int, const std::string &)> {
+  if (!$input.IsFunction()) {
+    %argument_fail(SWIG_TypeError, "$type", $symname, $argnum);
+  }
+  
+  // SWIG_NAPI_Callback returns an std::function that can be used to call into JS
+  $1 = SWIG_NAPI_Callback<std::string, int, const std::string &>(
+    // First argument is the JavaScript function
+    $input,
+    // The second argument is a function
+    // The first two arguments are fixed
+    // The next arguments are the C++ function type arguments
+    std::function<void(Napi::Env, std::vector<napi_value> &, int, const std::string &)>(
+        [](Napi::Env env, std::vector<napi_value> &js_args, int passcode, const std::string &name) -> void {
+        // $typemap allows to simply insert the existing SWIG typemap for this type
+        $typemap(out, int, 1=passcode, result=js_args.at(0), argnum=callback argument 1);
+        $typemap(out, std::string, 1=name, result=js_args.at(1), argnum=callback argument 2);
+      }
+    ),
+    // This argument is afunction that will convert the returned value
+    [](Napi::Env env, Napi::Value js_ret) -> std::string {
+      std::string c_ret;
+      // The existing SWIG typemap can be used
+      $typemap(in, std::string, input=js_ret, 1=c_ret, argnum=JavaScript callback return value)
+      return c_ret;
+    },
+    // This will be the value of the 'this' value inside the JavaScript function
+    env.Global()
+  );
+}
+  </pre>
+</div>
+
+<p>Asynchronous JavaScript callbacks are supported only if the multithreading support is enabled - ie everywhere except the special monothreaded WASM build that does not require COOP/COEP. In the returned value is a <code>Promise</code> it will be automatically resolved while the C++ code waits on a semaphore.</p>
 
 <H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
 
