@@ -903,36 +903,92 @@ This allows for more seamless integration at the price of copying the array at e
 <p>The following is an example typemap that converts <code>std::function<std::string(int, const std::string &)></code></p>.
 
 <div class="code">
-  <pre>%typemap(in) std::function<std::string(int, const std::string &)> {
+  <pre>%typemap(in) std::function&lt;std::string(int, const std::string &amp;)&gt; {
   if (!$input.IsFunction()) {
-    %argument_fail(SWIG_TypeError, "$type", $symname, $argnum);
+    %argument_fail(SWIG_TypeError, &quot;$type&quot;, $symname, $argnum);
   }
   
   // SWIG_NAPI_Callback returns an std::function that can be used to call into JS
-  $1 = SWIG_NAPI_Callback<std::string, int, const std::string &>(
+  $1 = SWIG_NAPI_Callback&lt;std::string, int, const std::string &amp;&gt;(
     // First argument is the JavaScript function
     $input,
     // The second argument is a function
     // The first two arguments are fixed
     // The next arguments are the C++ function type arguments
-    std::function<void(Napi::Env, std::vector<napi_value> &, int, const std::string &)>(
-        [](Napi::Env env, std::vector<napi_value> &js_args, int passcode, const std::string &name) -> void {
+    std::function&lt;void(Napi::Env, std::vector&lt;napi_value&gt; &amp;, int, const std::string &amp;)&gt;(
+        [](Napi::Env env, std::vector&lt;napi_value&gt; &amp;js_args, int passcode, const std::string &amp;name) -&gt; void {
         // $typemap allows to simply insert the existing SWIG typemap for this type
         $typemap(out, int, 1=passcode, result=js_args.at(0), argnum=callback argument 1);
         $typemap(out, std::string, 1=name, result=js_args.at(1), argnum=callback argument 2);
       }
     ),
-    // This argument is afunction that will convert the returned value
-    [](Napi::Env env, Napi::Value js_ret) -> std::string {
+    // This argument is a function that will convert the returned value
+    [](Napi::Env env, Napi::Value js_ret) -&gt; std::string {
       std::string c_ret;
       // The existing SWIG typemap can be used
       $typemap(in, std::string, input=js_ret, 1=c_ret, argnum=JavaScript callback return value)
       return c_ret;
     },
-    // This will be the value of the 'this' value inside the JavaScript function
+    // This will be the value of the &#39;this&#39; value inside the JavaScript function
     env.Global()
   );
 }</pre>
+</div>
+
+<p>For functions that do not return a value or do no take input arguments, pass empty functions:</p>
+
+<div class="code">
+<pre>%typemap(in) std::function<void()> {
+  if (!$input.IsFunction()) {
+    %argument_fail(SWIG_TypeError, &quot;$type&quot;, $symname, $argnum);
+  }
+  
+  $1 = SWIG_NAPI_Callback&lt;void&gt;(
+    $input,
+    // Empty input typemaps
+    std::function&lt;void(Napi::Env, std::vector&lt;napi_value&gt; &amp;)&gt;(
+        [](Napi::Env env, std::vector&lt;napi_value&gt; &amp;) -&gt; void {}
+    ),
+    /// Empty output typemap
+    [](Napi::Env env, Napi::Value) -&gt; void {},
+    env.Global()
+  );
+}</pre>
+</div>
+
+<p>Plain C function pointers can be converted by creating a wrapper that takes <code>std::function</code>:
+</p>
+
+<div class="code">
+  <pre>// This wrapper receives an std::function to be compatible with SWIG_NAPI_Callback
+// and calls a function that expects a C function pointer provided that the C function
+// accepts a context that is passed back.
+// It wraps a function that looks like:
+// std::string fn_C_ptr(std::string (*fn)(void *, int, const std::string &amp;), void *context);
+%wrapper %{
+std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string &amp;)&gt; fn) {
+  // In this particular example fn should be valid in the lambda
+  // But in order to support functions that keep the callback and call it
+  // later, we choose to make a copy.
+  // This also protects from unexpected return value optimizations by the
+  // compiler.
+  using cb_t = decltype(fn);
+  auto *cb = new cb_t{fn};
+  return fn_C_ptr(
+      [](void *data, int arg1, const std::string &amp;arg2) -&gt; std::string {
+        // This code supposes that C++ won&#39;t keep the function pointer
+        // and deletes the std::function after the first call
+        // If the function will be called repeatedly, there must be
+        // some mechanism to free this object after the last call
+        // Transferring the ownership to a unique_ptr allows to handle
+        // the exception case
+        auto fn_ = std::unique_ptr&lt;cb_t&gt;(reinterpret_cast&lt;cb_t*&gt;(data));
+        auto result = (*fn_)(arg1, arg2);
+        return result;
+      },
+      cb);
+}
+%}</pre>
 </div>
 
 <p>Asynchronous JavaScript callbacks are supported only if the multithreading support is enabled - ie everywhere except the special monothreaded WASM build that does not require COOP/COEP. If the returned value is a <code>Promise</code> it will be automatically resolved while the C++ code waits on a semaphore.</p>
