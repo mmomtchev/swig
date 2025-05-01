@@ -938,7 +938,7 @@ This allows for more seamless integration at the price of copying the array at e
 <p>For functions that do not return a value or do no take input arguments, pass empty functions:</p>
 
 <div class="code">
-<pre>%typemap(in) std::function<void()> {
+<pre>%typemap(in) std::function&lt;void()&gt; {
   if (!$input.IsFunction()) {
     %argument_fail(SWIG_TypeError, &quot;$type&quot;, $symname, $argnum);
   }
