@@ -8,6 +8,7 @@ const napi_callback = require('napi_callback');
 // The Promise does not have a stack trace and it seems to
 // be originating somewhere in the C++ code.
 // AFAIK, it is almost certainly not an expected behavior.
+// https://github.com/nodejs/node-addon-api/issues/1658
 process.on('unhandledRejection', (e) => {
   console.log('warning, unhandled rejection', e)
 });
@@ -32,6 +33,17 @@ process.on('unhandledRejection', (e) => {
   }));
   if (r2 !== 'received from JS: sent from JS with extra cheese')
     throw new Error(`not the expected value, received "${r2}"`);
+
+  const values = [];
+  const repeat = /* await */(napi_callback.GiveMeFiveRepeats((i, s) => {
+    values.push(i);
+    if (typeof s !== 'string') throw new Error('expected a string as name');
+    return '!' + s;
+  }));
+  if (JSON.stringify(values.sort()) !== '[0,1,2,3,4,5,6,7,8,9]')
+    throw new Error(`not the expected value, result is ${values}`);
+  if (repeat !== '!.!.!.!.!.!.!.!.!.!.')
+    throw new Error(`not the expected value, received "${repeat}"`);
 
   let called = false;
   /* await */(napi_callback.JustCall(() => {
@@ -95,6 +107,22 @@ process.on('unhandledRejection', (e) => {
   }));
   if (r2 !== 'received from JS: sent from JS with extra cheese')
     throw new Error(`not the expected value, received "${r2}"`);
+
+  try {
+    const values = [];
+    const repeat = /* await */(napi_callback.GiveMeFiveRepeats((i, s) => {
+      values.push(i);
+      if (typeof s !== 'string') throw new Error('expected a string as name');
+      return new Promise(res => setTimeout(res, 100)).then(() => '!' + s);
+    }));
+    if (JSON.stringify(values.sort()) !== '[0,1,2,3,4,5,6,7,8,9]')
+      throw new Error(`not the expected value, result is ${values}`);
+    if (repeat !== '!.!.!.!.!.!.!.!.!.!.')
+      throw new Error(`not the expected value, received "${repeat}"`);
+  } catch(e) {
+    if (!e.message.match(/Can't resolve a Promise when called synchronously/))
+      throw new Error(`Unexpected exception ${e.message}`);
+  }
 
   let called = false;
   /* await */(napi_callback.JustCall(/* async */() => {
