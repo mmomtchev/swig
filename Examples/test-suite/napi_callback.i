@@ -114,6 +114,7 @@ std::string GiveMeFive_C_wrapper(std::function<std::string(int, const std::strin
 #include <string>
 
 std::string GiveMeFive(std::function<std::string(int, const std::string &)> giver);
+std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &)> giver);
 std::string GiveMeFive_C(std::string (*giver)(void *, int, const std::string &), void *context);
 void JustCall(std::function<void()> cb);
 %}
@@ -130,5 +131,12 @@ std::string GiveMeFive_C(std::string (*giver)(void *, int, const std::string &),
 
 void JustCall(std::function<void()> cb) {
   cb();
+}
+
+std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &)> giver) {
+  std::string r = "";
+  for (size_t i = 0; i < 10; i++)
+    r += giver(i, ".");
+  return r;
 }
 %}
