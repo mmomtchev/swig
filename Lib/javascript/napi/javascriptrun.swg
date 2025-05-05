@@ -587,7 +587,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
    // This is the function that will be returned to the C++ code
   return [tmaps_in, napi_context](ARGS&&... args) -> RET {
     // Start by allocating a new call context
-    auto call_context = std::make_unique<SWIG_NAPI_Callback_Call_Context<RET>>(napi_context.get());
+    auto call_context = std::unique_ptr<SWIG_NAPI_Callback_Call_Context<RET>>(new SWIG_NAPI_Callback_Call_Context<RET>(napi_context.get()));
     // Here we are called by the C++ code - we might be in a the main thread (synchronous call)
     // or a background thread (asynchronous call).
 #if NAPI_HAS_THREADS
