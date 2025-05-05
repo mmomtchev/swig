@@ -587,7 +587,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
    // This is the function that will be returned to the C++ code
   return [tmaps_in, napi_context](ARGS&&... args) -> RET {
     // Start by allocating a new call context
-    auto *call_context = new SWIG_NAPI_Callback_Call_Context<RET>(napi_context.get());
+    auto call_context = std::make_unique<SWIG_NAPI_Callback_Call_Context<RET>>(napi_context.get());
     // Here we are called by the C++ code - we might be in a the main thread (synchronous call)
     // or a background thread (asynchronous call).
 #if NAPI_HAS_THREADS
@@ -607,20 +607,21 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     if (call_context->calling_thread_id == napi_context->env_data->js_main_thread.main_thread_id) {
       // Synchronous call
       Napi::Function js_cb = napi_context->jsfn_ref.Value();
-      SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context);
+      SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context.get());
     } else {
       // Asynchronous call
-      napi_context->tsfn.BlockingCall(call_context);
+      napi_context->tsfn.BlockingCall(call_context.get());
     }
 #else // NAPI_HAS_THREADS
     // Only synchronous call
     Napi::Function js_cb = napi_context->jsfn_ref.Value();
-    SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context);
+    SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context.get());
 #endif // NAPI_HAS_THREADS
 
     // This is the main thread barrier
     std::unique_lock<std::mutex> lock{call_context->m};
-    call_context->cv.wait(lock, [call_context]{ return call_context->ready; });
+    auto *ready = &call_context->ready;
+    call_context->cv.wait(lock, [ready]{ return ready; });
 
     if (call_context->error) throw std::runtime_error{call_context->error_msg};
 
