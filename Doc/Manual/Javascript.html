@@ -913,7 +913,9 @@ This allows for more seamless integration at the price of copying the array at e
     // First argument is the JavaScript function
     $input,
     // The second argument is a function
-    // The first two arguments are fixed
+    // The first two arguments are fixed - the Node-API environment pointer
+    //   and a reference to a napi_value vector that will receive the
+    //   converted arguments
     // The next arguments are the C++ function type arguments
     std::function&lt;void(Napi::Env, std::vector&lt;napi_value&gt; &amp;, int, const std::string &amp;)&gt;(
         [](Napi::Env env, std::vector&lt;napi_value&gt; &amp;js_args, int passcode, const std::string &amp;name) -&gt; void {
@@ -929,10 +931,14 @@ This allows for more seamless integration at the price of copying the array at e
       $typemap(in, std::string, input=js_ret, 1=c_ret, argnum=JavaScript callback return value)
       return c_ret;
     },
-    // This will be the value of the &#39;this&#39; value inside the JavaScript function
+    // This will be the value of &#39;this&#39; inside the JavaScript function
     env.Global()
   );
-}</pre>
+}
+
+// This is the associated TypeScript type
+%typemap(ts) std::function&lt;std::string(int, const std::string &amp;)&gt;
+  &quot;(this: typeof globalThis, pass: number, name: string) =&gt; Promise&lt;string&gt; | string&quot;;</pre>
 </div>
 
 <p>For functions that do not return a value or do no take input arguments, pass empty functions:</p>
@@ -953,7 +959,11 @@ This allows for more seamless integration at the price of copying the array at e
     [](Napi::Env env, Napi::Value) -&gt; void {},
     env.Global()
   );
-}</pre>
+}
+
+// The TypeScript type
+%typemap(ts) std::function&lt;void()&gt;
+  &quot;(this: typeof globalThis) =&gt; void | Promise&lt;void&gt;&quot;;</pre>
 </div>
 
 <p>Plain C function pointers can be converted by creating a wrapper that takes <code>std::function</code>:
