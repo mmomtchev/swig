@@ -615,7 +615,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 #else // NAPI_HAS_THREADS
     // Only synchronous call
     Napi::Function js_cb = napi_context->jsfn_ref.Value();
-    SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, napi_context);
+    SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context);
 #endif // NAPI_HAS_THREADS
 
     // This is the main thread barrier

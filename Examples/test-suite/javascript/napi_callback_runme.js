@@ -120,7 +120,8 @@ process.on('unhandledRejection', (e) => {
     if (repeat !== '!.!.!.!.!.!.!.!.!.!.')
       throw new Error(`not the expected value, received "${repeat}"`);
   } catch(e) {
-    if (!e.message.match(/Can't resolve a Promise when called synchronously/))
+    if (!(e.message.match(/Can't resolve a Promise when called synchronously/) ||
+        e.message.match(/No multithreading support/)))
       throw new Error(`Unexpected exception ${e.message}`);
   }
 
