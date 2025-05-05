@@ -620,8 +620,7 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
 
     // This is the main thread barrier
     std::unique_lock<std::mutex> lock{call_context->m};
-    auto *ready = &call_context->ready;
-    call_context->cv.wait(lock, [ready]{ return *ready; });
+    call_context->cv.wait(lock, [&call_context]{ return call_context->ready; });
 
     if (call_context->error) throw std::runtime_error{call_context->error_msg};
 
