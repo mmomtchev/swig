@@ -13,8 +13,29 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
 #endif
 %} // SWIG_NAPI_RunOnJSMainThread_def fragment
 
+%fragment("SWIG_NAPI_RunOnJSMainThread_init", "init") %{
+#if NAPI_HAS_THREADS
+  auto env_data = env.GetInstanceData<EnvInstanceData>();
+  auto &js_main_thread = env_data->js_main_thread;
 
-%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper", fragment="SWIG_NAPI_RunOnJSMainThread_def") %{
+  // Init the mechanism for scheduling jobs on the JS main thread
+  js_main_thread.main_thread_id = std::this_thread::get_id();
+  js_main_thread.handle = new uv_async_t;
+  uv_loop_t *event_loop;
+  if (napi_get_uv_event_loop(env, &event_loop) != napi_ok)
+    std::abort();
+  if (uv_async_init(event_loop, js_main_thread.handle, SWIG_NAPI_RunMainThreadQueue) != 0)
+    std::abort();
+  // The initial status of the async handle is inactive
+#ifndef __EMSCRIPTEN__
+  uv_unref(reinterpret_cast<uv_handle_t *>(js_main_thread.handle));
+#endif
+  js_main_thread.handle->data = static_cast<void*>(env_data);
+#endif
+%}
+
+
+%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper", fragment="SWIG_NAPI_RunOnJSMainThread_def", fragment="SWIG_NAPI_RunOnJSMainThread_init") %{
 /* ---------------------------------------------------------------------------
  * Execute the jobs on the queue on the main thread
  * ---------------------------------------------------------------------------*/
