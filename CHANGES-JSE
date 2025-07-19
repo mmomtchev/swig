@@ -8,6 +8,9 @@ Version 5.0.7
 ===========================
 
 2025-05-05: mmomtchev
+            [JavaScript] Switch to `node-addon-api@8.5.0` which requires C++17
+
+2025-05-05: mmomtchev
             [JavaScript] Provide built-in helpers for handling `std::function`
             arguments
 

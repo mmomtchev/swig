@@ -2,15 +2,25 @@
    and its templating capabilities introduced in C++11. */
 %module cpp11_result_of
 
-// std::result_of is deprecated in C++17
+// std::result_of is deprecated in C++17 and removed in C++20
 // Replace std implementation with a simple implementation in order to continue testing with C++17 compilers and later
+%begin %{
+// Rename the std version in case someone includes <functional>
+#if __cplusplus >= 201703L && __cplusplus < 202002L
+#define result_of _result_of_deprecated
+#endif
+%}
 
 %inline %{
 typedef double(*fn_ptr)(double);
 %}
 
 %{
+// node-addon-api includes functional, in this case redefine only on C++>=20
 #if __cplusplus >= 201703L
+#if __cplusplus < 202002L
+#undef result_of
+#endif
 namespace std {
   // Forward declaration of result_of
   template<typename Func> struct result_of;

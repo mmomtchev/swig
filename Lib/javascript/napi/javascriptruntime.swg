@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <map>
-#include <functional>
 #include <algorithm>
 #include <set>
 #include <stdexcept>

@@ -201,14 +201,20 @@ $ make check-javascript-test-suite ENGINE=jsc</pre>
 
 <H3><a name="Javascript_node_extensions">28.3.1 Creating node.js Extensions</a></H3>
 
+<p>On Windows and macOS, <code>Node.js</code> has <a href="https://nodejs.org/en/download">official installers</a>.</p>
 
-<p>To install <code>node.js</code> you can download an installer from their <a href="https://launchpad.net/~chris-lea/+archive/node.js">web-site</a> for Mac OS X and Windows. For Linux you can either build the source yourself and run <code>sudo checkinstall</code> or keep to the (probably stone-age) packaged version. For Ubuntu there is a <a href="https://launchpad.net/~chris-lea/+archive/ubuntu/node.js/">PPA</a> available.</p>
+<p>To install <code>Node.js</code> on Linux the best option is the semi-official <a href="https://nodesource.com/products/distributions">NodeSource binaries</a>. These are available for the major Linux distributions and integrate very well with the native distribution packaging:</p>
 <div class="shell">
 <pre>
-$ sudo add-apt-repository ppa:chris-lea/node.js
-$ sudo apt-get update
-$ sudo apt-get install nodejs</pre>
+sudo apt-get install -y curl
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v</pre>
+</p>
 </div>
+
+<p>If you need the manage multiple <code>Node.js</code> versions on the same machine, the best option is to use the <a href="https://github.com/nvm-sh/nvm"><code>nvm</code> package manager</a> which can handle multiple installation trees from a user-specific local directory on all OS.</p>
+
 <p>As <code>v8</code> is written in C++ and comes as a C++ library it is crucial to compile your module using the same compiler flags as used for building v8. To make things easier, <code>node.js</code> provides a build tool called <code>node-gyp</code>.</p>
 <p>You have to install it using <code>npm</code>:</p>
 <div class="shell">
@@ -262,6 +268,7 @@ $ node-gyp configure
 $ node-gyp build
 </pre>
 </div>
+<p>The latest version of <code>node-addon-api</code> requires C++17.</p>
 <p>There is also the <a href="https://github.com/mmomtchev/node-magickwand"><code>node-magickwand</code></a> project that can be used as a tutorial for building and publishing a complex C++ library to
   npm as a ready-to-use real-world binary module.</p>
 

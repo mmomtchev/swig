@@ -3,8 +3,11 @@
  *
  * Common fragments
  * ----------------------------------------------------------------------------- */
+%fragment("<functional>", "header") %{
+#include <functional>
+%}
 
-%fragment("SWIG_NAPI_RunOnJSMainThread_def", "header") %{
+%fragment("SWIG_NAPI_RunOnJSMainThread_def", "header", fragment="<functional>") %{
 // Execute the jobs on the queue on the main thread
 void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *, std::function<void()> &&);
 #if NAPI_HAS_THREADS
@@ -35,7 +38,10 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
 %}
 
 
-%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper", fragment="SWIG_NAPI_RunOnJSMainThread_def", fragment="SWIG_NAPI_RunOnJSMainThread_init") %{
+%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper",
+  fragment="SWIG_NAPI_RunOnJSMainThread_def",
+  fragment="SWIG_NAPI_RunOnJSMainThread_init",
+  fragment="<functional>") %{
 /* ---------------------------------------------------------------------------
  * Execute the jobs on the queue on the main thread
  * ---------------------------------------------------------------------------*/
@@ -92,7 +98,9 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
 }
 %} // SWIG_NAPI_RunOnJSMainThread fragment
 
-%fragment("SWIG_NAPI_Callback", "header", fragment="SWIG_NAPI_RunOnJSMainThread") %{
+%fragment("SWIG_NAPI_Callback", "header",
+  fragment="SWIG_NAPI_RunOnJSMainThread",
+  fragment="<functional>") %{
 /**
  * This is an implementation of a generic std::function factory that can produce
  * C++ functions from JS functions.
@@ -205,6 +213,7 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
     // Handle the Promise in case the function was async
     if (js_ret.IsPromise()) {
 #if NAPI_HAS_THREADS
+      Napi::Promise js_promise = js_ret.As<Napi::Promise>();
       if (call_context->context->env_data->js_main_thread.main_thread_id ==
           call_context->calling_thread_id) {
         throw std::runtime_error{"Can't resolve a Promise when called synchronously"};
@@ -240,16 +249,7 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
           call_context->ready = true;
           call_context->cv.notify_one();
         });
-      napi_value args[] = {on_resolve, on_reject};
-      // This is the correct way of handling a Promise
-      // from C++
-      // https://github.com/nodejs/node-addon-api/issues/1658
-#if NAPI_HAS_THREADS && !defined(__EMSCRIPTEN__)
-      js_ret.ToObject().Get("then").As<Napi::Function>().MakeCallback(js_ret, 2, args,
-        call_context->context->js_async_context);
-#else
-      js_ret.ToObject().Get("then").As<Napi::Function>().Call(js_ret, 2, args);
-#endif
+      js_promise.Then(on_resolve, on_reject);
       return;
 #else
       throw std::runtime_error{"No multithreading support"};
