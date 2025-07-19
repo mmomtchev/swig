@@ -3,8 +3,11 @@
  *
  * Common fragments
  * ----------------------------------------------------------------------------- */
+%fragment("<functional>", "header") %{
+#include <functional>
+%}
 
-%fragment("SWIG_NAPI_RunOnJSMainThread_def", "header") %{
+%fragment("SWIG_NAPI_RunOnJSMainThread_def", "header", fragment="<functional>") %{
 // Execute the jobs on the queue on the main thread
 void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *, std::function<void()> &&);
 #if NAPI_HAS_THREADS
@@ -35,7 +38,10 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
 %}
 
 
-%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper", fragment="SWIG_NAPI_RunOnJSMainThread_def", fragment="SWIG_NAPI_RunOnJSMainThread_init") %{
+%fragment("SWIG_NAPI_RunOnJSMainThread", "wrapper",
+  fragment="SWIG_NAPI_RunOnJSMainThread_def",
+  fragment="SWIG_NAPI_RunOnJSMainThread_init",
+  fragment="<functional>") %{
 /* ---------------------------------------------------------------------------
  * Execute the jobs on the queue on the main thread
  * ---------------------------------------------------------------------------*/
@@ -92,7 +98,9 @@ void SWIG_NAPI_RunOnJSMainThread(EnvInstanceData *env_data, std::function<void()
 }
 %} // SWIG_NAPI_RunOnJSMainThread fragment
 
-%fragment("SWIG_NAPI_Callback", "header", fragment="SWIG_NAPI_RunOnJSMainThread") %{
+%fragment("SWIG_NAPI_Callback", "header",
+  fragment="SWIG_NAPI_RunOnJSMainThread",
+  fragment="<functional>") %{
 /**
  * This is an implementation of a generic std::function factory that can produce
  * C++ functions from JS functions.
