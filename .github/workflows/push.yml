@@ -152,6 +152,7 @@ jobs:
         - SWIGLANG: perl5
         - SWIGLANG: php
           VER: '8.3'
+          CPPSTD: c++11
         - SWIGLANG: python
           PY2: 2
         - SWIGLANG: python
