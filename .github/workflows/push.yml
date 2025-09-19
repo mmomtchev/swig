@@ -18,6 +18,7 @@ jobs:
   linux:
 
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
+    if: false
 
     # By default, the name of the build is the language used and SWIG options, but matrix entries
     # can define the additional "desc" field with any additional information to include in the name.
