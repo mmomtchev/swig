@@ -422,6 +422,7 @@ jobs:
       PCRE2_CCCL_LD: '-lpcre2-8-static --cccl-link /NODEFAULTLIB:MSVCRT'
       CHECK_OPTIONS: 'CSHARPOPTIONS=-platform:x64'
       SWIGLANG: ${{ matrix.SWIGLANG }}
+      ENGINE: ${{ matrix.ENGINE }}
       VER: ${{ matrix.VER }}
       SWIG_FEATURES: ${{ matrix.SWIG_FEATURES }}
       COMPILER: ${{ matrix.COMPILER }}
