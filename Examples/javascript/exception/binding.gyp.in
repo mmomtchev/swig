@@ -16,6 +16,12 @@
             }
           }
         ],
+        ['OS=="win"',
+          {
+            'cflags': [ "/EHsc" ],
+            'cflags_cc': [ "/EHsc" ]
+          }
+        ],
         ['OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="solaris"',
           {
             'cflags': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-maybe-uninitialized"],
