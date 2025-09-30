@@ -2878,9 +2878,24 @@ AC_SUBST(ac_aux_dir)
 # Configure SWIG_LIB path
 
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
-  [swig_lib="$withval"], [swig_lib="${datadir}/swig-jse/${PACKAGE_VERSION}"])
+  [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${datadir}/swig-jse/${PACKAGE_VERSION}"])
 SWIG_LIB_INSTALL=${swig_lib}
+
+AC_ARG_WITH(relative-swiglibdir,[  --with-relative-swiglibdir=DIR   Put SWIG system-independent libraries into DIR relative to executable (for relocatable packages).],
+  [swig_relative_lib="$withval"], [])
+
+if test -n "${swig_relative_lib}"; then
+  swig_lib="${swig_relative_lib}"
+  if test -n "${swig_lib_explicit}"; then
+    AC_MSG_ERROR([swiglibdir and relative-swiglibdir are mutually exclusive])
+  fi
+  SWIG_LIB_INSTALL=${bindir}/${swig_lib}
+  AC_DEFINE_DIR(SWIG_RELATIVE_LIB, swig_lib, [Relative directory for SWIG system-independent libraries])
+else
+  SWIG_LIB_INSTALL=${swig_lib}
+fi
 AC_SUBST(SWIG_LIB_INSTALL)
+AC_MSG_NOTICE([SWIG system-independent libraries in ${SWIG_LIB_INSTALL}])
 AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 case $build in
