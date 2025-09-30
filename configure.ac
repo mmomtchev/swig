@@ -2880,22 +2880,26 @@ AC_SUBST(ac_aux_dir)
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
   [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${datadir}/swig-jse/${PACKAGE_VERSION}"])
 SWIG_LIB_INSTALL=${swig_lib}
+AC_ARG_ENABLE(relocatable,[  --enable-relocatable   Make swiglibdir relative to the main executable, default on Winows.],
+  [swig_relocatable="$enableval"], [])
 
-AC_ARG_WITH(relative-swiglibdir,[  --with-relative-swiglibdir=DIR   Put SWIG system-independent libraries into DIR relative to executable (for relocatable packages).],
-  [swig_relative_lib="$withval"], [])
+if test -z "${swig_relocatable}"; then
+  case $build in
+    # On Windows, relocatable is the default
+    *-*-mingw*|*-*-cygwin*) swig_relocatable=yes ;;
+    *) swig_relocatable=no ;;
+  esac
+fi
 
-if test -n "${swig_relative_lib}"; then
-  swig_lib="${swig_relative_lib}"
-  if test -n "${swig_lib_explicit}"; then
-    AC_MSG_ERROR([swiglibdir and relative-swiglibdir are mutually exclusive])
-  fi
+if test "x${swig_relocatable}" == "xyes"; then
   SWIG_LIB_INSTALL=${bindir}/${swig_lib}
-  AC_DEFINE_DIR(SWIG_RELATIVE_LIB, swig_lib, [Relative directory for SWIG system-independent libraries])
+  AC_DEFINE(SWIG_RELOCATABLE, 1, SWIG_LIB is relative to the executable)
+  AC_MSG_NOTICE([SWIG system-independent libraries (relocatable): ${SWIG_LIB_INSTALL}])
 else
   SWIG_LIB_INSTALL=${swig_lib}
+  AC_MSG_NOTICE([SWIG system-independent libraries: ${SWIG_LIB_INSTALL}])
 fi
 AC_SUBST(SWIG_LIB_INSTALL)
-AC_MSG_NOTICE([SWIG system-independent libraries in ${SWIG_LIB_INSTALL}])
 AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 case $build in
@@ -2904,6 +2908,9 @@ case $build in
   *-*-cygwin*) SWIG_LIB_WIN_UNIX=`cygpath --mixed "$SWIG_LIB"`;;
   *) SWIG_LIB_WIN_UNIX="";;
 esac
+if test -n "${SWIG_LIB_WIN_UNIX}"; then
+  AC_MSG_NOTICE([SWIG system-independent libraries Windows path: ${SWIG_LIB_WIN_UNIX}])
+fi
 AC_DEFINE_UNQUOTED(SWIG_LIB_WIN_UNIX, ["$SWIG_LIB_WIN_UNIX"], [Directory for SWIG system-independent libraries (Unix install on native Windows)])
 
 SWIG_LIB_PREINST=$ABS_SRCDIR/Lib
