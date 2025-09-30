@@ -2877,19 +2877,23 @@ AC_SUBST(ac_aux_dir)
 
 # Configure SWIG_LIB path
 
+case $build in
+  # On Windows, relocatable is the default
+  *-*-cygwin* | *-*-mingw* | *-*-msys*)
+    swig_relocatable=yes
+    SWIG_LIB_DEFAULT=Lib
+    ;;
+  *)
+    swig_relocatable=no
+    SWIG_LIB_DEFAULT=${datadir}/swig-jse/${PACKAGE_VERSION}
+    ;;
+esac
+
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
-  [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${datadir}/swig-jse/${PACKAGE_VERSION}"])
+  [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${SWIG_LIB_DEFAULT}"])
 SWIG_LIB_INSTALL=${swig_lib}
 AC_ARG_ENABLE(relocatable,[  --enable-relocatable   Make swiglibdir relative to the main executable, default on Winows.],
   [swig_relocatable="$enableval"], [])
-
-if test -z "${swig_relocatable}"; then
-  case $build in
-    # On Windows, relocatable is the default
-    *-*-mingw*|*-*-cygwin*) swig_relocatable=yes ;;
-    *) swig_relocatable=no ;;
-  esac
-fi
 
 if test "x${swig_relocatable}" == "xyes"; then
   SWIG_LIB_INSTALL=${bindir}/${swig_lib}
