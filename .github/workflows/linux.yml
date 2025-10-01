@@ -485,7 +485,7 @@ jobs:
       PY_ABI_VER: ${{ matrix.PY_ABI_VER }}
       COMPILER: ${{ matrix.compiler || 'gcc' }}
       ASAN: ${{ matrix.ASAN }}
-      RELOCATALE: ${{ matrix.RELOCATABLE }}
+      RELOCATABLE: ${{ matrix.RELOCATABLE }}
 
     steps:
     - name: Machine Info
@@ -623,6 +623,12 @@ jobs:
       run: |
           source $GITHUB_WORKSPACE/Tools/CI-linux-environment.sh
           set -x
+
+          if test -n "$RELOCATABLE"; then
+            if ! test "`./swig -swiglib`" = "`pwd`/swiglib"; then
+              exit 1
+            fi
+          fi
 
           if test -z "$SWIGLANG"; then
             make $SWIGJOBS check-ccache
