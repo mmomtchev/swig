@@ -2,7 +2,7 @@ name: windows
 
 on:
   push:
-    branches: main
+    branches: '*'
     paths-ignore:
       - 'CHANGES*'
       - 'Doc/**'
