@@ -468,6 +468,7 @@ jobs:
           VER: '20'
           CPPSTD: c++17
           RELOCATABLE: true
+          desc: relocatable
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
