@@ -2892,7 +2892,7 @@ esac
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
   [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${SWIG_LIB_DEFAULT}"])
 SWIG_LIB_INSTALL=${swig_lib}
-AC_ARG_ENABLE(relocatable,[  --enable-relocatable   Make swiglibdir relative to the main executable, default on Winows.],
+AC_ARG_ENABLE(relocatable,[  --enable-relocatable    make swiglibdir relative to the main executable, default on Winows.],
   [swig_relocatable="$enableval"], [])
 
 if test "x${swig_relocatable}" == "xyes"; then
@@ -2904,18 +2904,13 @@ else
   AC_MSG_NOTICE([SWIG system-independent libraries: ${SWIG_LIB_INSTALL}])
 fi
 AC_SUBST(SWIG_LIB_INSTALL)
-AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 case $build in
   # Windows does not understand unix directories. Convert into a windows directory with drive letter.
-  *-*-mingw*) SWIG_LIB_WIN_UNIX=`${srcdir}/Tools/convertpath -m $SWIG_LIB`;;
-  *-*-cygwin*) SWIG_LIB_WIN_UNIX=`cygpath --mixed "$SWIG_LIB"`;;
-  *) SWIG_LIB_WIN_UNIX="";;
+  *-*-mingw*) SWIG_LIB=`${srcdir}/Tools/convertpath -m $SWIG_LIB`;;
+  *-*-cygwin*) SWIG_LIB=`cygpath --mixed "$SWIG_LIB"`;;
 esac
-if test -n "${SWIG_LIB_WIN_UNIX}"; then
-  AC_MSG_NOTICE([SWIG system-independent libraries Windows path: ${SWIG_LIB_WIN_UNIX}])
-fi
-AC_DEFINE_UNQUOTED(SWIG_LIB_WIN_UNIX, ["$SWIG_LIB_WIN_UNIX"], [Directory for SWIG system-independent libraries (Unix install on native Windows)])
+AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 SWIG_LIB_PREINST=$ABS_SRCDIR/Lib
 AC_SUBST(SWIG_LIB_PREINST)
