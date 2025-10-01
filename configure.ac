@@ -2890,9 +2890,9 @@ case $build in
 esac
 
 AC_ARG_WITH(swiglibdir,[  --with-swiglibdir=DIR   Put SWIG system-independent libraries into DIR.],
-  [swig_lib="$withval"; swig_lib_explicit=1], [swig_lib="${SWIG_LIB_DEFAULT}"])
+  [swig_lib="$withval"; swig_relocatable=no], [swig_lib="${SWIG_LIB_DEFAULT}"])
 SWIG_LIB_INSTALL=${swig_lib}
-AC_ARG_ENABLE(relocatable,[  --enable-relocatable    make swiglibdir relative to the main executable, default on Winows.],
+AC_ARG_ENABLE(relocatable,[  --enable-relocatable    make swiglibdir relative to the main executable, default on Windows unless swiglibdir is manually set.],
   [swig_relocatable="$enableval"], [])
 
 if test "x${swig_relocatable}" == "xyes"; then
