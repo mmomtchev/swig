@@ -295,7 +295,7 @@ jobs:
              # cccl wrapping MSVC
             CONFIGOPTS+=("--disable-ccache")
           fi
-          ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" ${CONFIGOPTS}
+          ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" "${CONFIGOPTS[@]}"
 
     - name: Build
       shell: bash
