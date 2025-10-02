@@ -2907,10 +2907,18 @@ AC_SUBST(SWIG_LIB_INSTALL)
 
 case $build in
   # Windows does not understand unix directories. Convert into a windows directory with drive letter.
-  *-*-mingw*) SWIG_LIB=`${srcdir}/Tools/convertpath -m $SWIG_LIB`;;
-  *-*-cygwin*) SWIG_LIB=`cygpath --mixed "$SWIG_LIB"`;;
+  *-*-mingw*)
+    SWIG_LIB=`${srcdir}/Tools/convertpath -m $SWIG_LIB`
+    AC_DEFINE_UNQUOTED(SWIG_LIB, ["$SWIG_LIB"], [Directory for SWIG system-independent libraries])
+    ;;
+  *-*-cygwin*)
+    SWIG_LIB=`cygpath --mixed "$SWIG_LIB"`
+    AC_DEFINE_UNQUOTED(SWIG_LIB, ["$SWIG_LIB"], [Directory for SWIG system-independent libraries])
+    ;;
+  *)
+    AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
+    ;;
 esac
-AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 SWIG_LIB_PREINST=$ABS_SRCDIR/Lib
 AC_SUBST(SWIG_LIB_PREINST)
