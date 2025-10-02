@@ -313,7 +313,8 @@ jobs:
       if: ${{ !matrix.SWIGLIB }}
       run: |
           # path is based on executable location
-          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "$PWD")\\Lib" ]]; then
+          SWIGLIB=$(./swig.exe -swiglib)
+          if ! [[ "$(cygpath -w ${SWIGLIB})" = "$(cygpath -w "$PWD")\\Lib" ]]; then
             cat Source/Include/swigconfig.h
             ./swig.exe -swiglib
             cygpath -w '${{ matrix.SWIGLIB }}'
@@ -324,7 +325,8 @@ jobs:
       if: ${{ matrix.SWIGLIB }}
       run: |
           # path is hardcoded
-          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w '${{ matrix.SWIGLIB }}')" ]]; then
+          SWIGLIB=$(./swig.exe -swiglib)
+          if ! [[ "$(cygpath -w ${SWIGLIB})" = "$(cygpath -w '${{ matrix.SWIGLIB }}')" ]]; then
             cat Source/Include/swigconfig.h
             ./swig.exe -swiglib
             cygpath -w '${{ matrix.SWIGLIB }}'
