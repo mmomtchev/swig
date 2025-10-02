@@ -291,7 +291,7 @@ jobs:
           if [[ "$COMPILER" = "gcc" ]]; then
             # Use MinGW-w64 compiler
             export PATH="$MINGW_CC:$PATH"
-            CONFIGOPTS+=("--disable-ccache");
+            CONFIGOPTS+=("--disable-ccache")
           else
              # cccl wrapping MSVC
           fi
