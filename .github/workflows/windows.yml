@@ -291,10 +291,9 @@ jobs:
           if [[ "$COMPILER" = "gcc" ]]; then
             # Use MinGW-w64 compiler
             export PATH="$MINGW_CC:$PATH"
-            CONFIGOPTS+=("--disable-ccache")
           else
              # cccl wrapping MSVC
-             true
+            CONFIGOPTS+=("--disable-ccache")
           fi
           ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" ${CONFIGOPTS}
 
