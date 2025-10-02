@@ -294,6 +294,7 @@ jobs:
             CONFIGOPTS+=("--disable-ccache")
           else
              # cccl wrapping MSVC
+             true
           fi
           ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" ${CONFIGOPTS}
 
