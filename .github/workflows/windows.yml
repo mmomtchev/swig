@@ -306,7 +306,7 @@ jobs:
     # Test the Windows swig have a proper SWIG library path
     - name: Test swiglib (default location)
       shell: bash
-      if: !matrix.SWIGLIB
+      if: ${{ !matrix.SWIGLIB }}
       run: |
           # path is based on executable location
           if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "$PWD")\\Lib" ]]; then
@@ -314,7 +314,7 @@ jobs:
           fi
     - name: Test swiglib (custom location)
       shell: bash
-      if: matrix.SWIGLIB
+      if: ${{ matrix.SWIGLIB }}
       run: |
           # path is hardcoded
           if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "${{ matrix.SWIGLIB }}" ]]; then
