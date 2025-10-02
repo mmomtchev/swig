@@ -314,6 +314,9 @@ jobs:
       run: |
           # path is based on executable location
           if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "$PWD")\\Lib" ]]; then
+            cat Source/Include/swigconfig.h
+            ./swig.exe -swiglib
+            cygpath -w '${{ matrix.SWIGLIB }}'
             exit 1
           fi
     - name: Test swiglib (custom location)
