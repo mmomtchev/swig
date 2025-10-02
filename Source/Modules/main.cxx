@@ -899,20 +899,20 @@ static String *get_exe_path(void) {
 #include <dlfcn.h>
 
 static String *get_exe_path(void) {
-    Dl_info info;
-    if (dladdr("main", &info)) {
-        char realp_buffer[PATH_MAX];
-        char* res = NULL;
+  Dl_info info;
+  if (dladdr("main", &info)) {
+    char realp_buffer[PATH_MAX];
+    char* res = NULL;
 
-        res = realpath(info.dli_fname, realp_buffer);
-        if (!res) {
-         return NewString(SWIG_LIB);
-        }
-
-        const char* dir = dirname(realp_buffer);
-        return NewStringf("%s/", dir);
+    res = realpath(info.dli_fname, realp_buffer);
+    if (!res) {
+      return NewString(SWIG_LIB);
     }
-    return NewStringf("%s/", SWIG_LIB);
+
+    const char* dir = dirname(realp_buffer);
+    return NewStringf("%s/", dir);
+  }
+  return NewStringf("%s/", SWIG_LIB);
 }
 #endif
 #endif

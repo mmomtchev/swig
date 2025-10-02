@@ -84,7 +84,7 @@
 #define VERSION "@SWIG_VERSION@"
 
 /* SWIG_LIB is relative to the executable */
-#define SWIG_RELOCATABLE "@SWIG_RELOCATABLE@"
+#cmakedefine SWIG_RELOCATABLE 1
 
 /* Deal with attempt by Microsoft to deprecate C standard runtime functions */
 #if defined(_MSC_VER)
