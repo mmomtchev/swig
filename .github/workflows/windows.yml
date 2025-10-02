@@ -71,6 +71,10 @@ jobs:
         - SWIGLANG: ruby
           VER: '3.3'
           COMPILER: gcc
+        - SWIGLANG: python
+          VER: '3.13'
+          INSTALL: 'true'
+          SWIGLIB: '${{ github.workspace }}\\swiglib'
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
@@ -300,11 +304,20 @@ jobs:
           make -s $SWIGJOBS
 
     # Test the Windows swig have a proper SWIG library path
-    - name: Test swiglib
+    - name: Test swiglib (default location)
       shell: bash
+      if: !matrix.SWIGLIB
       run: |
           # path is based on executable location
           if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "$PWD")\\Lib" ]]; then
+            exit 1
+          fi
+    - name: Test swiglib (custom location)
+      shell: bash
+      if: matrix.SWIGLIB
+      run: |
+          # path is hardcoded
+          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "${{ matrix.SWIGLIB }}" ]]; then
             exit 1
           fi
 
