@@ -77,16 +77,14 @@
 /* Directory for SWIG system-independent libraries */
 #define SWIG_LIB "@CMAKE_INSTALL_PREFIX@/@SWIG_LIB@"
 
-/* Directory for SWIG system-independent libraries (Unix install on native
-   Windows) */
-#define SWIG_LIB_WIN_UNIX "@SWIG_LIB_WIN_UNIX@"
-
 /* Platform that SWIG is built for */
 #define SWIG_PLATFORM "@CMAKE_SYSTEM_NAME@"
 
 /* Version number of package */
 #define VERSION "@SWIG_VERSION@"
 
+/* SWIG_LIB is relative to the executable */
+#define SWIG_RELOCATABLE "@SWIG_RELOCATABLE@"
 
 /* Deal with attempt by Microsoft to deprecate C standard runtime functions */
 #if defined(_MSC_VER)

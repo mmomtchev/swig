@@ -19,7 +19,8 @@ endif ()
 set (SWIG_ROOT ${PROJECT_SOURCE_DIR})
 
 if (WIN32)
-  set (SWIG_LIB bin/Lib)
+  set (SWIG_LIB Lib)
+  set (SWIG_RELOCATABLE ON CACHE "SWIG_LIB is relative to the binary")
 else ()
   set (SWIG_LIB share/swig/${SWIG_VERSION})
 endif ()
@@ -81,10 +82,6 @@ if (WITH_PCRE)
   include_directories (${PCRE2_INCLUDE_DIRS})
 endif()
 
-#if (WIN32)
-#  file (TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${SWIG_LIB} SWIG_LIB_WIN_UNIX)
-#  string (REGEX REPLACE "\\\\" "\\\\\\\\" SWIG_LIB_WIN_UNIX "${SWIG_LIB_WIN_UNIX}")
-#endif ()
 configure_file (${SWIG_ROOT}/Tools/cmake/swigconfig.h.in
                 ${CMAKE_CURRENT_BINARY_DIR}/Source/Include/swigconfig.h)
 
