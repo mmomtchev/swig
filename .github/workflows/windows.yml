@@ -322,6 +322,7 @@ jobs:
       run: |
           # path is hardcoded
           if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w '${{ matrix.SWIGLIB }}')" ]]; then
+            cat Source/Include/swigconfig.h
             ./swig.exe -swiglib
             cygpath -w '${{ matrix.SWIGLIB }}'
             exit 1
