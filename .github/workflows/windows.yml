@@ -32,6 +32,7 @@ jobs:
       ${{ matrix.SWIGLANG }} ${{ matrix.VER }}
       ${{ matrix.SWIG_FEATURES }}
       ${{ matrix.COMPILER || 'msvc' }} ${{ matrix.os }}
+      ${{ matrix.SWIGLIB && '-swiglib' || '' }}
       ${{ matrix.continue-on-error && '(can fail)' }}
 
     strategy:
