@@ -177,7 +177,7 @@ else()
   string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB}")
 endif()
 # match both / and \
-string(REPLACE "/" "[/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
+string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
 set_property(TEST cmd_swiglib PROPERTY PASS_REGULAR_EXPRESSION "${SWIG_LIB_REGEX}")
 add_test(NAME cmd_external_runtime COMMAND swig -external-runtime ext_rt.h)
 set_tests_properties(cmd_external_runtime PROPERTIES ENVIRONMENT "SWIG_LIB=${PROJECT_SOURCE_DIR}/Lib")
