@@ -333,19 +333,6 @@ jobs:
             exit 1
           fi
 
-    - name: Test
-      shell: bash
-      run: |
-          if [[ "$COMPILER" = "gcc" ]]; then
-            # Use MinGW-w64 compiler
-            export PATH="$MINGW_CC:$PATH"
-          fi
-          ./swig.exe -version
-          make check-$SWIGLANG-version
-          make check-$SWIGLANG-enabled
-          make -k check-$SWIGLANG-examples $SWIGJOBS $CHECK_OPTIONS
-          make -k check-$SWIGLANG-test-suite $SWIGJOBS $CHECK_OPTIONS
-
     - name: Install
       if: ${{ env.INSTALL == 'true' }}
       shell: bash
@@ -360,6 +347,19 @@ jobs:
           #  which ccache-swig.exe
           #  ccache-swig.exe -V
           #fi
+
+    - name: Test
+      shell: bash
+      run: |
+          if [[ "$COMPILER" = "gcc" ]]; then
+            # Use MinGW-w64 compiler
+            export PATH="$MINGW_CC:$PATH"
+          fi
+          ./swig.exe -version
+          make check-$SWIGLANG-version
+          make check-$SWIGLANG-enabled
+          make -k check-$SWIGLANG-examples $SWIGJOBS $CHECK_OPTIONS
+          make -k check-$SWIGLANG-test-suite $SWIGJOBS $CHECK_OPTIONS
 
     # The test by itself is not related to the installation.
     # We just want to save testing time :-)
