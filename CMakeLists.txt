@@ -172,9 +172,9 @@ add_test (NAME cmd_pcreversion COMMAND swig -pcreversion)
 add_test (NAME cmd_swiglib COMMAND swig -swiglib)
 if (SWIG_RELOCATABLE)
   # credits to https://gitlab.kitware.com/cmake/cmake/-/issues/18580#note_483128
-  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${PROJECT_BINARY_DIR}/${SWIG_LIB}")
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "$<TARGET_FILE:swig>/${SWIG_LIB}")
 else()
-  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB}")
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB_INSTALL}")
 endif()
 # match both / and \
 string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
