@@ -75,7 +75,7 @@ jobs:
         - SWIGLANG: python
           VER: '3.13'
           INSTALL: 'true'
-          SWIGLIB: 'C:\\swiglib'
+          SWIGLIB: 'C:/swiglib'
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
@@ -286,7 +286,7 @@ jobs:
       shell: bash
       run: |
           if [[ -n "${{ matrix.SWIGLIB }}" ]]; then
-            CONFIGOPTS+=("--with-swiglibdir='${{ matrix.SWIGLIB }}'")
+            CONFIGOPTS+=("--with-swiglibdir=${{ matrix.SWIGLIB }}")
           fi
           if [[ "$COMPILER" = "gcc" ]]; then
             # Use MinGW-w64 compiler
