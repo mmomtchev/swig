@@ -24,7 +24,15 @@ if (WIN32)
 else ()
   set (SWIG_LIB "share/swig/${SWIG_VERSION}" CACHE STRING "SWIG system-independent libraries directory")
   set (SWIG_RELOCATABLE OFF CACHE BOOL "SWIG_LIB is relative to the binary")
-endif()
+endif ()
+
+if (SWIG_RELOCATABLE)
+  set (SWIG_LIB_INSTALL "${SWIG_LIB}")
+else ()
+  set (SWIG_LIB_INSTALL "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
+endif ()
+
+message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
 # Project wide configuration variables
 # ------------------------------------
 
