@@ -20,7 +20,7 @@ set (SWIG_ROOT ${PROJECT_SOURCE_DIR})
 
 if (WIN32)
   set (SWIG_LIB Lib)
-  set (SWIG_RELOCATABLE ON CACHE "SWIG_LIB is relative to the binary")
+  set (SWIG_RELOCATABLE ON CACHE BOOL "SWIG_LIB is relative to the binary")
 else ()
   set (SWIG_LIB share/swig/${SWIG_VERSION})
 endif ()
