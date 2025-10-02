@@ -318,7 +318,7 @@ jobs:
       if: ${{ matrix.SWIGLIB }}
       run: |
           # path is hardcoded
-          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "${{ matrix.SWIGLIB }}"" ]]; then
+          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w '${{ matrix.SWIGLIB }}'" ]]; then
             exit 1
           fi
 
