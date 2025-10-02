@@ -2915,6 +2915,9 @@ case $build in
     SWIG_LIB=`cygpath --mixed "$SWIG_LIB"`
     AC_DEFINE_UNQUOTED(SWIG_LIB, ["$SWIG_LIB"], [Directory for SWIG system-independent libraries])
     ;;
+  *-*-msys*)
+    AC_DEFINE_UNQUOTED(SWIG_LIB, ["$SWIG_LIB"], [Directory for SWIG system-independent libraries])
+    ;;
   *)
     AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
     ;;
