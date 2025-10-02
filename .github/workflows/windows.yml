@@ -75,7 +75,7 @@ jobs:
         - SWIGLANG: python
           VER: '3.13'
           INSTALL: 'true'
-          SWIGLIB: '${{ github.workspace }}\\swiglib'
+          SWIGLIB: 'C:\\swiglib'
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
