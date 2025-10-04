@@ -1,4 +1,4 @@
-name: windows-cmake
+name: linux-cmake
 
 on:
   push:
@@ -69,6 +69,6 @@ jobs:
     - name: Install
       shell: bash
       run: |
-          cmake --install .
+          sudo cmake --install .
           /usr/local/bin/swig -version
           /usr/local/bin/swig -swiglib
