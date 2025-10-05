@@ -4,6 +4,15 @@ See the RELEASENOTES file for a summary of changes in each release.
 Issue # numbers mentioned below can be found on Github. For more details, add
 the issue number to the end of the URL: https://github.com/swig/swig/issues/
 
+Version 5.0.8
+===========================
+
+2025-10-05: mmomtchev
+            Unify UNIX and Windows handling of `SWIG_LIB` and support
+            relocatable installations using `--enable-relocatable`
+            `configure` option, default on Windows
+            [mmomtchev/swig#111](https://github.com/mmomtchev/swig/pull/111)
+
 Version 5.0.7 (29 Sep 2025)
 ===========================
 
