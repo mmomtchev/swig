@@ -19,10 +19,20 @@ endif ()
 set (SWIG_ROOT ${PROJECT_SOURCE_DIR})
 
 if (WIN32)
-  set (SWIG_LIB bin/Lib)
+  set (SWIG_LIB "Lib" CACHE STRING "SWIG system-independent libraries directory")
+  set (SWIG_RELOCATABLE ON CACHE BOOL "SWIG_LIB is relative to the binary")
 else ()
-  set (SWIG_LIB share/swig/${SWIG_VERSION})
+  set (SWIG_LIB "share/swig/${SWIG_VERSION}" CACHE STRING "SWIG system-independent libraries directory")
+  set (SWIG_RELOCATABLE OFF CACHE BOOL "SWIG_LIB is relative to the binary")
 endif ()
+
+if (SWIG_RELOCATABLE)
+  set (SWIG_LIB_INSTALL "${SWIG_LIB}")
+else ()
+  set (SWIG_LIB_INSTALL "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
+endif ()
+
+message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
 # Project wide configuration variables
 # ------------------------------------
 
@@ -81,10 +91,6 @@ if (WITH_PCRE)
   include_directories (${PCRE2_INCLUDE_DIRS})
 endif()
 
-#if (WIN32)
-#  file (TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${SWIG_LIB} SWIG_LIB_WIN_UNIX)
-#  string (REGEX REPLACE "\\\\" "\\\\\\\\" SWIG_LIB_WIN_UNIX "${SWIG_LIB_WIN_UNIX}")
-#endif ()
 configure_file (${SWIG_ROOT}/Tools/cmake/swigconfig.h.in
                 ${CMAKE_CURRENT_BINARY_DIR}/Source/Include/swigconfig.h)
 
@@ -164,6 +170,16 @@ enable_testing ()
 add_test (NAME cmd_version COMMAND swig -version)
 add_test (NAME cmd_pcreversion COMMAND swig -pcreversion)
 add_test (NAME cmd_swiglib COMMAND swig -swiglib)
-add_test (NAME cmd_external_runtime COMMAND swig -external-runtime ext_rt.h)
+if (SWIG_RELOCATABLE)
+  get_filename_component(SWIG_EXE_DIR swig DIRECTORY)
+  # credits to https://gitlab.kitware.com/cmake/cmake/-/issues/18580#note_483128
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_EXE_DIR}/${SWIG_LIB}")
+else()
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB_INSTALL}")
+endif()
+# match both / and \
+string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
+set_property(TEST cmd_swiglib PROPERTY PASS_REGULAR_EXPRESSION "${SWIG_LIB_REGEX}")
+add_test(NAME cmd_external_runtime COMMAND swig -external-runtime ext_rt.h)
 set_tests_properties(cmd_external_runtime PROPERTIES ENVIRONMENT "SWIG_LIB=${PROJECT_SOURCE_DIR}/Lib")
 

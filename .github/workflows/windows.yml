@@ -32,6 +32,7 @@ jobs:
       ${{ matrix.SWIGLANG }} ${{ matrix.VER }}
       ${{ matrix.SWIG_FEATURES }}
       ${{ matrix.COMPILER || 'msvc' }} ${{ matrix.os }}
+      ${{ matrix.SWIGLIB && '-swiglib' || '' }}
       ${{ matrix.continue-on-error && '(can fail)' }}
 
     strategy:
@@ -71,6 +72,10 @@ jobs:
         - SWIGLANG: ruby
           VER: '3.3'
           COMPILER: gcc
+        - SWIGLANG: python
+          VER: '3.13'
+          INSTALL: 'true'
+          SWIGLIB: 'C:/swiglib'
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
@@ -280,14 +285,17 @@ jobs:
     - name: Configure
       shell: bash
       run: |
+          if [[ -n "${{ matrix.SWIGLIB }}" ]]; then
+            CONFIGOPTS+=("--with-swiglibdir=${{ matrix.SWIGLIB }}")
+          fi
           if [[ "$COMPILER" = "gcc" ]]; then
             # Use MinGW-w64 compiler
             export PATH="$MINGW_CC:$PATH"
-            ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe"
           else
              # cccl wrapping MSVC
-            ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" --disable-ccache
+            CONFIGOPTS+=("--disable-ccache")
           fi
+          ./configure --disable-dependency-tracking --with-boost="$BOOST_PATH" --with-csharp-compiler="csc.exe" "${CONFIGOPTS[@]}"
 
     - name: Build
       shell: bash
@@ -300,26 +308,30 @@ jobs:
           make -s $SWIGJOBS
 
     # Test the Windows swig have a proper SWIG library path
-    - name: Test swiglib
+    - name: Test swiglib (default location)
       shell: bash
+      if: ${{ !matrix.SWIGLIB }}
       run: |
           # path is based on executable location
-          if ! [[ "$(./swig.exe -swiglib)" = "$(cygpath -w "$PWD")\\Lib" ]]; then
+          SWIGLIB=$(./swig.exe -swiglib)
+          if ! [[ "$(cygpath -w ${SWIGLIB})" = "$(cygpath -w "$PWD")\\Lib" ]]; then
+            cat Source/Include/swigconfig.h
+            ./swig.exe -swiglib
+            cygpath -w '${{ matrix.SWIGLIB }}'
             exit 1
           fi
-
-    - name: Test
+    - name: Test swiglib (custom location)
       shell: bash
+      if: ${{ matrix.SWIGLIB }}
       run: |
-          if [[ "$COMPILER" = "gcc" ]]; then
-            # Use MinGW-w64 compiler
-            export PATH="$MINGW_CC:$PATH"
+          # path is hardcoded
+          SWIGLIB=$(./swig.exe -swiglib)
+          if ! [[ "$(cygpath -w ${SWIGLIB})" = "$(cygpath -w '${{ matrix.SWIGLIB }}')" ]]; then
+            cat Source/Include/swigconfig.h
+            ./swig.exe -swiglib
+            cygpath -w '${{ matrix.SWIGLIB }}'
+            exit 1
           fi
-          ./swig.exe -version
-          make check-$SWIGLANG-version
-          make check-$SWIGLANG-enabled
-          make -k check-$SWIGLANG-examples $SWIGJOBS $CHECK_OPTIONS
-          make -k check-$SWIGLANG-test-suite $SWIGJOBS $CHECK_OPTIONS
 
     - name: Install
       if: ${{ env.INSTALL == 'true' }}
@@ -335,6 +347,19 @@ jobs:
           #  which ccache-swig.exe
           #  ccache-swig.exe -V
           #fi
+
+    - name: Test
+      shell: bash
+      run: |
+          if [[ "$COMPILER" = "gcc" ]]; then
+            # Use MinGW-w64 compiler
+            export PATH="$MINGW_CC:$PATH"
+          fi
+          ./swig.exe -version
+          make check-$SWIGLANG-version
+          make check-$SWIGLANG-enabled
+          make -k check-$SWIGLANG-examples $SWIGJOBS $CHECK_OPTIONS
+          make -k check-$SWIGLANG-test-suite $SWIGJOBS $CHECK_OPTIONS
 
     # The test by itself is not related to the installation.
     # We just want to save testing time :-)

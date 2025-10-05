@@ -176,7 +176,6 @@ Arguments may also be passed in a file, separated by whitespace. For example:\n\
 // Local variables
 static String *LangSubDir = 0; // Target language library subdirectory
 static String *SwigLib = 0; // Library directory
-static String *SwigLibWinUnix = 0; // Extra library directory on Windows
 static int freeze = 0;
 static String *lang_config = 0;
 static const char *hpp_extension = "h";
@@ -606,8 +605,6 @@ static void getoptions(int argc, char *argv[]) {
 	Swig_mark_arg(i);
       } else if (strcmp(argv[i], "-swiglib") == 0) {
 	Printf(stdout, "%s\n", SwigLib);
-	if (SwigLibWinUnix)
-	  Printf(stdout, "%s\n", SwigLibWinUnix);
 	Exit(EXIT_SUCCESS);
       } else if (strcmp(argv[i], "-o") == 0) {
 	Swig_mark_arg(i);
@@ -883,6 +880,43 @@ static void getoptions(int argc, char *argv[]) {
 
 static void SWIG_exit_handler(int status);
 
+#if defined(SWIG_RELOCATABLE)
+#if defined(_WIN32)
+static String *get_exe_path(void) {
+  char buf[MAX_PATH];
+  char *p;
+  if (!(GetModuleFileName(0, buf, MAX_PATH) == 0 ||
+        (p = strrchr(buf, '\\')) == 0)) {
+    *(p + 1) = '\0';
+    return NewString(buf); // Native windows installation path
+  } else {
+    return NewString(""); // Unexpected error
+  }
+}
+#else
+#include <libgen.h>
+#include <unistd.h>
+#include <dlfcn.h>
+
+static String *get_exe_path(void) {
+  Dl_info info;
+  if (dladdr("main", &info)) {
+    char realp_buffer[PATH_MAX];
+    char* res = NULL;
+
+    res = realpath(info.dli_fname, realp_buffer);
+    if (!res) {
+      return NewString(SWIG_LIB);
+    }
+
+    const char* dir = dirname(realp_buffer);
+    return NewStringf("%s/", dir);
+  }
+  return NewStringf("%s/", SWIG_LIB);
+}
+#endif
+#endif
+
 int SWIG_main(int argc, char *argv[], const TargetLanguageModule *tlm) {
   char *c;
 
@@ -918,17 +952,8 @@ int SWIG_main(int argc, char *argv[], const TargetLanguageModule *tlm) {
   // Check for SWIG_LIB environment variable
   c = getenv("SWIG_LIB");
   if (c == (char *) 0 || *c == 0) {
-#if defined(_WIN32)
-    char buf[MAX_PATH];
-    char *p;
-    if (!(GetModuleFileName(0, buf, MAX_PATH) == 0 || (p = strrchr(buf, '\\')) == 0)) {
-      *(p + 1) = '\0';
-      SwigLib = NewStringf("%sLib", buf); // Native windows installation path
-    } else {
-      SwigLib = NewStringf("");	// Unexpected error
-    }
-    if (Len(SWIG_LIB_WIN_UNIX) > 0)
-      SwigLibWinUnix = NewString(SWIG_LIB_WIN_UNIX); // Unix installation path using a drive letter (for msys/mingw)
+#if defined(SWIG_RELOCATABLE)
+    SwigLib = NewStringf("%s%s", get_exe_path(), SWIG_LIB);
 #else
     SwigLib = NewString(SWIG_LIB);
 #endif
@@ -1002,19 +1027,12 @@ int SWIG_main(int argc, char *argv[], const TargetLanguageModule *tlm) {
     String *rl = NewString("");
     Printf(rl, ".%sswig_lib%s%s", SWIG_FILE_DELIMITER, SWIG_FILE_DELIMITER, LangSubDir);
     Swig_add_directory(rl);
-    if (SwigLibWinUnix) {
-      rl = NewString("");
-      Printf(rl, "%s%s%s", SwigLibWinUnix, SWIG_FILE_DELIMITER, LangSubDir);
-      Swig_add_directory(rl);
-    }
     rl = NewString("");
     Printf(rl, "%s%s%s", SwigLib, SWIG_FILE_DELIMITER, LangSubDir);
     Swig_add_directory(rl);
   }
 
   Swig_add_directory((String *) "." SWIG_FILE_DELIMITER "swig_lib");
-  if (SwigLibWinUnix)
-    Swig_add_directory((String *) SwigLibWinUnix);
   Swig_add_directory(SwigLib);
 
   if (Verbose) {
@@ -1160,7 +1178,7 @@ int SWIG_main(int argc, char *argv[], const TargetLanguageModule *tlm) {
 	  for (int i = 0; i < Len(files); i++) {
             int use_file = 1;
             if (depend == 2) {
-              if ((Strncmp(Getitem(files, i), SwigLib, Len(SwigLib)) == 0) || (SwigLibWinUnix && (Strncmp(Getitem(files, i), SwigLibWinUnix, Len(SwigLibWinUnix)) == 0)))
+              if ((Strncmp(Getitem(files, i), SwigLib, Len(SwigLib)) == 0) == 0)
                 use_file = 0;
             }
             if (use_file) {

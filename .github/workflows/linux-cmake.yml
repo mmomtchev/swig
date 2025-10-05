@@ -1,0 +1,74 @@
+name: linux-cmake
+
+on:
+  push:
+    branches: main
+    paths-ignore:
+      - 'CHANGES*'
+      - 'Doc/**'
+      - 'appveyor.yml'
+  pull_request:
+    branches: main
+    paths-ignore:
+      - 'CHANGES*'
+      - 'Doc/**'
+      - 'appveyor.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cmake:
+    runs-on: ${{ matrix.os }}
+
+    name: CMake
+
+    strategy:
+      matrix:
+        include:
+        - os: 'ubuntu-22.04'
+
+    steps:
+    - name: Machine Info
+      run: |
+          echo "nproc..."
+          nproc --all
+          echo "uname..."
+          uname --all
+          echo "meminfo..."
+          cat /proc/meminfo
+          echo "lsb-release..."
+          cat /etc/lsb-release
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        show-progress: false
+
+    - name: Install CCache
+      uses: hendrikmuhs/ccache-action@v1
+      with:
+        key: ${{ matrix.os }}
+
+    - name: Configure
+      shell: bash
+      run: |
+          cmake --version
+          cmake \
+            -DCMAKE_INSTALL_PREFIX="/usr/local" \
+            .
+
+    - name: Build
+      shell: bash
+      run: cmake --build .
+
+    - name: Test
+      shell: bash
+      run: ctest --output-on-failure -V
+
+    - name: Install
+      shell: bash
+      run: |
+          sudo cmake --install .
+          /usr/local/bin/swig -version
+          /usr/local/bin/swig -swiglib
