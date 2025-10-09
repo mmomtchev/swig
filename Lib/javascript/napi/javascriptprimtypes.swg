@@ -65,7 +65,7 @@ SWIG_From_signed_SS_char(Napi::Env env, signed char c)
 SWIGINTERNINLINE
 Napi::Value SWIG_From_int(Napi::Env env, int val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -101,7 +101,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_int(Napi::Env env, unsigned int val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -140,7 +140,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_short(Napi::Env env, short val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -176,7 +176,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_short(Napi::Env env, unsigned short val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -215,7 +215,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_long(Napi::Env env, long val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -250,7 +250,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_long(Napi::Env env, unsigned long val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -289,7 +289,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_long_SS_long(Napi::Env env, long long val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 %#endif
 }
@@ -334,7 +334,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_unsigned_SS_long_SS_long(Napi::Env env, unsigned long long val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 %#endif
 }
@@ -381,7 +381,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_float(Napi::Env env, float val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
@@ -418,7 +418,7 @@ fail:
 SWIGINTERNINLINE
 Napi::Value SWIG_From_double(Napi::Env env, double val)
 {
-  return Napi::Number::New(env, val);
+  return Napi::Number::New(env, static_cast<double>(val));
 }
 }
 
