@@ -7,6 +7,12 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.8
 ===========================
 
+2025-10-09: mmomtchev
+            [JavaScript] Suppress all loss of precision warnings when
+            compiling the generated code, the loss of integer precision in
+            JavaScript is expected and part of the language specifications
+            [mmomtchev/swig#112](https://github.com/mmomtchev/swig/pull/112)
+
 2025-10-05: mmomtchev
             Unify UNIX and Windows handling of `SWIG_LIB` and support
             relocatable installations using `--enable-relocatable`
