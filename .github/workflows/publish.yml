@@ -156,6 +156,7 @@ jobs:
         tarBall: true
         out-file-path: ${{ github.workspace }}/swig
         extract: true
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Check swiglib
       run: ./swig/swig -swiglib
