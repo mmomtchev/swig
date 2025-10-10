@@ -1,4 +1,4 @@
-name: Publish
+name: Publish prebuilt binaries
 on:
   workflow_dispatch:
     inputs:
@@ -26,7 +26,7 @@ jobs:
 
 
   build:
-    name: Build for ${{ matrix.id && '' || '' }}
+    name: Build for ${{ matrix.id }}
     needs: [ create-release ]
     runs-on: ${{ matrix.platform }}
     permissions:
@@ -76,7 +76,7 @@ jobs:
       shell: powershell
       run: |
           cmake --version
-          cmake -G "$env:BUILD_SYS" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" `
           -DCMAKE_C_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
           -DCMAKE_CXX_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
@@ -87,6 +87,7 @@ jobs:
     - name: Configure (Linux)
       if: runner.os == 'Linux'
       run: |
+          cmake --version
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
             -DSWIG_RELOCATABLE=ON \
@@ -116,7 +117,7 @@ jobs:
       shell: bash
       run: |
         cd dist
-        tar -zcvf ../${{ matrix.id }}.tar.gz dist
+        tar -zcvf ../${{ matrix.id }}.tar.gz swig
 
     - name: Publish the binaries
       uses: ncipollo/release-action@v1
