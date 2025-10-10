@@ -101,15 +101,15 @@ find_package (BISON 3.5 REQUIRED)
 # --------------
 
 include_directories (
+    ${PROJECT_BINARY_DIR}/Source/Include
+    ${PROJECT_BINARY_DIR}/Source/CParse
+    ${PROJECT_SOURCE_DIR}/Source/Doxygen
     ${SWIG_SOURCE_DIR}/CParse
     ${SWIG_SOURCE_DIR}/Include
     ${SWIG_SOURCE_DIR}/DOH
     ${SWIG_SOURCE_DIR}/Swig
     ${SWIG_SOURCE_DIR}/Preprocessor
     ${SWIG_SOURCE_DIR}/Modules
-    ${PROJECT_BINARY_DIR}/Source/Include
-    ${PROJECT_BINARY_DIR}/Source/CParse
-    ${PROJECT_SOURCE_DIR}/Source/Doxygen
 )
 
 # generate the parser source code (depends on bison)
