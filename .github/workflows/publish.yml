@@ -152,6 +152,8 @@ jobs:
       run: |
         gh release download  ${{ github.ref_name }} -p '${{ matrix.id }}*'
         tar zxvf ${{ matrix.id }}.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
 
     - name: Check swiglib
       run: ./swig/swig -swiglib
