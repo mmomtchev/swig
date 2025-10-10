@@ -151,7 +151,7 @@ jobs:
     - name: Download the binaries
       uses: robinraju/release-downloader@v1
       with:
-        tag: $${{ github.ref }}
+        tag: ${{ github.ref_name }}
         fileName: ${{ matrix.id }}.tar.gz
         tarBall: true
         out-file-path: ${{ github.workspace }}/swig
