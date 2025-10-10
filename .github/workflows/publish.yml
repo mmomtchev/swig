@@ -127,3 +127,45 @@ jobs:
         omitNameDuringUpdate: true
         omitDraftDuringUpdate: true
         omitPrereleaseDuringUpdate: true
+
+
+  test:
+    name: Test ${{ matrix.id }}
+    needs: [ build ]
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            id: linux-x64
+          - platform: macos-14
+            id: darwin-arm64
+          - platform: macos-13
+            id: darwin-x64
+          - platform: windows-2022
+            id: win32-x64
+    
+    steps:
+    - name: Download the binaries
+      uses: robinraju/release-downloader@v1
+      with:
+        tag: $${{ github.ref }}
+        fileName: ${{ matrix.id }}.tar.gz
+        tarBall: true
+        out-file-path: ${{ github.workspace }}/swig
+        extract: true
+
+    - name: Check swiglib
+      run: ./swig/swig -swiglib
+
+    - name: Checkout an example
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          Examples/javascript/class/example.i
+          Examples/javascript/class/example.h
+
+    - name: Generate example wrappers
+      run: ./swig/swig -javascript -napi -c++ Examples/javascript/class/example.i
