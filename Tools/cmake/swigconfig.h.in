@@ -75,7 +75,7 @@
 #define SWIG_CXX "@CMAKE_CXX_COMPILER@"
 
 /* Directory for SWIG system-independent libraries */
-#define SWIG_LIB "@SWIG_LIB_INSTALL@"
+#define SWIG_LIB "@SWIG_LIB_BUILD@"
 
 /* Platform that SWIG is built for */
 #define SWIG_PLATFORM "@CMAKE_SYSTEM_NAME@"

@@ -27,9 +27,13 @@ else ()
 endif ()
 
 if (SWIG_RELOCATABLE)
+  # Where CMake installs
   set (SWIG_LIB_INSTALL "bin/${SWIG_LIB}")
+  # Where the SWIG executable looks for
+  set (SWIG_LIB_BUILD "${SWIG_LIB}")
 else()
   set (SWIG_LIB_INSTALL "${SWIG_LIB}")
+  set (SWIG_LIB_BUILD "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
 endif()
 
 message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
