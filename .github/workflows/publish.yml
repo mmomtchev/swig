@@ -1,11 +1,7 @@
-name: Publish
+name: Publish prebuilt binaries
 on:
   workflow_dispatch:
     inputs:
-      name:
-        type: string
-        required: true
-        description: Name (version)
       prerelease:
         type: boolean
         default: false
@@ -24,13 +20,12 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         draft: true
-        name: ${{ inputs.name }}
         skipIfReleaseExists: true
         prerelease: ${{ inputs.prerelease }}
 
 
   build:
-    name: Build for ${{ matrix.id && '' || '' }}
+    name: Build for ${{ matrix.id }}
     needs: [ create-release ]
     runs-on: ${{ matrix.platform }}
     permissions:
@@ -80,7 +75,7 @@ jobs:
       shell: powershell
       run: |
           cmake --version
-          cmake -G "$env:BUILD_SYS" -A x64 `
+          cmake -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" `
           -DCMAKE_C_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
           -DCMAKE_CXX_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
@@ -88,13 +83,24 @@ jobs:
           -DPCRE2_LIBRARY="$env:PCRE2_PATH\lib\pcre2-8-static.lib" `
           -DLINK_FLAGS="/NODEFAULTLIB:MSVCRT" -S . -B .
 
-    - name: Configure (UNIX)
-      if: runner.os != 'Windows'
+    - name: Configure (Linux)
+      if: runner.os == 'Linux'
+      run: |
+          cmake --version
+          cmake \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
+            -DSWIG_RELOCATABLE=ON \
+            -DSWIG_LIB=Lib \
+            .
+
+    - name: Configure (macOS)
+      if: runner.os == 'macOS'
       run: |
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
-            -DSWIG_RELOCATABLE=ON
-            -DSWIG_LIB=Lib
+            -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison \
+            -DSWIG_RELOCATABLE=ON \
+            -DSWIG_LIB=Lib \
             .
 
     - name: Build
@@ -110,7 +116,7 @@ jobs:
       shell: bash
       run: |
         cd dist
-        tar -zcvf ../${{ matrix.id }}.tar.gz dist
+        tar -zcvf ../${{ matrix.id }}.tar.gz swig
 
     - name: Publish the binaries
       uses: ncipollo/release-action@v1
@@ -118,5 +124,46 @@ jobs:
         allowUpdates: true
         artifacts: ${{ matrix.id }}.tar.gz
         updateOnlyUnreleased: true
+        omitNameDuringUpdate: true
         omitDraftDuringUpdate: true
         omitPrereleaseDuringUpdate: true
+
+
+  test:
+    name: Test ${{ matrix.id }}
+    needs: [ build ]
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            id: linux-x64
+          - platform: macos-14
+            id: darwin-arm64
+          - platform: macos-13
+            id: darwin-x64
+          - platform: windows-2022
+            id: win32-x64
+    
+    steps:
+    - name: Checkout an example
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          Examples/javascript/class/example.i
+          Examples/javascript/class/example.h
+
+    - name: Download the binaries
+      run: |
+        gh release download  ${{ github.ref_name }} -p '${{ matrix.id }}*'
+        tar zxvf ${{ matrix.id }}.tar.gz
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Check swiglib
+      run: ./swig/bin/swig -swiglib
+
+    - name: Generate example wrappers
+      run: ./swig/bin/swig -javascript -napi -c++ Examples/javascript/class/example.i

@@ -27,10 +27,14 @@ else ()
 endif ()
 
 if (SWIG_RELOCATABLE)
+  # Where CMake installs
+  set (SWIG_LIB_INSTALL "bin/${SWIG_LIB}")
+  # Where the SWIG executable looks for
+  set (SWIG_LIB_BUILD "${SWIG_LIB}")
+else()
   set (SWIG_LIB_INSTALL "${SWIG_LIB}")
-else ()
-  set (SWIG_LIB_INSTALL "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
-endif ()
+  set (SWIG_LIB_BUILD "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
+endif()
 
 message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
 # Project wide configuration variables
@@ -101,15 +105,15 @@ find_package (BISON 3.5 REQUIRED)
 # --------------
 
 include_directories (
+    ${PROJECT_BINARY_DIR}/Source/Include
+    ${PROJECT_BINARY_DIR}/Source/CParse
+    ${PROJECT_SOURCE_DIR}/Source/Doxygen
     ${SWIG_SOURCE_DIR}/CParse
     ${SWIG_SOURCE_DIR}/Include
     ${SWIG_SOURCE_DIR}/DOH
     ${SWIG_SOURCE_DIR}/Swig
     ${SWIG_SOURCE_DIR}/Preprocessor
     ${SWIG_SOURCE_DIR}/Modules
-    ${PROJECT_BINARY_DIR}/Source/Include
-    ${PROJECT_BINARY_DIR}/Source/CParse
-    ${PROJECT_SOURCE_DIR}/Source/Doxygen
 )
 
 # generate the parser source code (depends on bison)
@@ -127,8 +131,8 @@ file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg ${SWIG_WARN_SWG})
 set_property (SOURCE ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg PROPERTY GENERATED 1)
 
 # install lib
-install (DIRECTORY ${SWIG_ROOT}/Lib/ DESTINATION ${SWIG_LIB})
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg DESTINATION ${SWIG_LIB})
+install (DIRECTORY ${SWIG_ROOT}/Lib/ DESTINATION ${SWIG_LIB_INSTALL})
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg DESTINATION ${SWIG_LIB_INSTALL})
 
 # sources
 # ---------
@@ -175,7 +179,7 @@ if (SWIG_RELOCATABLE)
   # credits to https://gitlab.kitware.com/cmake/cmake/-/issues/18580#note_483128
   string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_EXE_DIR}/${SWIG_LIB}")
 else()
-  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB_INSTALL}")
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
 endif()
 # match both / and \
 string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
