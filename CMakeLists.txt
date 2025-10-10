@@ -27,10 +27,10 @@ else ()
 endif ()
 
 if (SWIG_RELOCATABLE)
+  set (SWIG_LIB_INSTALL "bin/${SWIG_LIB}")
+else()
   set (SWIG_LIB_INSTALL "${SWIG_LIB}")
-else ()
-  set (SWIG_LIB_INSTALL "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
-endif ()
+endif()
 
 message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
 # Project wide configuration variables
@@ -127,8 +127,8 @@ file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg ${SWIG_WARN_SWG})
 set_property (SOURCE ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg PROPERTY GENERATED 1)
 
 # install lib
-install (DIRECTORY ${SWIG_ROOT}/Lib/ DESTINATION ${SWIG_LIB})
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg DESTINATION ${SWIG_LIB})
+install (DIRECTORY ${SWIG_ROOT}/Lib/ DESTINATION ${SWIG_LIB_INSTALL})
+install (FILES ${CMAKE_CURRENT_BINARY_DIR}/swigwarn.swg DESTINATION ${SWIG_LIB_INSTALL})
 
 # sources
 # ---------
@@ -175,7 +175,7 @@ if (SWIG_RELOCATABLE)
   # credits to https://gitlab.kitware.com/cmake/cmake/-/issues/18580#note_483128
   string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_EXE_DIR}/${SWIG_LIB}")
 else()
-  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_LIB_INSTALL}")
+  string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
 endif()
 # match both / and \
 string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
