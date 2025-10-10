@@ -20,7 +20,6 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         draft: true
-        name: Current Draft
         skipIfReleaseExists: true
         prerelease: ${{ inputs.prerelease }}
 
@@ -126,21 +125,5 @@ jobs:
         artifacts: ${{ matrix.id }}.tar.gz
         updateOnlyUnreleased: true
         omitNameDuringUpdate: true
-        omitDraftDuringUpdate: true
-        omitPrereleaseDuringUpdate: true
-
-    - name: Get the release name (Linux)
-      if: runner.os == 'Linux'
-      id: release
-      run: |
-        echo VERSION=$(./swig -version | grep Version | egrep -o '[0-9]+\.[0-9]+\.[0-9]+') >> $GITHIB_OUTPUT
-
-    - name: Set the release name (Linux)
-      if: runner.os == 'Linux'
-      uses: ncipollo/release-action@v1
-      with:
-        name: ${{ steps.release.outputs.VERSION }}
-        allowUpdates: true
-        updateOnlyUnreleased: true
         omitDraftDuringUpdate: true
         omitPrereleaseDuringUpdate: true
