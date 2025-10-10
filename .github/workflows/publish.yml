@@ -99,7 +99,7 @@ jobs:
       run: |
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
-            -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison
+            -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison \
             -DSWIG_RELOCATABLE=ON \
             -DSWIG_LIB=Lib \
             .
@@ -133,7 +133,7 @@ jobs:
       if: runner.os == 'Linux'
       id: release
       run: |
-        echo VERSION=./swig -version | grep Version | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' >> $GITHIB_OUTPUT
+        echo VERSION=$(./swig -version | grep Version | egrep -o '[0-9]+\.[0-9]+\.[0-9]+') >> $GITHIB_OUTPUT
 
     - name: Set the release name (Linux)
       if: runner.os == 'Linux'
