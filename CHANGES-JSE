@@ -7,6 +7,10 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.8
 ===========================
 
+2025-10-20: mmomtchev
+            Add scripts for generating prebuilt binaries for new releases
+            [mmomtchev/swig#113](https://github.com/mmomtchev/swig/pull/113)
+
 2025-10-09: mmomtchev
             [JavaScript] Suppress all loss of precision warnings when
             compiling the generated code, the loss of integer precision in
