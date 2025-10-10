@@ -88,13 +88,23 @@ jobs:
           -DPCRE2_LIBRARY="$env:PCRE2_PATH\lib\pcre2-8-static.lib" `
           -DLINK_FLAGS="/NODEFAULTLIB:MSVCRT" -S . -B .
 
-    - name: Configure (UNIX)
-      if: runner.os != 'Windows'
+    - name: Configure (Linux)
+      if: runner.os == 'Linux'
       run: |
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
-            -DSWIG_RELOCATABLE=ON
-            -DSWIG_LIB=Lib
+            -DSWIG_RELOCATABLE=ON \
+            -DSWIG_LIB=Lib \
+            .
+
+    - name: Configure (macOS)
+      if: runner.os == 'macOS'
+      run: |
+          cmake \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
+            -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison
+            -DSWIG_RELOCATABLE=ON \
+            -DSWIG_LIB=Lib \
             .
 
     - name: Build
