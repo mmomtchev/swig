@@ -163,7 +163,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
 
     - name: Check swiglib
-      run: ./swig/swig -swiglib
+      run: ./swig/bin/swig -swiglib
 
     - name: Generate example wrappers
-      run: ./swig/swig -javascript -napi -c++ Examples/javascript/class/example.i
+      run: ./swig/bin/swig -javascript -napi -c++ Examples/javascript/class/example.i
