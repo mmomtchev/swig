@@ -148,6 +148,13 @@ jobs:
             id: win32-x64
     
     steps:
+    - name: Checkout an example
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          Examples/javascript/class/example.i
+          Examples/javascript/class/example.h
+
     - name: Download the binaries
       run: |
         gh release download  ${{ github.ref_name }} -p '${{ matrix.id }}*'
@@ -157,13 +164,6 @@ jobs:
 
     - name: Check swiglib
       run: ./swig/swig -swiglib
-
-    - name: Checkout an example
-      uses: actions/checkout@v4
-      with:
-        sparse-checkout: |
-          Examples/javascript/class/example.i
-          Examples/javascript/class/example.h
 
     - name: Generate example wrappers
       run: ./swig/swig -javascript -napi -c++ Examples/javascript/class/example.i
