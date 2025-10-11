@@ -133,6 +133,7 @@ jobs:
 
     - name: Check output (Windows)
       if: runner.os == 'Windows'
+      shell: cmd
       run: |
         dir /s
 
