@@ -109,7 +109,7 @@ jobs:
     - name: Check the version number is correct (Linux)
       if: runner.os == 'Linux'
       run: |
-        ACTUAL="$(./swig -version | grep Version | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')"
+        ACTUAL="v$(./swig -version | grep Version | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')"
         EXPECTED="${{ github.ref_name }}"
         if test "${ACTUAL}" != "${EXPECTED}"; then
           exit 1
