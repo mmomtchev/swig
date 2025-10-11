@@ -119,7 +119,7 @@ jobs:
       if: runner.os == 'Linux'
       run: ldd ./swig
 
-    - name: Check required dybnamic libraries (macOS)
+    - name: Check required dynamic libraries (macOS)
       if: runner.os == 'macOS'
       run: otool -L ./swig
 
