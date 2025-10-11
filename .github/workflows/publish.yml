@@ -131,12 +131,6 @@ jobs:
     - name: Install
       run: cmake --install .
 
-    - name: Check output (Windows)
-      if: runner.os == 'Windows'
-      shell: cmd
-      run: |
-        dir /s
-
     - name: Run CMake tests
       run: ctest --output-on-failure -V -C Release
 

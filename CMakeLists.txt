@@ -162,7 +162,7 @@ if (PCRE2_FOUND)
   target_link_libraries (swig ${PCRE2_LIBRARIES})
 endif ()
 
-set_target_properties(swig PROPERTIES OUTPUT_NAME "swig-${SWIG_SUFFIX}") 
+set_target_properties (swig PROPERTIES OUTPUT_NAME "swig${SWIG_SUFFIX}") 
 install (TARGETS swig DESTINATION bin)
 
 # 'make package-source' creates tarballs
