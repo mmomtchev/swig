@@ -62,13 +62,13 @@ jobs:
       run: |
           call conanbuild.bat
           cmake --version
-          cmake -A x64 `
-          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" `
-          -DCMAKE_C_FLAGS="/W3 /EHsc" `
-          -DCMAKE_CXX_FLAGS="/W3 /EHsc" `
-          -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" `
-          -DSWIG_SUFFIX="${{ env.SWIG_SUFFIX }}" `
-          -DLINK_FLAGS="/NODEFAULTLIB:MSVCRT" -S . -B .
+          cmake -A x64 ^
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" ^
+            -DCMAKE_C_FLAGS="/W3 /EHsc" ^
+            -DCMAKE_CXX_FLAGS="/W3 /EHsc" ^
+            -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" ^
+            -DSWIG_SUFFIX="${{ env.SWIG_SUFFIX }}" ^
+            -DLINK_FLAGS="/NODEFAULTLIB:MSVCRT" -S . -B .
 
     - name: Configure (UNIX)
       if: runner.os != 'Windows'
