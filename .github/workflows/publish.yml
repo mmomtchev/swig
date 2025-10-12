@@ -84,11 +84,14 @@ jobs:
             .
 
     - name: Build (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
       run: |
         conanbuild.bat
         cmake --build . --config Release
 
     - name: Build (UNIX)
+      if: runner.os != 'Windows'
       run: |
         . conanbuild.sh
         cmake --build .
