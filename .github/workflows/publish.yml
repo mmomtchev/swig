@@ -60,6 +60,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: powershell
       run: |
+          conanbuild.bat
           cmake --version
           cmake -A x64 `
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" `
@@ -72,6 +73,7 @@ jobs:
     - name: Configure (UNIX)
       if: runner.os != 'Windows'
       run: |
+          . conanbuild.sh
           cmake --version
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
