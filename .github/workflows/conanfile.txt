@@ -2,7 +2,7 @@
 pcre2/10.44
 
 [tool_requires]
-bison/3.7.6
+bison/3.8.2
 
 [generators]
 CMakeDeps
