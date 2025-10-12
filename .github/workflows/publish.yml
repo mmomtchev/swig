@@ -49,28 +49,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install NuGet Packages (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-          nuget install PCRE2 -OutputDirectory C:\Tools
-          nuget install Bison -OutputDirectory C:\Tools
-    
-    - name: Prepare Environment (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-          cat << EOF >> $GITHUB_ENV
-          PCRE2_PATH=$(cygpath -w "$(ls -d /C/Tools/PCRE2*)")
-          EOF
-          BISON_PATH=$(cygpath -w "$(ls -d /C/Tools/Bison*)/bin")
-          echo "$BISON_PATH" >> $GITHUB_PATH
 
-    - name: Prepare Environment (macOS)
-      if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        brew install bison
+    - name: Setup Conan
+      uses: conan-io/setup-conan@v1
+
+    - name: Install dependencies
+      run: conan install .github/workflows -of . --build=missing
 
     - name: Configure (Windows)
       if: runner.os == 'Windows'
@@ -79,31 +63,20 @@ jobs:
           cmake --version
           cmake -G "Visual Studio 17 2022" -A x64 `
           -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}\dist\swig" `
-          -DCMAKE_C_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
-          -DCMAKE_CXX_FLAGS="/W3 /EHsc /DPCRE2_STATIC" `
-          -DPCRE2_INCLUDE_DIR="$env:PCRE2_PATH\include" `
-          -DPCRE2_LIBRARY="$env:PCRE2_PATH\lib\pcre2-8-static.lib" `
+          -DCMAKE_C_FLAGS="/W3 /EHsc" `
+          -DCMAKE_CXX_FLAGS="/W3 /EHsc" `
+          -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" `
           -DSWIG_SUFFIX="${{ env.SWIG_SUFFIX }}" `
           -DLINK_FLAGS="/NODEFAULTLIB:MSVCRT" -S . -B .
 
-    - name: Configure (Linux)
-      if: runner.os == 'Linux'
+    - name: Configure (UNIX)
+      if: runner.os != 'Windows'
       run: |
           cmake --version
           cmake \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
+            -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" \
             -DSWIG_SUFFIX="${{ env.SWIG_SUFFIX }}" \
-            -DSWIG_RELOCATABLE=ON \
-            -DSWIG_LIB=Lib \
-            .
-
-    - name: Configure (macOS)
-      if: runner.os == 'macOS'
-      run: |
-          cmake \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/dist/swig" \
-            -DSWIG_SUFFIX="${{ env.SWIG_SUFFIX }}" \
-            -DBISON_EXECUTABLE=$(brew --prefix bison)/bin/bison \
             -DSWIG_RELOCATABLE=ON \
             -DSWIG_LIB=Lib \
             .
