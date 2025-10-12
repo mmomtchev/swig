@@ -58,7 +58,7 @@ jobs:
 
     - name: Configure (Windows)
       if: runner.os == 'Windows'
-      shell: powershell
+      shell: cmd
       run: |
           conanbuild.bat
           cmake --version
@@ -83,8 +83,15 @@ jobs:
             -DSWIG_LIB=Lib \
             .
 
-    - name: Build
-      run: cmake --build . --config Release
+    - name: Build (Windows)
+      run: |
+        conanbuild.bat
+        cmake --build . --config Release
+
+    - name: Build (UNIX)
+      run: |
+        . conanbuild.sh
+        cmake --build .
 
     - name: Check the version number is correct (Linux)
       if: runner.os == 'Linux'
