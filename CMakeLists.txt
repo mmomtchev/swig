@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.15)
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
 
@@ -17,12 +17,13 @@ else ()
 endif ()
 
 set (SWIG_ROOT ${PROJECT_SOURCE_DIR})
+set (SWIG_SUFFIX "" CACHE STRING "SWIG branch suffix")
 
 if (WIN32)
   set (SWIG_LIB "Lib" CACHE STRING "SWIG system-independent libraries directory")
   set (SWIG_RELOCATABLE ON CACHE BOOL "SWIG_LIB is relative to the binary")
 else ()
-  set (SWIG_LIB "share/swig/${SWIG_VERSION}" CACHE STRING "SWIG system-independent libraries directory")
+  set (SWIG_LIB "share/swig/${SWIG_VERSION}${SWIG_SUFFIX}" CACHE STRING "SWIG system-independent libraries directory")
   set (SWIG_RELOCATABLE OFF CACHE BOOL "SWIG_LIB is relative to the binary")
 endif ()
 
@@ -36,13 +37,13 @@ else()
   set (SWIG_LIB_BUILD "${CMAKE_INSTALL_PREFIX}/${SWIG_LIB}")
 endif()
 
-message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB}")
+message (NOTICE "SWIG system-independent libraries in ${SWIG_LIB} (${SWIG_LIB_BUILD})")
 # Project wide configuration variables
 # ------------------------------------
 
 set (SWIG_SOURCE_DIR ${SWIG_ROOT}/Source CACHE INTERNAL "Path of swig sources" FORCE)
 
-set (PACKAGE_NAME swig)
+set (PACKAGE_NAME swig${SWIG_SUFFIX})
 set (PACKAGE_VERSION ${SWIG_VERSION})
 
 # Configure
@@ -160,6 +161,8 @@ add_executable (swig
 if (PCRE2_FOUND)
   target_link_libraries (swig ${PCRE2_LIBRARIES})
 endif ()
+
+set_target_properties (swig PROPERTIES OUTPUT_NAME "swig${SWIG_SUFFIX}") 
 install (TARGETS swig DESTINATION bin)
 
 # 'make package-source' creates tarballs
