@@ -899,20 +899,37 @@ static String *get_exe_path(void) {
 #include <dlfcn.h>
 
 static String *get_exe_path(void) {
-  Dl_info info;
-  if (dladdr("main", &info)) {
-    char realp_buffer[PATH_MAX];
-    char* res = NULL;
-
-    res = realpath(info.dli_fname, realp_buffer);
-    if (!res) {
-      return NewString(SWIG_LIB);
-    }
-
-    const char* dir = dirname(realp_buffer);
+  char filename[PATH_MAX], dir[PATH_MAX];
+  char *res = NULL;
+  
+  // Alas, getting the executable path on UNIX is not trivial
+  // First try, /proc-based UNIX systems
+  if (readlink("/proc/self/exe", filename, PATH_MAX) == 0) {
+    // Linux
+    if (realpath(filename, dir) == 0)
     return NewStringf("%s/", dir);
   }
-  return NewStringf("%s/", SWIG_LIB);
+  if (readlink("/proc/curproc/file", filename, PATH_MAX) == 0) {
+    // FreeBSD
+    if (realpath(filename, dir) == 0)
+    return NewStringf("%s/", dir);
+  }
+  if (readlink("proc/self/path/a.out", filename, PATH_MAX) == 0) {
+    // Solaris
+    if (realpath(filename, dir) == 0)
+      return NewStringf("%s/", dir);
+  }
+
+  // Second try, dladdr works on macOS even if the executable
+  // is launched through PATH (it does not so on Linux)
+  Dl_info info;
+  if (dladdr("main", &info)) {
+    if (realpath(info.dli_fname, dir) == 0) {
+      return NewStringf("%s/", dir);
+    }
+  }
+  Printf(stderr, "Warning, cannot determine swig executable path, consider setting SWIG_LIB manually\n");
+  return NewString("");
 }
 #endif
 #endif
