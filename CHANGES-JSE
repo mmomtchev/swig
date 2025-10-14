@@ -4,10 +4,18 @@ See the RELEASENOTES file for a summary of changes in each release.
 Issue # numbers mentioned below can be found on Github. For more details, add
 the issue number to the end of the URL: https://github.com/swig/swig/issues/
 
+Version 5.0.9
+===========================
+
+2025-10-14: mmomtchev
+            Fix executable path detection on Linux when the binary is called
+            from the `PATH`
+            [mmomtchev/swig#115](https://github.com/mmomtchev/swig/pull/115)
+
 Version 5.0.8 (13 Oct 2025)
 ===========================
 
-2025-10-20: mmomtchev
+2025-10-10: mmomtchev
             Add scripts for generating prebuilt binaries for new releases
             [mmomtchev/swig#113](https://github.com/mmomtchev/swig/pull/113)
 
