@@ -1,0 +1,46 @@
+{
+  "env": {
+    "projectIncludePaths": [
+      "${workspaceFolder}/Source/Include",
+      "${workspaceFolder}/Source/Swig",
+      "${workspaceFolder}/Source/DOH",
+      "${workspaceFolder}/Source/Preprocessor",
+      "${workspaceFolder}/Source/CParse",
+      "${workspaceFolder}/Source/Modules",
+      "${workspaceFolder}/Source/Doxygen"
+    ]
+  },
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": [
+        "${projectIncludePaths}",
+        "${default}"
+      ],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c99",
+      "cppStandard": "gnu++11"
+    },
+    {
+      "name": "macOS",
+      "includePath": [
+        "${projectIncludePaths}",
+        "${default}"
+      ],
+      "compilerPath": "/usr/bin/clang",
+      "cStandard": "c99",
+      "cppStandard": "gnu++11"
+    },
+    {
+      "name": "Windows",
+      "includePath": [
+        "${projectIncludePaths}",
+        "${default}"
+      ],
+      "compilerPath": "cl.exe",
+      "cStandard": "c99",
+      "cppStandard": "c++11"
+    }
+  ],
+  "version": 4
+}
