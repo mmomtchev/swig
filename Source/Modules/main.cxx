@@ -924,7 +924,7 @@ static String *get_exe_path(void) {
   // is launched through PATH (it does not so on Linux)
   Dl_info info;
   if (dladdr("main", &info)) {
-    if (realpath(info.dli_fname, resolved) == 0) {
+    if (realpath(info.dli_fname, resolved) != NULL) {
       return NewStringf("%s/", dirname(resolved));
     }
   }
