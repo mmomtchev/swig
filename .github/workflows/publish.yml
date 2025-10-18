@@ -1,4 +1,4 @@
-name: Publish prebuilt binaries
+name: Create release with binaries
 on:
   workflow_dispatch:
     inputs:
