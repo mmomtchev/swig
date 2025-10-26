@@ -8,6 +8,9 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.10
 ===========================
 
+2025-10-26: mmomtchev
+            Merge upstream SWIG 4.4.0
+
 2025-10-14: mmomtchev
             Fix `enum` function arguments not being resolved to TypeScript
             types
