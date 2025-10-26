@@ -180,6 +180,10 @@ jobs:
         - SWIGLANG: php
           VER: '8.4'
           CPPSTD: c++11 # C++98 not supported by PHP.
+        - SWIGLANG: php
+          VER: '8.5'
+          CPPSTD: c++11 # C++98 not supported by PHP.
+          continue-on-error: true # PHP 8.5 has not yet been released.
         - SWIGLANG: python
           PY2: 2
         #- SWIGLANG: python
@@ -219,11 +223,9 @@ jobs:
           VER: '3.14'
           PY_ABI_VER: '3.14'
           CSTD: gnu99
-          continue-on-error: true
         - SWIGLANG: python
           VER: '3.14'
           CSTD: gnu99
-          continue-on-error: true
         - SWIGLANG: python
           PY2: 2
           SWIG_FEATURES: -builtin
