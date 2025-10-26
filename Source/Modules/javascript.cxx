@@ -703,7 +703,14 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
 
   String *enum_name = NewString("");
   Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
-  parent->state.types(enum_name, js_name);
+
+  Hash *js_node = NewHash();
+  Setattr(js_node, "name", js_name);
+  parent->state.types(enum_name, js_node);
+  if (js_debug_tstypes) {
+    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) from enum declaration\n",
+           Getfile(n), Getline(n), enum_name, js_name);
+  }
 
   Template t_enum(parent->getTemplate("ts_enum_declaration"));
 
