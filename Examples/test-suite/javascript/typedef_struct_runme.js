@@ -32,6 +32,5 @@ var foo = new typedef_struct.Foo;
 var enumvar = foo.enumvar;
 if (typeof enumvar !== typeof typedef_struct.Foo.NONAME1)
   throw new Error;
-/* TODO: fix TS types for anonymous enums */
-/* no-ts-expect-error ensure it is not any */
+/* @ts-expect-error ensure it is not any */
 enumvar = 'invalid'

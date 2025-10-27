@@ -702,7 +702,8 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   switchNamespace(n);
 
   String *enum_name = NewString("");
-  Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
+  Printf(enum_name, "%s %s", Getattr(n, "enumkey"),
+    GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") : Getattr(n, "enumtype"));
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
