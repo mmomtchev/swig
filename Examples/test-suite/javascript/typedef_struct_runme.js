@@ -25,6 +25,9 @@ if (z.a != 0)
 /* @ts-expect-error ensure the type is not any */
 z = 'invalid'
 
+// ensure y and z have the same TS type
+y = z
+
 var foo = new typedef_struct.Foo;
 var enumvar = foo.enumvar;
 if (enumvar != typedef_struct.Foo.NONAME1)
