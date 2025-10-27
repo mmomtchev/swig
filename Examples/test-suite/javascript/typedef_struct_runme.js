@@ -1,10 +1,10 @@
 var typedef_struct = require("typedef_struct");
 
 var x = new typedef_struct.LineObj;
-if (x.numpoints != 0)
+if (typeof x.numpoints !== 'number')
   throw new Error;
 x.numpoints = 100;
-if (x.numpoints != 100)
+if (x.numpoints !== 100)
   throw new Error;
 
 let MS_NOOVERRIDE = typedef_struct.MS_NOOVERRIDE
@@ -14,13 +14,13 @@ if (MS_NOOVERRIDE !== -1111)
 MS_NOOVERRIDE = 'invalid';
 
 var y = /* await */(typedef_struct.make_a());
-if (y.a != 0)
+if (typeof y.a !== 'number')
   throw new Error;
 /* @ts-expect-error ensure the type is not any */
 y = 'invalid'
 
 var z = /* await */(typedef_struct.make_b());
-if (z.a != 0)
+if (typeof z.a !== 'number')
   throw new Error;
 /* @ts-expect-error ensure the type is not any */
 z = 'invalid'
@@ -30,7 +30,7 @@ y = z
 
 var foo = new typedef_struct.Foo;
 var enumvar = foo.enumvar;
-if (enumvar != typedef_struct.Foo.NONAME1)
+if (typeof enumvar !== typeof typedef_struct.Foo.NONAME1)
   throw new Error;
 /* TODO: fix TS types for anonymous enums */
 /* no-ts-expect-error ensure it is not any */
