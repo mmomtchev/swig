@@ -7,15 +7,23 @@ x.numpoints = 100;
 if (x.numpoints != 100)
   throw new Error;
 
-if (typedef_struct.MS_NOOVERRIDE != -1111)
+let MS_NOOVERRIDE = typedef_struct.MS_NOOVERRIDE
+if (MS_NOOVERRIDE !== -1111)
   throw new Error;
+/* @ts-expect-error ensure the type is not any */
+MS_NOOVERRIDE = 'invalid';
 
 var y = /* await */(typedef_struct.make_a());
 if (y.a != 0)
   throw new Error;
+/* @ts-expect-error ensure the type is not any */
+y = 'invalid'
+
 var z = /* await */(typedef_struct.make_b());
 if (z.a != 0)
   throw new Error;
+/* @ts-expect-error ensure the type is not any */
+z = 'invalid'
 
 var foo = new typedef_struct.Foo;
 var enumvar = foo.enumvar;
