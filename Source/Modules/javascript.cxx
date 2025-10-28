@@ -836,7 +836,9 @@ void TYPESCRIPT::registerType(Node *n) {
   // struct Name and simply Name and that equivalence might
   // not be set up unless there is at least one plain argument
   // or variable
-  // TODO: This needs a better solution
+  // TODO: The real solution would be to export the
+  // r_resolved system from typesys.c and drop the custom
+  // TypeScript types tracking
   if (!CPlusPlus) {
     String *altname = NewStringf("struct %s", ctype);
     parent->state.types(altname, jsnode);
