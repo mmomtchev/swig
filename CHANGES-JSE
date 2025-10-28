@@ -9,8 +9,8 @@ Version 5.0.10
 ===========================
 
 2025-10-27: mmomtchev
-            [TypeScript] Generate correct types for anonymous enums and fix
-            the default typemaps for pointers and references
+            [TypeScript] Generate correct types for anonymous enums and C
+            arrays and fix the default typemaps for pointers and references
 
 2025-10-26: mmomtchev
             Merge upstream SWIG 4.4.0
