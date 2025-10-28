@@ -24,6 +24,7 @@
 
 %typemap(ts) SWIGTYPE "$jstype"
 %typemap(ts) SWIGTYPE *, SWIGTYPE & "$typemap(ts, $*1_type)";
+%typemap(ts) SWIGTYPE[ANY] "$typemap(ts, $*1_type)[]";
 
 %typemap(ts) void "void";
 %typemap(ts) void * "unknown";
