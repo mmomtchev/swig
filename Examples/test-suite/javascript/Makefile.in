@@ -122,8 +122,9 @@ endif
 # This is required because most of the tests use %inline
 # which goes to the header file in split mode
 LDFLAGS_MULDEFS = @MULTIPLE_DEFS@
-# This one should work w/o it
+# These should work w/o it
 extend_splitting.cpptest: LDFLAGS_MULDEFS=
+extend_constructor_destructor.cpptest: LDFLAGS_MULDEFS=
 
 # emscripten is cross-compilation, skip the platform flags
 ifeq (emcc, $(CC))
