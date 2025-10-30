@@ -3284,6 +3284,7 @@ protected:
   virtual int emitFunction(Node *, bool, bool);
   virtual int emitFunctionDeclaration(Node *, bool);
   virtual int emitFunctionDefinition(Node *, bool, bool, bool);
+  virtual int emitFunctionDispatcher(Node *, bool);
   virtual int emitFunctionDispatcher(Node *, bool, bool);
   virtual int emitDtor(Node *);
   virtual int emitClassMethodDeclaration(Node *);
@@ -4173,6 +4174,10 @@ int NAPIEmitter::emitFunctionDeclaration(Node *n, bool is_async) {
 
 int NAPIEmitter::exitFunction(Node *) {
   return SWIG_OK;
+}
+
+int NAPIEmitter::emitFunctionDispatcher(Node *n, bool is_member) {
+  return emitFunctionDispatcher(n, is_member, false);
 }
 
 int NAPIEmitter::emitFunctionDispatcher(Node *n, bool is_member, bool is_async) {
