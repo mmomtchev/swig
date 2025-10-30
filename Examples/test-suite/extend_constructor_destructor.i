@@ -9,7 +9,7 @@
 
 // This test supports code splitting
 %header %{
-  extern int globalVar;
+  extern "C" int globalVar;
 %}
 
 %wrapper %{
