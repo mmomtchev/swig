@@ -140,7 +140,7 @@ case "$SWIGLANG" in
 	"ruby")
 		if [[ "$VER" ]]; then
 			case "$VER" in
-				2.5 | 2.7 | 3.0 | 3.1 | 3.2 | 3.3 )
+				2.5 | 2.7 | 3.0 | 3.1 | 3.2 | 3.3* )
 					# Ruby 3.1+ support is currently only rvm master (2023-04-19)
 					# YOLO
 					#
