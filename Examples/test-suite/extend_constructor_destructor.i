@@ -7,8 +7,18 @@
 %warnfilter(SWIGWARN_LANG_EXTEND_CONSTRUCTOR) tagEStruct::EStruct;
 %warnfilter(SWIGWARN_LANG_EXTEND_DESTRUCTOR) tagEStruct::~EStruct;
 
+// This test supports code splitting
+%header %{
+  extern "C" int globalVar;
+%}
+
+%wrapper %{
+  int globalVar = 0;
+%}
+
+int globalVar;
+
 %inline %{
-int globalVar = 0;
 
 namespace Space {
   typedef struct tagAStruct {

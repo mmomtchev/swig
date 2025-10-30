@@ -4477,6 +4477,7 @@ int NAPIEmitter::emitCtor(Node *n) {
 }
 
 int NAPIEmitter::emitDtor(Node *n) {
+  int is_extend = Extend;
   // NAPI destructors must have a class declaration
   Template t_getter = getTemplate("jsnapi_class_dtor_declaration");
   t_getter.replace("$jsmangledname", state.clazz(NAME_MANGLED))
@@ -4485,10 +4486,26 @@ int NAPIEmitter::emitDtor(Node *n) {
 
   // We reuse the shared JS code but everything is redirected
   // to f_template_definitions -> it is going in the header file
+  // The only exception is Extend which we handle separately
+  // because of the code splitting support
+  Extend = 0;
+  if (is_extend) {
+    // Send the body to f_wrappers
+    String *wrap = Getattr(n, "wrap:code");
+    if (wrap) {
+      Printv(CodeSplitting ? f_wrappers : f_template_definitions, wrap, NIL);
+    }
+    // Send the signature to the template declarations
+    String *sig = Getattr(n, "wrap:declaration");
+    if (sig) {
+      Printv(f_template_definitions, sig, NULL);
+    }
+  }
   File *wrappers = f_wrappers;
   f_wrappers = f_template_definitions;
   int rc = JSEmitter::emitDtor(n);
   f_wrappers = wrappers;
+  Extend = is_extend;
   return rc;
 }
 
