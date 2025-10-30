@@ -4488,7 +4488,7 @@ int NAPIEmitter::emitDtor(Node *n) {
     // Send the body to f_wrappers
     String *wrap = Getattr(n, "wrap:code");
     if (wrap) {
-      Printv(f_wrappers, wrap, NIL);
+      Printv(CodeSplitting ? f_wrappers : f_template_definitions, wrap, NIL);
     }
     // Send the signature to the template declarations
     String *sig = Getattr(n, "wrap:declaration");
