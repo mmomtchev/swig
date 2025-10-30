@@ -3,6 +3,14 @@
 
 %include "constant_expr_c.i"
 
+// Alas, this is limited by the current parser of SWIG
+// The bar type cannot have a typemap declared
+// Anyway, it is a bad test since SWIG cannot evaluate
+// properly this type
+#ifdef SWIGTYPESCRIPT
+%ignore bar;
+#endif
+
 %inline %{
 
 // Testcase from https://sourceforge.net/p/swig/bugs/1139/

@@ -1,4 +1,8 @@
-export default function resolve(val) {
+/// <reference path="./resolve.d.mts" />
+
+function resolve(val) {
   if (!(val instanceof Promise)) throw new Error(`Returned value ${val} is not a Promise`);
   return val;
 }
+
+export default resolve;

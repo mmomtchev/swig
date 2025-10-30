@@ -2,6 +2,7 @@ var cpp_enum = require("cpp_enum");
 
 var f = new cpp_enum.Foo()
 
+/* @ts-expect-error These enums are really distinct */
 if(f.hola != cpp_enum.Hello){
   console.error(f.hola);
   throw "Error";
@@ -20,11 +21,11 @@ if(f.hola != cpp_enum.Hello){
   throw "Error";
 }
 
-/* @ts-ignore : setting an invalid property is OK in JS but not in TS */
+/* @ts-expect-error : setting an invalid property is OK in JS but not in TS */
 cpp_enum.Foo.hi = cpp_enum.Hello;
-/* @ts-ignore */
+/* @ts-expect-error */
 if (cpp_enum.Foo.hi != cpp_enum.Hello) {
-  /* @ts-ignore */
+  /* @ts-expect-error */
   console.error(cpp_enum.Foo.hi);
   throw "Error";
 }

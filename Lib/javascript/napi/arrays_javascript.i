@@ -61,6 +61,8 @@
   }
 }
 
+%typemap(ts) CTYPE[ANY] "$typemap(ts, " #CTYPE ")[]";
+
 %enddef
 
 %define JAVASCRIPT_ARRAYS_OUT_DECL(NAME, CTYPE)
@@ -85,4 +87,3 @@ JAVASCRIPT_ARRAYS_IN_DECL("SWIG_NAPI_GetNumberProperty", double, ANY, $1_dim0)
 
 JAVASCRIPT_ARRAYS_OUT_DECL("SWIG_NAPI_OutInt", int)
 JAVASCRIPT_ARRAYS_OUT_DECL("SWIG_NAPI_OutNumber", double)
-

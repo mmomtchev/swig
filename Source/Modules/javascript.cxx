@@ -400,6 +400,19 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   SwigType *ctype =
       SwigType_typedef_resolve_all(SwigType_base(Getattr(target, "type")));
   Hash *jstype = parent->state.types(ctype);
+  if (!jstype) {
+    List *equiv_types = SwigType_get_equiv_types(ctype);
+    if (equiv_types) {
+      for (int i = 0; i < Len(equiv_types); i++) {
+        SwigType *etype = SwigType_base(Getitem(equiv_types, i));
+        jstype = parent->state.types(etype);
+        if (jstype) {
+          break;
+        }
+      }
+      Delete(equiv_types);
+    }
+  }
   String *jsname = jstype ? Getattr(jstype, "name") : NULL;
   String *r = Copy(tm);
   if (js_debug_tstypes) {
@@ -702,7 +715,8 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   switchNamespace(n);
 
   String *enum_name = NewString("");
-  Printf(enum_name, "%s %s", Getattr(n, "enumkey"), Getattr(n, "enumtype"));
+  Printf(enum_name, "%s %s", Getattr(n, "enumkey"),
+    GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") : Getattr(n, "enumtype"));
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
@@ -790,10 +804,10 @@ void TYPESCRIPT::registerType(Node *n) {
 
   Printf(jsname, "%s%s", nspace, Getattr(n, "sym:name"));
   Setattr(jsnode, "name", jsname);
-  String *ctype = Copy(Getattr(n, "classtype"));
   if (forward) {
     SetFlag(jsnode, "forward");
   }
+  String *ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtype")));
 
   if (js_debug_tstypes) {
     Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
@@ -817,6 +831,19 @@ void TYPESCRIPT::registerType(Node *n) {
     }
   }
   parent->state.types(ctype, jsnode);
+  // This is an ugly kludge that works around the fact
+  // that for C code, the type may get requested both as
+  // struct Name and simply Name and that equivalence might
+  // not be set up unless there is at least one plain argument
+  // or variable
+  // TODO: The real solution would be to export the
+  // r_resolved system from typesys.c and drop the custom
+  // TypeScript types tracking
+  if (!CPlusPlus) {
+    String *altname = NewStringf("struct %s", ctype);
+    parent->state.types(altname, jsnode);
+    Delete(altname);
+  } 
 }
 
 /**********************************************************************
@@ -919,7 +946,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
           SwigType *ctype = SwigType_base(Getitem(equiv_types, i));
-          String *jstype = parent->state.types(ctype);
+          Hash *jstype = parent->state.types(ctype);
           if (jstype) {
             Printf(args, " | %s", Getattr(jstype, "name"));
           }
