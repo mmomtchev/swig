@@ -2,7 +2,7 @@
 
 This is SWIG JavaScript Evolution, an up-to-date fork of the SWIG project with a focus on JavaScript - native/Node.js, WASM/Node.js and WASM/browser.
 
-**Update: since Oct 24 I am homeless and living in my van. I lost access to most of my computer hardware. The eviction from my home has been timed for maximum effect as I was not present when it happened. I have only a single set of clothes and no means to get anything else. Please, if you use my software, consider asking everyone around you if they are taking part in this extortion and why.**
+**Update: since Oct 24 2024 I am homeless and living in my van. I lost access to most of my computer hardware. The eviction from my home has been timed for maximum effect as I was not present when it happened, if you use my software, consider asking everyone around you if they are taking part in this extortion and why.**
 
 # Major New Features
 
@@ -44,6 +44,25 @@ This is SWIG JavaScript Evolution, an up-to-date fork of the SWIG project with a
 
   Although this feature has been mentioned many times in the past, the memory requirements of WASM compilation make it mandatory. SWIG JSE can produce separate C++ headers and multiple compilation units. At the moment only JavaScript Node-API and Javascript WASM can use this feature, but it is planned to eventually extend it to Python.
 
+* Binary Distribution
+
+  SWIG JSE is available without having to rebuild it from source from three different channels:
+  * [The SWIG JSE releases](https://github.com/mmomtchev/swig/releases)
+      Simply extract it in a directory of your choosing:
+      ```bash
+      tar zxf <binary-tarball>
+      ```
+  * [The SWIG JSE conan repository](https://github.com/mmomtchev/swig-conan)
+      ```bash
+      conan remote add swig-jse https://swig.momtchev.com/artifactory/api/conan/swig-jse
+      conan install -of /tmp --requires swig-jse/5.0.10 --deployer-folder=${TARGET_FOLDER} --deployer-package='*' --deployer=runtime_deploy
+      ```
+  * [The SWIG JSE xPack](https://github.com/mmomtchev/swig-xpack)
+      ```bash
+      xpm install @mmomtchev/swig-xpack
+      ```
+
+   All three channels carry Windows `x86-64`, Linux `x86-64` and macOS `x84-64` & `arm8-64` binaries.
 
 # Usage
 
