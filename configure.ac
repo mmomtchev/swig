@@ -2907,9 +2907,19 @@ AC_SUBST(SWIG_LIB_INSTALL)
 
 case $build in
   # Windows does not understand unix directories. Convert into a windows directory with drive letter.
-  *-*-mingw*) swig_lib=`${srcdir}/Tools/convertpath -m $swig_lib` ;;
-  *-*-cygwin*) swig_lib=`cygpath --mixed "$swig_lib"` ;;
+  *-*-mingw*)
+    if test "x${swig_relocatable}" == "xyes"; then
+      swig_lib_win_unix=`${srcdir}/Tools/convertpath -u $swig_lib`
+    else
+      swig_lib_win_unix=`${srcdir}/Tools/convertpath -m $swig_lib`
+    fi
+    ;;
+  *-*-cygwin*) swig_lib_win_unix=`cygpath --mixed "$swig_lib"` ;;
 esac
+if test "x${swig_lib_win_unix}" != "x"; then
+  AC_MSG_NOTICE([SWIG Windows transformed path: ${wig_lib_win_unix}])
+  swig_lib=${swig_lib_win_unix}
+fi
 AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 SWIG_LIB_PREINST=$ABS_SRCDIR/Lib
