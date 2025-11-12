@@ -3402,7 +3402,10 @@ int NAPIEmitter::dump(Node *n) {
   File *f_main_file = NewFile(Getattr(n, "outfile"), "w", SWIG_output_files());
   Swig_banner(f_main_file);
   if (CodeSplitting) {
-    Printf(f_main_file, "\n#include \"%s\"\n\n", header_file);
+    String *include_file = Copy(header_file);
+    Replaceall(include_file, "\\", "/");
+    Printf(f_main_file, "\n#include \"%s\"\n\n", include_file);
+    Delete(include_file);
   }
 
   File *f_header_file;
@@ -3433,7 +3436,10 @@ int NAPIEmitter::dump(Node *n) {
       }
       Swig_banner(file);
       Delete(file_name);
-      Printf(file, "\n#include \"%s\"\n\n", header_file);
+      String *include_file = Copy(header_file);
+      Replaceall(include_file, "\\", "/");
+      Printf(file, "\n#include \"%s\"\n\n", include_file);
+      Delete(include_file);
     }
     Printf(file, "%s\n", Getattr(f_split_wrappers, it.item));
   }
