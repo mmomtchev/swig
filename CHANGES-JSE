@@ -8,6 +8,11 @@ Version 5.0.11
 ===========================
 
 2025-11-12: mmomtchev
+            Fix incorrect backslashes in `#include` when generating the
+            wrappers with SWIG on Windows with code splitting
+            [mmomtchev/swig#126](https://github.com/mmomtchev/swig/issues/126)
+
+2025-11-12: mmomtchev
             Drop `macos-13` and `macos-14` support and add `arm64`
             binaries for all OS
 
