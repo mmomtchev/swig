@@ -39,12 +39,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             id: linux-x64
-          - platform: macos-14
+          - platform: ubuntu-22.04-arm
+            id: linux-x64
+          - platform: macos-15
             id: darwin-arm64
-          - platform: macos-13
+          - platform: macos-15-intel
             id: darwin-x64
           - platform: windows-2022
             id: win32-x64
+          - platform: windows-11-arm
+            id: win32-arm64
 
     steps:
     - name: Checkout
@@ -147,12 +151,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             id: linux-x64
-          - platform: macos-14
+          - platform: ubuntu-22.04-arm
+            id: linux-x64
+          - platform: macos-15
             id: darwin-arm64
-          - platform: macos-13
+          - platform: macos-15-intel
             id: darwin-x64
           - platform: windows-2022
             id: win32-x64
+          - platform: windows-11-arm
+            id: win32-arm64
     
     steps:
     - name: Checkout an example

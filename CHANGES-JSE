@@ -7,7 +7,11 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.11
 ===========================
 
-2025-10-27: mmomtchev
+2025-11-12: mmomtchev
+            Drop `macos-13` and `macos-14` support and add `arm64`
+            binaries for all OS
+
+2025-11-12: mmomtchev
             Fix manually setting `--with-swiglibdir` with
             `--enable-relocatable` using `configure` on Windows with
             Visual Studio
