@@ -27,9 +27,9 @@
 // Everything from Node.js v14.0.0 on
 // Our limiting feature is napi_set_instance_data
 #ifndef NAPI_VERSION
-#define NAPI_VERSION 6
-#elif NAPI_VERSION < 6
-#error NAPI_VERSION 6 is the minimum supported target (Node.js >=14, >=12.17, >=10.20)
+#define NAPI_VERSION 8
+#elif NAPI_VERSION < 8
+#error NAPI_VERSION 6 is the minimum supported target (Node.js >=16)
 #endif
 #include <napi.h>
 

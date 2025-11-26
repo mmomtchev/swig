@@ -21,6 +21,7 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
   // Init the mechanism for scheduling jobs on the JS main thread
   js_main_thread.main_thread_id = std::this_thread::get_id();
   js_main_thread.handle = new uv_async_t;
+  js_main_thread.handle->data = env_data;
   uv_loop_t *event_loop;
   if (napi_get_uv_event_loop(env, &event_loop) != napi_ok)
     std::abort();
@@ -32,6 +33,25 @@ void SWIG_NAPI_RunMainThreadQueue(uv_async_t *);
   uv_unref(reinterpret_cast<uv_handle_t *>(js_main_thread.handle));
 #endif
   js_main_thread.handle->data = static_cast<void*>(env_data);
+
+  // Register a hook to dispose of the uv_async_t on environment shutdown
+  if (napi_add_async_cleanup_hook(
+      env,
+      [](napi_async_cleanup_hook_handle hook, void *arg) {
+        auto env_data = static_cast<EnvInstanceData *>(arg);
+        uv_close(reinterpret_cast<uv_handle_t *>(env_data->js_main_thread.handle), [](uv_handle_t *async) {
+          auto env_data = static_cast<EnvInstanceData *>(async->data);
+          auto &js_main_thread = env_data->js_main_thread;
+          delete js_main_thread.handle;
+          auto r = napi_remove_async_cleanup_hook(js_main_thread.cleanup_hook);
+          if (r != napi_ok) {
+            fprintf(stderr, "Failed to destroy async handle\n");
+            std::abort();
+          }
+        });
+      },
+      env_data, &js_main_thread.cleanup_hook) != napi_ok)
+    std::abort();
 #endif
 %}
 

@@ -146,6 +146,7 @@ struct EnvInstanceData {
   // background threads
   struct {
     uv_async_t *handle;
+    napi_async_cleanup_hook_handle cleanup_hook;
     std::thread::id main_thread_id;
     std::queue<std::function<void()>> jobs;
     std::mutex lock;

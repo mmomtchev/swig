@@ -7,6 +7,14 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.11
 ===========================
 
+2025-11-23: mmomtchev
+            [JavaScript] Close properly `uv_async_t` used by smart pointers
+            and callbacks and fix the race condition with a use-after-free
+            that can lead to a crash on Node.js exit
+            [mmomtchev/swig#128](https://github.com/mmomtchev/swig/issues/128)
+            **Raise the minimum Node API requirement to version 8**
+            **Node.js 16+ or Node.js 14.17+**
+
 2025-11-12: mmomtchev
             Fix incorrect backslashes in `#include` when generating the
             wrappers with SWIG on Windows with code splitting
