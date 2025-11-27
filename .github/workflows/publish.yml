@@ -152,7 +152,7 @@ jobs:
           - platform: ubuntu-22.04
             id: linux-x64
           - platform: ubuntu-22.04-arm
-            id: linux-x64
+            id: linux-arm64
           - platform: macos-15
             id: darwin-arm64
           - platform: macos-15-intel
