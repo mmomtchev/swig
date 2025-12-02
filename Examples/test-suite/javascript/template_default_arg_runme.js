@@ -45,15 +45,15 @@ x = new template_default_arg.X_hello_unsigned(
     20.0, new template_default_arg.Hello_int());
 
 
-y = new template_default_arg.Y_hello_unsigned();
-/* await */(y.meth(20.0, new template_default_arg.Hello_int()));
-/* await */(y.meth(new template_default_arg.Hello_int()));
-/* await */(y.meth());
+var y2 = new template_default_arg.Y_hello_unsigned();
+/* await */(y2.meth(20.0, new template_default_arg.Hello_int()));
+/* await */(y2.meth(new template_default_arg.Hello_int()));
+/* await */(y2.meth());
 
 
 var fz = new template_default_arg.Foo_Z_8();
-x = new template_default_arg.X_Foo_Z_8();
-var fzc = /* await */(x.meth(fz));
+var x2 = new template_default_arg.X_Foo_Z_8();
+var fzc = /* await */(x2.meth(fz));
 
 
 // Templated functions
