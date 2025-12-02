@@ -23,7 +23,7 @@
 %typemap(ts) float, double "number";
 
 %typemap(ts) SWIGTYPE "$jstype"
-%typemap(ts) SWIGTYPE *, SWIGTYPE & "$typemap(ts, $*1_type)";
+%typemap(ts) SWIGTYPE *, SWIGTYPE & "$typemap(ts, $*1_ltype)";
 
 %typemap(ts) void "void";
 %typemap(ts) void * "unknown";
