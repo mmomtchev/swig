@@ -100,6 +100,8 @@ ALL_TMAPS(double)
 
 %typemap(ts) (const void *indata, size_t inlen) = (Char *STRING, size_t LENGTH);
 
+%typemap(ts) (char [ANY]) "string";
+
 
 /**
  * Engine-specific maps
