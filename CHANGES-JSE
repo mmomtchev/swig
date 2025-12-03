@@ -8,6 +8,11 @@ Version 5.0.12
 ===========================
 
 2025-12-03: mmomtchev
+            [TypeScript] Add TypeScript types for C++ `enum class``
+            and fix several missing `enum` cases
+            [mmomtchev/swig#139](https://github.com/mmomtchev/swig/issues/139)
+
+2025-12-03: mmomtchev
             [TypeScript] Add TypeScript types for templated arguments
             [mmomtchev/swig#135](https://github.com/mmomtchev/swig/issues/135)
 
