@@ -7,6 +7,16 @@ function enumCheck(actual, expected) {
   return expected + 1;
 }
 
+/* async */ function checkThrows(fn) {
+  var pass = false;
+  try {
+    /* await */(fn());
+  } catch {
+    pass = true;
+  }
+  if (!pass) throw new Error('accepted string as enum');
+}
+
 var val = 0;
 val = enumCheck(cpp11_strongly_typed_enumerations.Enum1_Val1, val);
 val = enumCheck(cpp11_strongly_typed_enumerations.Enum1_Val2, val);
@@ -160,18 +170,22 @@ enumCheck(/* await */(class1.class1Test1(cpp11_strongly_typed_enumerations.Enum1
 enumCheck(/* await */(class1.class1Test2(cpp11_strongly_typed_enumerations.Class1.Enum12_Val5c)), 1121);
 //enumCheck(class1.class1Test3(cpp11_strongly_typed_enumerations.Class1.Struct1_Enum12_Val5f), 3121);
 
+// @ts-expect-error
+/* await */(checkThrows(() => class1.class1Test1('invalid')));
+// @ts-expect-error
+/* await */(checkThrows(() => class1.class1Test2('invalid')));
+
 enumCheck(/* await */(cpp11_strongly_typed_enumerations.globalTest1(cpp11_strongly_typed_enumerations.Enum1_Val5a)), 13);
 enumCheck(/* await */(cpp11_strongly_typed_enumerations.globalTest2(cpp11_strongly_typed_enumerations.Class1.Enum12_Val5c)), 1121);
 //enumCheck(globalTest3(cpp11_strongly_typed_enumerations.Class1.Struct1_Enum12_Val5f), 3121);
 
+// @ts-expect-error
+/* await */(checkThrows(() => cpp11_strongly_typed_enumerations.globalTest1('invalid')));
+// @ts-expect-error
+/* await */(checkThrows(() => cpp11_strongly_typed_enumerations.globalTest2('invalid')));
+
 if (/* await */(cpp11_strongly_typed_enumerations.cast_enum(cpp11_strongly_typed_enumerations.Enum15_Val1)) !== 1151)
   throw new Error('enum class argument failed');
 
-var pass = false
-try {
-  // @ts-expect-error
-  /* await */(cpp11_strongly_typed_enumerations.cast_enum('invalid'));
-} catch {
-  pass = true
-}
-if (!pass) throw new Error('accepted string as enum');
+// @ts-expect-error
+/* await */(checkThrows(() => cpp11_strongly_typed_enumerations.cast_enum('invalid')));
