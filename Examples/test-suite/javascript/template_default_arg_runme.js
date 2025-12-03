@@ -63,6 +63,15 @@ if (/* await */(template_default_arg.ott(new template_default_arg.Foo_int())) !=
     throw new Error(("ott test 1 failed"));
 }
 
+var pass = false
+try {
+  // @ts-expect-error
+  template_default_arg.nsottint('12');
+} catch {
+  pass = true
+}
+if (!pass) throw new Error('ott accepted an invalid object');
+
 // %template(ott) ott<int, int>
 if (/* await */(template_default_arg.ott()) != 10) {
     throw new Error(("ott test 2 failed"));
