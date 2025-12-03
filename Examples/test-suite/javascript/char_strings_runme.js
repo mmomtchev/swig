@@ -6,11 +6,11 @@ var assertIsEqual = function(expected, actual) {
   }
 };
 
-var assertThrows = function(fn) {
+var assertThrows = /* async */ function(fn) {
   var pass = false;
 
   try {
-    fn();
+    /* await */ (fn());
   } catch {
     pass = true;
   }
@@ -23,8 +23,8 @@ assertIsEqual("hi there", /* await */(char_strings.CharArrayPingPong("hi there")
 assertIsEqual("hi there", /* await */(char_strings.CharArrayDimsPingPong("hi there")));
 
 // @ts-expect-error
-assertThrows(() => (/* await */(char_strings.CharPingPong(42))));
+assertThrows(() => (char_strings.CharPingPong(42)));
 // @ts-expect-error
-assertThrows(() => (/* await */(char_strings.CharArrayPingPong(42))));
+assertThrows(() => (char_strings.CharArrayPingPong(42)));
 // @ts-expect-error
-assertThrows(() => (/* await */(char_strings.CharArrayDimsPingPong(42))));
+assertThrows(() => (char_strings.CharArrayDimsPingPong(42)));
