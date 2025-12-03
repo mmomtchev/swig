@@ -163,3 +163,15 @@ enumCheck(/* await */(class1.class1Test2(cpp11_strongly_typed_enumerations.Class
 enumCheck(/* await */(cpp11_strongly_typed_enumerations.globalTest1(cpp11_strongly_typed_enumerations.Enum1_Val5a)), 13);
 enumCheck(/* await */(cpp11_strongly_typed_enumerations.globalTest2(cpp11_strongly_typed_enumerations.Class1.Enum12_Val5c)), 1121);
 //enumCheck(globalTest3(cpp11_strongly_typed_enumerations.Class1.Struct1_Enum12_Val5f), 3121);
+
+if (/* await */(cpp11_strongly_typed_enumerations.cast_enum(cpp11_strongly_typed_enumerations.Enum15_Val1)) !== 1151)
+  throw new Error('enum class argument failed');
+
+var pass = false
+try {
+  // @ts-expect-error
+  /* await */(cpp11_strongly_typed_enumerations.cast_enum('invalid'));
+} catch {
+  pass = true
+}
+if (!pass) throw new Error('accepted string as enum');
