@@ -720,8 +720,9 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   String *type_name = Getattr(n, "type") ? Getattr(n, "type") : Getattr(n, "tdname");
 
   // Fully qualify the name and take into account anonymous enums
-  String *enum_name = GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") 
-      : SwigType_typedef_qualified(type_name);
+  String *enum_name = GetFlag(n, "unnamedinstance") ?
+      NewStringf("%s %s", Getattr(n, "enumkey"), Getattr(n, "unnamed")) :
+      SwigType_typedef_qualified(type_name);
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
@@ -736,6 +737,7 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   t_enum.replace("$jsname", name)
       .replace("$js_qualified_name", js_name)
       .print(f_declarations);
+  Delete(enum_name);
   return SWIG_OK;
 }
 
