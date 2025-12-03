@@ -8,6 +8,10 @@ Version 5.0.12
 ===========================
 
 2025-12-03: mmomtchev
+            [TypeScript] Add TypeScript types for templated arguments
+            [mmomtchev/swig#135](https://github.com/mmomtchev/swig/issues/135)
+
+2025-12-03: mmomtchev
             [TypeScript] Add TypeScript types for fixed-size character
             C arrays
             [mmomtchev/swig#134](https://github.com/mmomtchev/swig/issues/134)
