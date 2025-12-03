@@ -7,6 +7,11 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
+2025-12-03: mmomtchev
+            [TypeScript] Add TypeScript types for fixed-size character
+            C arrays
+            [mmomtchev/swig#134](https://github.com/mmomtchev/swig/issues/134)
+
 2025-12-02: mmomtchev
             [TypeScript] Fix more cases of incorrect TypeScript types
             for pointers and references
