@@ -810,7 +810,7 @@ void TYPESCRIPT::registerType(Node *n) {
   String *raw_ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtype")));
   String *ctype = SwigType_namestr(raw_ctype);
 
-      if (js_debug_tstypes) {
+  if (js_debug_tstypes) {
     Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
            Getfile(n), Getline(n), ctype, jsname,
            forward ? "forward declaration" : "definition");
