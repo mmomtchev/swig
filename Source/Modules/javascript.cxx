@@ -397,8 +397,9 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm)
     return NULL;
 
-  SwigType *ctype =
+  SwigType *raw_ctype =
       SwigType_typedef_resolve_all(SwigType_base(Getattr(target, "type")));
+  String *ctype = SwigType_namestr(raw_ctype);
   Hash *jstype = parent->state.types(ctype);
   if (!jstype) {
     List *equiv_types = SwigType_get_equiv_types(ctype);
@@ -796,7 +797,6 @@ int TYPESCRIPT::constructorHandler(Node *n) {
  * ($jsname in ts/tsout typemaps)
  * --------------------------------------------------------------------- */
 void TYPESCRIPT::registerType(Node *n) {
-  //Swig_print(n, 1);
   Hash *jsnode = NewHash();
   String *jsname = NewStringEmpty();
   bool forward = Equal(Getattr(n, "nodeType"), "classforward");
@@ -807,9 +807,10 @@ void TYPESCRIPT::registerType(Node *n) {
   if (forward) {
     SetFlag(jsnode, "forward");
   }
-  String *ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtypeobj")));
+  String *raw_ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtype")));
+  String *ctype = SwigType_namestr(raw_ctype);
 
-  if (js_debug_tstypes) {
+      if (js_debug_tstypes) {
     Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
            Getfile(n), Getline(n), ctype, jsname,
            forward ? "forward declaration" : "definition");
@@ -941,11 +942,12 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       Append(args, ": ");
       Append(args, type);
 
-      String *ctype = SwigType_base(Getattr(p, "type"));
+      String *ctype = SwigType_namestr(SwigType_base(Getattr(p, "type")));
+
       List *equiv_types = SwigType_get_equiv_types(ctype);
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
-          SwigType *ctype = SwigType_base(Getitem(equiv_types, i));
+          String *ctype = SwigType_namestr(SwigType_base(Getitem(equiv_types, i)));
           Hash *jstype = parent->state.types(ctype);
           if (jstype) {
             Printf(args, " | %s", Getattr(jstype, "name"));
