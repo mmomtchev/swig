@@ -715,8 +715,13 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   Printf(js_name, "%s%s", nspace, name);
   switchNamespace(n);
 
+  // Type declarations have type, while typedefs have tdname
+  // Note that SWIG will consider 'class enum' to be 'enum'
+  String *type_name = Getattr(n, "type") ? Getattr(n, "type") : Getattr(n, "tdname");
+
+  // Fully qualify the name and take into account anonymous enums
   String *enum_name = GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") 
-      : SwigType_typedef_qualified(Getattr(n, "type"));
+      : SwigType_typedef_qualified(type_name);
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
