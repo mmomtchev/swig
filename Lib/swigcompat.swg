@@ -15,13 +15,13 @@
      (defined __cplusplus && __cplusplus >= 201103L) || \
      defined SWIG_HAVE_SNPRINTF) && \
     !defined SWIG_NO_SNPRINTF
-# define SWIG_snprintf(O,S,F,A) snprintf(O,S,F,A)
-# define SWIG_snprintf2(O,S,F,A,B) snprintf(O,S,F,A,B)
+# define SWIG_snprintf(O,S,...) snprintf(O,S,__VA_ARGS__)
+# define SWIG_snprintf2(O,S,...) snprintf(O,S,__VA_ARGS__)
 #else
 /* Fallback versions ignore the buffer size, but most of our uses either have a
  * fixed maximum possible size or dynamically allocate a buffer that's large
  * enough.
  */
-# define SWIG_snprintf(O,S,F,A) sprintf(O,F,A)
-# define SWIG_snprintf2(O,S,F,A,B) sprintf(O,F,A,B)
+# define SWIG_snprintf(O,S,...) sprintf(O,__VA_ARGS__)
+# define SWIG_snprintf2(O,S,...) sprintf(O,__VA_ARGS__)
 #endif

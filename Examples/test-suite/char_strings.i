@@ -19,7 +19,7 @@ const int UINT_DIGITS = 10; // max unsigned int is 4294967295
 
 bool check(const char *const str, unsigned int number) {
   static char expected[256];
-  sprintf(expected, "%s%d", OTHERLAND_MSG, number);
+  SWIG_snprintf(expected, sizeof(expected), "%s%d", OTHERLAND_MSG, number);
   bool matches = (strcmp(str, expected) == 0);
   if (!matches) printf("Failed: [%s][%s]\n", str, expected);
   return matches;
