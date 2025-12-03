@@ -29,19 +29,19 @@ if (/* await */(y.meth()) != 0) {
 }
 
 
-x = new template_default_arg.X_longlong();
-x = new template_default_arg.X_longlong(20.0);
-x = new template_default_arg.X_longlong(20.0, 200);
+var x2 = new template_default_arg.X_longlong();
+x2 = new template_default_arg.X_longlong(20.0);
+x2 = new template_default_arg.X_longlong(20.0, 200);
 
 
-x = new template_default_arg.X_int();
-x = new template_default_arg.X_int(20.0);
-x = new template_default_arg.X_int(20.0, 200);
+var x3 = new template_default_arg.X_int();
+x3 = new template_default_arg.X_int(20.0);
+x3 = new template_default_arg.X_int(20.0, 200);
 
 
-x = new template_default_arg.X_hello_unsigned();
-x = new template_default_arg.X_hello_unsigned(20.0);
-x = new template_default_arg.X_hello_unsigned(
+var x4 = new template_default_arg.X_hello_unsigned();
+x4 = new template_default_arg.X_hello_unsigned(20.0);
+x4 = new template_default_arg.X_hello_unsigned(
     20.0, new template_default_arg.Hello_int());
 
 
@@ -52,8 +52,8 @@ var y2 = new template_default_arg.Y_hello_unsigned();
 
 
 var fz = new template_default_arg.Foo_Z_8();
-var x2 = new template_default_arg.X_Foo_Z_8();
-var fzc = /* await */(x2.meth(fz));
+var x5 = new template_default_arg.X_Foo_Z_8();
+var fzc = /* await */(x5.meth(fz));
 
 
 // Templated functions
