@@ -148,6 +148,7 @@ CPP_TEST_CASES += \
 	char_binary \
 	char_binary_rev_len \
 	char_strings \
+	char_strings_split \
 	chartest \
 	class_case \
 	class_scope_namespace \
