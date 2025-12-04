@@ -715,9 +715,11 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   Printf(js_name, "%s%s", nspace, name);
   switchNamespace(n);
 
-  String *enum_name = NewString("");
-  Printf(enum_name, "%s %s", Getattr(n, "enumkey"),
-    GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") : Getattr(n, "enumtype"));
+  // There are many types of enum declarations, but when resolving
+  // these will always be referred as "enum <name>"
+  String *enum_name = 
+    NewStringf("enum %s", 
+      GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") : Getattr(n, "name"));
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
@@ -732,6 +734,7 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   t_enum.replace("$jsname", name)
       .replace("$js_qualified_name", js_name)
       .print(f_declarations);
+  Delete(enum_name);
   return SWIG_OK;
 }
 

@@ -262,6 +262,10 @@ private:
     Val1 = 1171,
     Val2 = 1172,
   };
+
+  long long cast_enum(Enum15 val) {
+    return static_cast<long long>(val);
+  }
 %}
 
 // Test handling of %rename of enum class and an enumerator.
