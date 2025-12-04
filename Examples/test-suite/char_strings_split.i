@@ -35,6 +35,10 @@ bool check(const char *const str, unsigned int number) {
 %immutable global_const_char;
 
 %inline %{
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 // get functions
 char *GetCharHeapString();
 const char *GetConstCharProgramCodeString();
@@ -66,6 +70,10 @@ extern char global_char_array2[sizeof(CPLUSPLUS_MSG)+1];
 extern const char *global_const_char;
 extern const char global_const_char_array1[];
 extern const char global_const_char_array2[sizeof(CPLUSPLUS_MSG)+1];
+
+#ifdef __cplusplus
+}
+#endif
 %}
 
 %insert(wrapper) %{
@@ -177,9 +185,15 @@ const char global_const_char_array2[sizeof(CPLUSPLUS_MSG)+1] = CPLUSPLUS_MSG;
 %typemap(newfree) char *GetNewCharString() { /* hello */ delete[] $1; }
 %newobject GetNewCharString();
 
-%inline {
+%inline %{
+#ifdef __cplusplus
+extern "C" {
+#endif
   char *GetNewCharString();
+#ifdef __cplusplus
 }
+#endif
+%}
 
 %insert(wrapper) %{
   char *GetNewCharString() {
@@ -189,12 +203,18 @@ const char global_const_char_array2[sizeof(CPLUSPLUS_MSG)+1] = CPLUSPLUS_MSG;
   }
 %}
 
-%inline {
+%inline %{
+#ifdef __cplusplus
+extern "C" {
+#endif
   struct Formatpos;
   struct OBFormat;
 
   int GetNextFormat(Formatpos& itr, const  char*& str,OBFormat*& pFormat);
+#ifdef __cplusplus
 }
+#endif
+%}
 
 %insert(wrapper) %{
   int GetNextFormat(Formatpos& itr, const  char*& str,OBFormat*& pFormat) {
@@ -204,11 +224,17 @@ const char global_const_char_array2[sizeof(CPLUSPLUS_MSG)+1] = CPLUSPLUS_MSG;
 
 
 %inline %{
+#ifdef __cplusplus
+extern "C" {
+#endif
 // char *& tests
 char *&GetCharPointerRef();
 bool SetCharPointerRef(char *&str, unsigned int number);
 const char *&GetConstCharPointerRef();
 bool SetConstCharPointerRef(const char *&str, unsigned int number);
+#ifdef __cplusplus
+}
+#endif
 %}
 
 %insert(wrapper) %{
