@@ -232,17 +232,20 @@ extern "C" {
 
 %inline %{
 #ifdef __cplusplus
+extern "C++" {
 // char *& tests, these work only in C++
 char *&GetCharPointerRef();
 bool SetCharPointerRef(char *&str, unsigned int number);
 const char *&GetConstCharPointerRef();
 bool SetConstCharPointerRef(const char *&str, unsigned int number);
+}
 #endif
 %}
 
 %insert(wrapper) %{
 // char *& tests
 #ifdef __cplusplus
+extern "C++" {
 char *&GetCharPointerRef() {
   static char str[] = CPLUSPLUS_MSG;
   static char *ptr = str;
@@ -265,6 +268,7 @@ bool SetConstCharPointerRef(const char *&str, unsigned int number) {
   static char static_str[] = CPLUSPLUS_MSG;
   strcpy(static_str, str);
   return check(static_str, number);
+}
 }
 #endif
 %}
