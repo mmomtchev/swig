@@ -542,8 +542,10 @@ SWIG_From##CharName##Array(const Char *cptr, size_t size)
 }
 
 %fragment("SWIG_As" #CharName "Array","header",fragment=#SWIG_AsCharPtrAndSize,fragment="SWIG_As" #CharName "Array_Body") {
+#ifdef SWIGCODESPLIT
 SWIGCLINKAGE SWIGINTERN int
 SWIG_As##CharName##Array(SWIG_Object obj, Char *val, size_t size);
+#endif
 }
 
 %fragment("SWIG_As" #CharName "Array_Body","wrapper",fragment=#SWIG_AsCharPtrAndSize) {
@@ -587,8 +589,10 @@ SWIG_From_dec(Char)(Char c)
 	  fragment="SWIG_As"#CharName"Array",
 	  fragment=FragLimits,
 	  fragment=SWIG_AsVal_frag(long)) {
+#ifdef SWIGCODESPLIT
 SWIGCLINKAGE SWIGINTERN int
 SWIG_AsVal_dec(Char)(SWIG_Object obj, Char *val);
+#endif
 }
 
 %fragment(SWIG_AsVal_body(Char),"wrapper",
