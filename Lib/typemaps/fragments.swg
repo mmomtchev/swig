@@ -77,7 +77,8 @@
 
 #define SWIG_Traits_frag(Type...) %fragment_name(Traits, Type) 
 #define SWIG_AsPtr_frag(Type...)  %fragment_name(AsPtr, Type)	 
-#define SWIG_AsVal_frag(Type...)  %fragment_name(AsVal, Type)	 
+#define SWIG_AsVal_frag(Type...)  %fragment_name(AsVal_body, Type)	 
+#define SWIG_AsVal_body(Type...)  %fragment_name(AsVal, Type)	 
 #define SWIG_From_frag(Type...)   %fragment_name(From, Type)	 
 
 #define SWIG_AsVal_name(Type...)  %symbol_name(AsVal, Type) 
