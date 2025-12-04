@@ -542,12 +542,12 @@ SWIG_From##CharName##Array(const Char *cptr, size_t size)
 }
 
 %fragment("SWIG_As" #CharName "Array","header",fragment=#SWIG_AsCharPtrAndSize,fragment="SWIG_As" #CharName "Array_Body") {
-SWIGINTERN int
+SWIGCLINKAGE SWIGINTERN int
 SWIG_As##CharName##Array(SWIG_Object obj, Char *val, size_t size);
 }
 
 %fragment("SWIG_As" #CharName "Array_Body","wrapper",fragment=#SWIG_AsCharPtrAndSize) {
-SWIGINTERN int
+SWIGCLINKAGE SWIGINTERN int
 SWIG_As##CharName##Array(SWIG_Object obj, Char *val, size_t size)
 { 
   Char* cptr = 0; size_t csize = 0; int alloc = SWIG_OLDOBJ;
@@ -587,7 +587,7 @@ SWIG_From_dec(Char)(Char c)
 	  fragment="SWIG_As"#CharName"Array",
 	  fragment=FragLimits,
 	  fragment=SWIG_AsVal_frag(long)) {
-SWIGINTERN int
+SWIGCLINKAGE SWIGINTERN int
 SWIG_AsVal_dec(Char)(SWIG_Object obj, Char *val);
 }
 
@@ -595,7 +595,7 @@ SWIG_AsVal_dec(Char)(SWIG_Object obj, Char *val);
 	  fragment="SWIG_As"#CharName"Array",
 	  fragment=FragLimits,
 	  fragment=SWIG_AsVal_frag(long)) {
-SWIGINTERN int
+SWIGCLINKAGE SWIGINTERN int
 SWIG_AsVal_dec(Char)(SWIG_Object obj, Char *val)
 {    
   int res = SWIG_As##CharName##Array(obj, val, 1);
