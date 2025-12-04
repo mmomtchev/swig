@@ -13,9 +13,16 @@ testing the strings.swg typemaps
 
 #define OTHERLAND_MSG "Little message from the safe world."
 #define CPLUSPLUS_MSG "A message from the deep dark world of C++, where anything is possible."
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern char *global_str;
 extern const int UINT_DIGITS; // max unsigned int is 4294967295
 bool check(const char *const str, unsigned int number);
+#ifdef __cplusplus
+}
+#endif
 %}
 
 %insert(wrapper) %{
@@ -225,20 +232,17 @@ extern "C" {
 
 %inline %{
 #ifdef __cplusplus
-extern "C" {
-#endif
-// char *& tests
+// char *& tests, these work only in C++
 char *&GetCharPointerRef();
 bool SetCharPointerRef(char *&str, unsigned int number);
 const char *&GetConstCharPointerRef();
 bool SetConstCharPointerRef(const char *&str, unsigned int number);
-#ifdef __cplusplus
-}
 #endif
 %}
 
 %insert(wrapper) %{
 // char *& tests
+#ifdef __cplusplus
 char *&GetCharPointerRef() {
   static char str[] = CPLUSPLUS_MSG;
   static char *ptr = str;
@@ -262,5 +266,6 @@ bool SetConstCharPointerRef(const char *&str, unsigned int number) {
   strcpy(static_str, str);
   return check(static_str, number);
 }
+#endif
 %}
 
