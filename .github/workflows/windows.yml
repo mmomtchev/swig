@@ -6,12 +6,16 @@ on:
     paths-ignore:
       - 'CHANGES*'
       - 'Doc/**'
+      - 'Tools/CI-linux-*'
+      - 'Tools/GHA-linux-*'
       - 'appveyor.yml'
   pull_request:
     branches: main
     paths-ignore:
       - 'CHANGES*'
       - 'Doc/**'
+      - 'Tools/CI-linux-*'
+      - 'Tools/GHA-linux-*'
       - 'appveyor.yml'
 
 permissions:
