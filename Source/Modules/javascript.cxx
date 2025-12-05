@@ -526,11 +526,6 @@ int TYPESCRIPT::top(Node *n) {
       continue;
     if (!GetFlag(it.item, "ts_used"))
       continue;
-    // See TypeScript::registerType for explanation why symbols
-    // can be duplicated
-    if (GetFlag(it.item, "ts_emitted"))
-      continue;
-    SetFlag(it.item, "ts_emitted");
     String *name = Getattr(it.item, "name");
     if (js_debug_tstypes) {
       Printf(stdout, "Emitting a symbol declaration for %s, found only a forward declaration\n", name);
@@ -860,21 +855,6 @@ void TYPESCRIPT::registerType(Node *n) {
            forward ? "forward declaration" : "definition");
   }
   parent->state.types(ctype, jsnode);
-  // This is an ugly kludge that works around the fact
-  // that for C code, the type may get requested both as
-  // struct Name and simply Name and that equivalence might
-  // not be set up unless there is at least one plain argument
-  // or variable
-  // TODO: The real solution would be to export the
-  // r_resolved system from typesys.c and drop the custom
-  // TypeScript types tracking
-  // This kludge requires another kludge when emitting
-  // See TypeScript::top and "ts_emitted"
-  if (!CPlusPlus) {
-    String *altname = NewStringf("struct %s", ctype);
-    parent->state.types(altname, jsnode);
-    Delete(altname);
-  }
   Delete(ctype);
 }
 
