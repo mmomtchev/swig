@@ -824,15 +824,21 @@ void TYPESCRIPT::registerType(Node *n) {
   String *cname = Getattr(n, "classtype")
                       ? SwigType_base(Getattr(n, "classtype"))
                       : SwigType_base(Getattr(n, "name"));
-  String *raw_ctype = SwigType_typedef_resolve_all(Swig_cparse_type(cname));
-  String *ctype = SwigType_namestr(raw_ctype);
+  SwigType *raw_type = Swig_cparse_type(cname);
+  SwigType *resolved_type = SwigType_typedef_resolve_all(raw_type);
+  String *ctype = SwigType_namestr(resolved_type);
 
   // Definitions replace the forward declaration
   // when they become available except for typedefs
   // where there can be multiple typedefs
   Hash *existing = parent->state.types(ctype);
-  if (existing && opaque)
+  Delete(raw_type);
+  Delete(resolved_type);
+
+  if (existing && opaque) {
+    Delete(ctype);
     return;
+  }
   if (existing) {
     if (!GetFlag(existing, "forward") && !GetFlag(existing, "opaque")) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
@@ -862,6 +868,7 @@ void TYPESCRIPT::registerType(Node *n) {
     parent->state.types(altname, jsnode);
     Delete(altname);
   }
+  Delete(ctype);
 }
 
 /**********************************************************************

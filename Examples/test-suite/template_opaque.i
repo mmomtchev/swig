@@ -36,11 +36,4 @@ namespace A {
 }
 }
 
-// Alas, this is indeed a double declaration for an already
-// existing type that SWIG cannot identify in its current state
-// (it results two distinct r_mangled entries)
-#ifndef SWIGTYPESCRIPT
 %template(OpaqueVectorType) std::vector<A::OpaqueType>;
-#else
-%template(OpaqueVectorType) std::vector<A::OpaqueStruct>;
-#endif
