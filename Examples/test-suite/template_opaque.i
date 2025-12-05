@@ -36,4 +36,4 @@ namespace A {
 }
 }
 
-%template(OpaqueVectorType) std::vector<A::OpaqueType>;
+%template(OpaqueVectorType) std::vector<A::OpaqueType>; 
