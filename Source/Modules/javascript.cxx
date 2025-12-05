@@ -800,7 +800,6 @@ int TYPESCRIPT::constructorHandler(Node *n) {
  * ($jsname in ts/tsout typemaps)
  * --------------------------------------------------------------------- */
 void TYPESCRIPT::registerType(Node *n) {
-  //Swig_print(n);
   Hash *jsnode = NewHash();
   String *jsname = NewStringEmpty();
   bool forward = Equal(Getattr(n, "nodeType"), "classforward");
