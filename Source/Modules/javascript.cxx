@@ -522,7 +522,7 @@ int TYPESCRIPT::top(Node *n) {
   // a forward declaration for std::string, but then this type will
   // be eliminated as an std::string is not wrapped but rather converted
   for (it = First(parent->state.types()); it.item; it = Next(it)) {
-    if (!GetFlag(it.item, "forward"))
+    if (!GetFlag(it.item, "forward") && !GetFlag(it.item, "opaque"))
       continue;
     if (!GetFlag(it.item, "ts_used"))
       continue;
@@ -800,9 +800,13 @@ int TYPESCRIPT::constructorHandler(Node *n) {
  * ($jsname in ts/tsout typemaps)
  * --------------------------------------------------------------------- */
 void TYPESCRIPT::registerType(Node *n) {
+  //Swig_print(n);
   Hash *jsnode = NewHash();
   String *jsname = NewStringEmpty();
   bool forward = Equal(Getattr(n, "nodeType"), "classforward");
+  bool opaque = Equal(Getattr(n, "kind"), "typedef") &&
+      Equal(Getattr(n, "nodeType"), "cdecl") &&
+      !GetFlag(n, "is_wrapped");
   String *nspace = parent->currentNamespacePrefix();
 
   Printf(jsname, "%s%s", nspace, Getattr(n, "sym:name"));
@@ -810,29 +814,33 @@ void TYPESCRIPT::registerType(Node *n) {
   if (forward) {
     SetFlag(jsnode, "forward");
   }
-  String *raw_ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtype")));
+  if (opaque) {
+    SetFlag(jsnode, "opaque");
+  }
+  String *cname = Getattr(n, "classtype")
+                      ? SwigType_base(Getattr(n, "classtype"))
+                      : SwigType_base(Getattr(n, "name"));
+  String *raw_ctype = SwigType_typedef_resolve_all(cname);
   String *ctype = SwigType_namestr(raw_ctype);
 
-  if (js_debug_tstypes) {
-    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
-           Getfile(n), Getline(n), ctype, jsname,
-           forward ? "forward declaration" : "definition");
-  }
   // Definitions replace the forward declaration
-  // when they become available
+  // when they become available except for typedefs
+  // where there can be multiple typedefs
   Hash *existing = parent->state.types(ctype);
+  if (existing && opaque)
+    return;
   if (existing) {
-    if (!GetFlag(existing, "forward")) {
+    if (!GetFlag(existing, "forward") && !GetFlag(existing, "opaque")) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
                    "Redefinition for %s: %s -> %s\n",
                    ctype, jsname, Getattr(existing, "name"));
     }
-    if (!Equal(jsname, Getattr(existing, "name"))) {
-      Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
-                   "JS type of definition for %s does not match forward "
-                   "declaration: %s -> %s\n",
-                   ctype, jsname, Getattr(existing, "name"));
-    }
+  }
+  if (js_debug_tstypes) {
+    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s%s)\n",
+           Getfile(n), Getline(n), ctype, jsname,
+           opaque ? "opaque typedef ": "",
+           forward ? "forward declaration" : "definition");
   }
   parent->state.types(ctype, jsnode);
   // This is an ugly kludge that works around the fact
@@ -870,6 +878,7 @@ class JAVASCRIPT:public Language {
   virtual int staticmemberfunctionHandler(Node *n);
   virtual int classHandler(Node *n);
   virtual int classforwardDeclaration(Node *n);
+  virtual int cDeclaration(Node *n);
   virtual int enumDeclaration(Node *n);
   virtual int functionWrapper(Node *n);
   virtual int constantWrapper(Node *n);
@@ -1202,6 +1211,22 @@ int JAVASCRIPT::classforwardDeclaration(Node *n) {
      * when the full type becomes available
      */
     ts_emitter->registerType(n);
+  }
+  return SWIG_OK;
+}
+
+int JAVASCRIPT::cDeclaration(Node *n) {
+  emitter->switchNamespace(n);
+  int r = Language::cDeclaration(n);
+  if (r != SWIG_OK)
+    return r;
+  if (ts_emitter) {
+    /* This tracks forward typedefs that remain opaque
+     * Just as the above case, these will be eventually
+     * replaced with the definition if there is a definition
+     */
+    if (Cmp(Getattr(n, "kind"), "typedef") == 0)
+      ts_emitter->registerType(n);
   }
   return SWIG_OK;
 }

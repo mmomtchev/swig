@@ -68,3 +68,10 @@ typedef struct _Foo {
 #endif
 
 %}
+
+%inline %{
+  typedef struct Opaque Opaque;
+
+  Opaque *RetOpaque() { return NULL; }
+  void TakeOpaque (Opaque *o) {}
+%}

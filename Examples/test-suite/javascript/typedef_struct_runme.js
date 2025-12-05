@@ -34,3 +34,16 @@ if (typeof enumvar !== typeof typedef_struct.Foo.NONAME1)
   throw new Error;
 /* @ts-expect-error ensure it is not any */
 enumvar = 'invalid'
+
+// opaque C structs
+var opaque = typedef_struct.RetOpaque();
+typedef_struct.TakeOpaque(opaque);
+
+var pass = false;
+try {
+  // @ts-expect-error
+  typedef_struct.TakeOpaque('12');
+} catch {
+  pass = true;
+}
+if (!pass) throw new Error('opaque accepted a number');
