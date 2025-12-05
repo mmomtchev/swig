@@ -39,6 +39,9 @@ enumvar = 'invalid'
 var opaque = /* await */(typedef_struct.RetOpaque());
 /* await */(typedef_struct.TakeOpaque(opaque));
 
+/* @ts-expect-error ensure it is not any */
+opaque = 'invalid'
+
 var pass = false;
 try {
   // @ts-expect-error
