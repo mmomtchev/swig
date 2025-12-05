@@ -824,7 +824,7 @@ void TYPESCRIPT::registerType(Node *n) {
   String *cname = Getattr(n, "classtype")
                       ? SwigType_base(Getattr(n, "classtype"))
                       : SwigType_base(Getattr(n, "name"));
-  String *raw_ctype = SwigType_typedef_resolve_all(cname);
+  String *raw_ctype = SwigType_typedef_resolve_all(Swig_cparse_type(cname));
   String *ctype = SwigType_namestr(raw_ctype);
 
   // Definitions replace the forward declaration
