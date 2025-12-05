@@ -756,9 +756,16 @@ int TYPESCRIPT::enterClass(Node *n) {
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
   if (jsbase && Getattr(jsbase, "module")) {
-    Hash *base_class = Getattr(jsbase, "classtype");
-    String *base_jsname = Getattr(parent->state.types(base_class), "name");
+    String *base_class = Getattr(jsbase, "classtype");
+    SwigType *base_type = Swig_cparse_type(base_class);
+    SwigType *base_type_resolved = SwigType_typedef_resolve_all(base_type);
+    String *type = SwigType_namestr(base_type_resolved);
+    Hash *js_node = parent->state.types(type);
+    String *base_jsname = Getattr(js_node, "name");
     Printf(jsparent, " extends %s", base_jsname);
+    Delete(type);
+    Delete(base_type_resolved);
+    Delete(base_type);
   }
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
