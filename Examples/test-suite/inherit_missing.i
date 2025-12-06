@@ -14,12 +14,8 @@ public:
 };
 %}
 
-#ifdef SWIGTYPESCRIPT
-// Without this TypeScript will produce an opaque type w/o a wrapper for Foo
-%ignore Foo;
-#endif
-
 /* Forward declaration.  Says that Foo is a class, but doesn't provide a definition */
+
 class Foo;
 
 %newobject new_Foo;
