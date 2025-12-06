@@ -396,16 +396,28 @@ void TYPESCRIPT::main(int, char *[]) {
  * Works for both SwigType and String (thus the conditional parse)
  */
 String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
-  SwigType *parsed = Swig_cparse_type(type);
-  SwigType *base = SwigType_base(parsed ? parsed : type);
-  SwigType *resolved = SwigType_typedef_resolve_all(base);
-  String *ret = resolved;
+  // The extra SwigType_namestr normalizes already resolved types
+  String *prepared = SwigType_namestr(type);
+  SwigType *parsed = Swig_cparse_type(prepared);
+  // If the type is a string representation, the above will fail
+  SwigType *resolved = SwigType_typedef_resolve_all(parsed ? parsed : type);
+  SwigType *qualified = SwigType_typedef_qualified(resolved);
+  SwigType *base = SwigType_base(qualified);
+  // The string representation is the best unique identifier
+  String *ret = SwigType_namestr(base);
   if (mangle) {
-    ret = SwigType_manglestr(resolved);
-    Delete(resolved);
+    // The only exception is the C support where mangling
+    // fixes a couple of problems related to omitting "struct"
+    String *mangled = SwigType_manglestr(ret);
+    Delete(ret);
+    ret = mangled;
   }
-  if (parsed)
-    Delete(parsed);
+  // SwigType seems to have complex reusing rules
+  // that make deleting difficult (not allowed?)
+  Delete(prepared);
+  Printf(stdout, "(type) %s -> (parsed) %s -> (resolved) %s -> (qualified) %s -> (base) %s -> %s (parsed %s, mangle %s)\n",
+    NewString(type), NewString(parsed), NewString(resolved), NewString(qualified), NewString(base), ret,
+    parsed ? "yes" : "no", mangle ? "yes" : "no");
   return ret;
 }
 
