@@ -373,7 +373,7 @@ protected:
   virtual String *emitArguments(Node *);
   virtual String *promisify(String *);
   virtual String *enumName(Node *);
-  virtual String *normalizeType(SwigType *t);
+  virtual String *normalizeType(SwigType *t, bool mangle = true);
 
 private:
   String *f_declarations, *f_current_class;
@@ -395,13 +395,18 @@ void TYPESCRIPT::main(int, char *[]) {
  * 
  * Works for both SwigType and String (thus the conditional parse)
  */
-String *TYPESCRIPT::normalizeType(SwigType *type) {
+String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
   SwigType *parsed = Swig_cparse_type(type);
   SwigType *base = SwigType_base(parsed ? parsed : type);
   SwigType *resolved = SwigType_typedef_resolve_all(base);
-  String *mangled = SwigType_manglestr(resolved);
-  Delete(resolved);
-  return mangled;
+  String *ret = resolved;
+  if (mangle) {
+    ret = SwigType_manglestr(resolved);
+    Delete(resolved);
+  }
+  if (parsed)
+    Delete(parsed);
+  return ret;
 }
 
 /**
@@ -415,6 +420,7 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   String *ctype = normalizeType(Getattr(target, "type"));
   Hash *jstype = parent->state.types(ctype);
   if (!jstype) {
+    String *unmangled = normalizeType(Getattr(target, "type"), false);
     List *equiv_types = SwigType_get_equiv_types(ctype);
     if (equiv_types) {
       for (int i = 0; i < Len(equiv_types); i++) {
@@ -426,6 +432,7 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
       }
       Delete(equiv_types);
     }
+    Delete(unmangled);
   }
   String *jsname = jstype ? Getattr(jstype, "name") : NULL;
   String *r = Copy(tm);
@@ -967,7 +974,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       Append(args, ": ");
       Append(args, type);
 
-      String *ctype = normalizeType(Getattr(p, "type"));
+      String *ctype = normalizeType(Getattr(p, "type"), false);
 
       List *equiv_types = SwigType_get_equiv_types(ctype);
       if (equiv_types) {
@@ -981,6 +988,7 @@ String *TYPESCRIPT::emitArguments(Node *n) {
         }
         Delete(equiv_types);
       }
+      Delete(ctype);
     }
     if (tm != NULL) {
       p = Getattr(p, "tmap:ts:next");
