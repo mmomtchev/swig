@@ -990,6 +990,9 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
       String *ctype = normalizeType(Getattr(p, "type"), false);
 
+      // TODO: try to compare equivalent types as full types
+      // This requires that all used variations (refs, pointers...)
+      // are also registered
       List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
