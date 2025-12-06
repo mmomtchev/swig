@@ -8,12 +8,10 @@ var x = /* await */(inherit_missing.do_blah(a));
 if (x != "Foo::blah")
   throw new Error(`Whoa! Bad return ${x}`);
 
-// @ts-expect-error TypeScript cannot extend the opaque Foo
 x = /* await */(inherit_missing.do_blah(b))
 if (x != "Bar::blah")
   throw new Error(`Whoa! Bad return ${x}`);
 
-// @ts-expect-error TypeScript cannot extend the opaque Foo
 x = /* await */(inherit_missing.do_blah(c));
 if (x != "Spam::blah")
   throw new Error(`Whoa! Bad return ${x}`);
