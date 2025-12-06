@@ -79,6 +79,8 @@ CPP_TEST_CASES += \
 # FIXME: Return-value optimization is broken in NAPI
 # https://github.com/mmomtchev/swig/issues/87
 typemap_out_optimal.cpptest: SWIGOPT += -w474
+napi_li_std_vector.cpptest: SWIGOPT += -w302
+li_std_vector.cpptest: SWIGOPT += -w302
 
 # napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
 ifneq (emcc, $(CC))
