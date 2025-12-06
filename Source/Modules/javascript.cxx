@@ -415,9 +415,6 @@ String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
   // SwigType seems to have complex reusing rules
   // that make deleting difficult (not allowed?)
   Delete(prepared);
-  Printf(stdout, "(type) %s -> (parsed) %s -> (resolved) %s -> (qualified) %s -> (base) %s -> %s (parsed %s, mangle %s)\n",
-    NewString(type), NewString(parsed), NewString(resolved), NewString(qualified), NewString(base), ret,
-    parsed ? "yes" : "no", mangle ? "yes" : "no");
   return ret;
 }
 
