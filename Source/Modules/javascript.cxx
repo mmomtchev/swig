@@ -402,12 +402,12 @@ String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
   // If the type is a string representation, the above will fail
   SwigType *resolved = SwigType_typedef_resolve_all(parsed ? parsed : type);
   SwigType *qualified = SwigType_typedef_qualified(resolved);
-  SwigType *base = SwigType_base(qualified);
   // The string representation is the best unique identifier
-  String *ret = SwigType_namestr(base);
+  String *ret = SwigType_namestr(qualified);
   if (mangle) {
     // The only exception is the C support where mangling
-    // fixes a couple of problems related to omitting "struct"
+    // fixes problems related to omitting "struct"
+    // TODO: check enums.ctest vs enums.cpptest - maybe it is a bug
     String *mangled = SwigType_manglestr(ret);
     Delete(ret);
     ret = mangled;
