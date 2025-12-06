@@ -79,6 +79,9 @@ CPP_TEST_CASES += \
 # FIXME: Return-value optimization is broken in NAPI
 # https://github.com/mmomtchev/swig/issues/87
 typemap_out_optimal.cpptest: SWIGOPT += -w474
+
+# TypeScript now tracks many class names
+# and these tests rename classes
 napi_li_std_vector.cpptest: SWIGOPT += -w302
 li_std_vector.cpptest: SWIGOPT += -w302
 

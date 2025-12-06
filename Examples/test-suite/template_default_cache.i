@@ -8,6 +8,12 @@
 
 %ignore ns_a::iface1::Model;
 
+#ifdef SWIGTYPESCRIPT
+// TypeScript correctly identifies name collisions here
+%rename(AModelPtr) ns_a::iface1::ModelPtr;
+%rename(BModelPtr) ns_b::iface1::ModelPtr;
+#endif
+
 %inline %{
 namespace ns_a {
     namespace iface1 {
