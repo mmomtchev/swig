@@ -430,11 +430,16 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   Hash *jstype = parent->state.types(ctype);
   if (!jstype) {
     String *unmangled = normalizeType(Getattr(target, "type"), false);
-    List *equiv_types = SwigType_get_equiv_types(ctype);
+    List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
     if (equiv_types) {
       for (int i = 0; i < Len(equiv_types); i++) {
         String *etype = normalizeType(Getitem(equiv_types, i));
         jstype = parent->state.types(etype);
+        if (js_debug_tstypes) {
+          Printf(stdout, "\t%s (C++) => %s (JS) is equivalent\n",
+                 Getitem(equiv_types, i),
+                 jstype ? Getattr(jstype, "name") : "<not wrapped>");
+        }
         if (jstype) {
           break;
         }
@@ -985,13 +990,18 @@ String *TYPESCRIPT::emitArguments(Node *n) {
 
       String *ctype = normalizeType(Getattr(p, "type"), false);
 
-      List *equiv_types = SwigType_get_equiv_types(ctype);
+      List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
           String *ctype = normalizeType(Getitem(equiv_types, i));
           Hash *jstype = parent->state.types(ctype);
           if (jstype) {
             Printf(args, " | %s", Getattr(jstype, "name"));
+          }
+          if (js_debug_tstypes) {
+            Printf(stdout, "\t%s (C++) => %s (JS) is equivalent\n",
+                   Getitem(equiv_types, i),
+                   jstype ? Getattr(jstype, "name") : "<not wrapped>");
           }
           Delete(ctype);
         }
