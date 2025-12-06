@@ -431,11 +431,12 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   String *r = Copy(tm);
   if (js_debug_tstypes) {
     Printf(stdout,
-           "%s:%d resolving TypeScript type for %s\n  Found %s:%d -> %s "
+           "%s:%d resolving TypeScript type for %s (%s)\n  Found %s:%d -> %s "
            "($jstype = %s)%s\n",
-           Getfile(target), Getline(target), ctype, Getfile(tm), Getline(tm), r,
-           jsname ? jsname : "<none> -> any",
-           jstype && GetFlag(jstype, "forward") ? " from forward declaration" : "");
+           Getfile(target), Getline(target), Getattr(target, "type"), ctype,
+           Getfile(tm), Getline(tm), r, jsname ? jsname : "<none> -> any",
+           jstype && GetFlag(jstype, "forward") ? " from forward declaration"
+                                                : "");
   }
   if (Strstr(r, "$jstype")) {
     if (jsname) {
@@ -739,8 +740,8 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   Setattr(js_node, "name", js_name);
   parent->state.types(mangled, js_node);
   if (js_debug_tstypes) {
-    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) from enum declaration\n",
-           Getfile(n), Getline(n), mangled, js_name);
+    Printf(stdout, "%s:%d registering %s (%s) (C/C++) ==> %s (JS) from enum declaration\n",
+           Getfile(n), Getline(n), enum_name, mangled, js_name);
   }
 
   Template t_enum(parent->getTemplate("ts_enum_declaration"));
@@ -856,13 +857,13 @@ void TYPESCRIPT::registerType(Node *n) {
     if (!Equal(jsname, Getattr(existing, "name"))) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
                    "JS type of definition for %s does not match forward "
-                   "declaration: %s -> %s\n",
+                   "declaration: %s (%s) -> %s\n", cname,
                    ctype, jsname, Getattr(existing, "name"));
     }
   }
   if (js_debug_tstypes) {
-    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s%s)\n",
-           Getfile(n), Getline(n), ctype, jsname,
+    Printf(stdout, "%s:%d registering %s (%s) (C/C++) ==> %s (JS) (%s%s)\n",
+           Getfile(n), Getline(n), cname, ctype, jsname,
            opaque ? "opaque typedef ": "",
            forward ? "forward declaration" : "definition");
   }
