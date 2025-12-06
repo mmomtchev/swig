@@ -993,6 +993,8 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       // TODO: try to compare equivalent types as full types
       // This requires that all used variations (refs, pointers...)
       // are also registered
+      // (this would lead to problems only if a pointer and a reference
+      // or a plain object have different JS types)
       List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
