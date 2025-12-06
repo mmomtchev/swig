@@ -373,6 +373,7 @@ protected:
   virtual String *emitArguments(Node *);
   virtual String *promisify(String *);
   virtual String *enumName(Node *);
+  virtual String *normalizeType(SwigType *t, bool mangle = true);
 
 private:
   String *f_declarations, *f_current_class;
@@ -390,6 +391,34 @@ void TYPESCRIPT::main(int, char *[]) {
 }
 
 /**
+ * Normalize a type so that it can be compared and searched for
+ * 
+ * Works for both SwigType and String (thus the conditional parse)
+ */
+String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
+  // The extra SwigType_namestr normalizes already resolved types
+  String *prepared = SwigType_namestr(type);
+  SwigType *parsed = Swig_cparse_type(prepared);
+  // If the type is a string representation, the above will fail
+  SwigType *resolved = SwigType_typedef_resolve_all(parsed ? parsed : type);
+  SwigType *qualified = SwigType_typedef_qualified(resolved);
+  // The string representation is the best unique identifier
+  String *ret = SwigType_namestr(qualified);
+  if (mangle) {
+    // The only exception is the C support where mangling
+    // fixes problems related to omitting "struct"
+    // TODO: check enums.ctest vs enums.cpptest - maybe it is a bug
+    String *mangled = SwigType_manglestr(ret);
+    Delete(ret);
+    ret = mangled;
+  }
+  // SwigType seems to have complex reusing rules
+  // that make deleting difficult (not allowed?)
+  Delete(prepared);
+  return ret;
+}
+
+/**
  * Expand the TS-specific typemap special variables
  * $jstype - the wrapped symbol name
  */
@@ -397,32 +426,38 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   if (!tm)
     return NULL;
 
-  SwigType *raw_ctype =
-      SwigType_typedef_resolve_all(SwigType_base(Getattr(target, "type")));
-  String *ctype = SwigType_namestr(raw_ctype);
+  String *ctype = normalizeType(Getattr(target, "type"));
   Hash *jstype = parent->state.types(ctype);
   if (!jstype) {
-    List *equiv_types = SwigType_get_equiv_types(ctype);
+    String *unmangled = normalizeType(Getattr(target, "type"), false);
+    List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
     if (equiv_types) {
       for (int i = 0; i < Len(equiv_types); i++) {
-        SwigType *etype = SwigType_base(Getitem(equiv_types, i));
+        String *etype = normalizeType(Getitem(equiv_types, i));
         jstype = parent->state.types(etype);
+        if (js_debug_tstypes) {
+          Printf(stdout, "\t%s (C++) => %s (JS) is equivalent\n",
+                 Getitem(equiv_types, i),
+                 jstype ? Getattr(jstype, "name") : "<not wrapped>");
+        }
         if (jstype) {
           break;
         }
       }
       Delete(equiv_types);
     }
+    Delete(unmangled);
   }
   String *jsname = jstype ? Getattr(jstype, "name") : NULL;
   String *r = Copy(tm);
   if (js_debug_tstypes) {
     Printf(stdout,
-           "%s:%d resolving TypeScript type for %s\n  Found %s:%d -> %s "
+           "%s:%d resolving TypeScript type for %s (%s)\n  Found %s:%d -> %s "
            "($jstype = %s)%s\n",
-           Getfile(target), Getline(target), ctype, Getfile(tm), Getline(tm), r,
-           jsname ? jsname : "<none> -> any",
-           jstype && GetFlag(jstype, "forward") ? " from forward declaration" : "");
+           Getfile(target), Getline(target), Getattr(target, "type"), ctype,
+           Getfile(tm), Getline(tm), r, jsname ? jsname : "<none> -> any",
+           jstype && GetFlag(jstype, "forward") ? " from forward declaration"
+                                                : "");
   }
   if (Strstr(r, "$jstype")) {
     if (jsname) {
@@ -522,7 +557,7 @@ int TYPESCRIPT::top(Node *n) {
   // a forward declaration for std::string, but then this type will
   // be eliminated as an std::string is not wrapped but rather converted
   for (it = First(parent->state.types()); it.item; it = Next(it)) {
-    if (!GetFlag(it.item, "forward"))
+    if (!GetFlag(it.item, "forward") && !GetFlag(it.item, "opaque"))
       continue;
     if (!GetFlag(it.item, "ts_used"))
       continue;
@@ -720,13 +755,14 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   String *enum_name = 
     NewStringf("enum %s", 
       GetFlag(n, "unnamedinstance") ? Getattr(n, "unnamed") : Getattr(n, "name"));
+  String *mangled = SwigType_manglestr(enum_name);
 
   Hash *js_node = NewHash();
   Setattr(js_node, "name", js_name);
-  parent->state.types(enum_name, js_node);
+  parent->state.types(mangled, js_node);
   if (js_debug_tstypes) {
-    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) from enum declaration\n",
-           Getfile(n), Getline(n), enum_name, js_name);
+    Printf(stdout, "%s:%d registering %s (%s) (C/C++) ==> %s (JS) from enum declaration\n",
+           Getfile(n), Getline(n), enum_name, mangled, js_name);
   }
 
   Template t_enum(parent->getTemplate("ts_enum_declaration"));
@@ -734,6 +770,7 @@ int TYPESCRIPT::enumDeclaration(Node *n) {
   t_enum.replace("$jsname", name)
       .replace("$js_qualified_name", js_name)
       .print(f_declarations);
+  Delete(mangled);
   Delete(enum_name);
   return SWIG_OK;
 }
@@ -751,9 +788,11 @@ int TYPESCRIPT::enterClass(Node *n) {
   String *jsparent = NewString("");
   Node *jsbase = parent->getBaseClass(n);
   if (jsbase && Getattr(jsbase, "module")) {
-    Hash *base_class = Getattr(jsbase, "classtype");
-    String *base_jsname = Getattr(parent->state.types(base_class), "name");
+    String *base_class = normalizeType(Getattr(jsbase, "classtype"));
+    Hash *js_node = parent->state.types(base_class);
+    String *base_jsname = Getattr(js_node, "name");
     Printf(jsparent, " extends %s", base_jsname);
+    Delete(base_class);
   }
   const char *qualifier = Getattr(n, "abstracts") ? "abstract" : "";
 
@@ -803,6 +842,9 @@ void TYPESCRIPT::registerType(Node *n) {
   Hash *jsnode = NewHash();
   String *jsname = NewStringEmpty();
   bool forward = Equal(Getattr(n, "nodeType"), "classforward");
+  bool opaque = Equal(Getattr(n, "kind"), "typedef") &&
+      Equal(Getattr(n, "nodeType"), "cdecl") &&
+      !GetFlag(n, "is_wrapped");
   String *nspace = parent->currentNamespacePrefix();
 
   Printf(jsname, "%s%s", nspace, Getattr(n, "sym:name"));
@@ -810,19 +852,25 @@ void TYPESCRIPT::registerType(Node *n) {
   if (forward) {
     SetFlag(jsnode, "forward");
   }
-  String *raw_ctype = SwigType_typedef_resolve_all(SwigType_base(Getattr(n, "classtype")));
-  String *ctype = SwigType_namestr(raw_ctype);
-
-  if (js_debug_tstypes) {
-    Printf(stdout, "%s:%d registering %s (C/C++) ==> %s (JS) (%s)\n",
-           Getfile(n), Getline(n), ctype, jsname,
-           forward ? "forward declaration" : "definition");
+  if (opaque) {
+    SetFlag(jsnode, "opaque");
   }
+  String *cname = Getattr(n, "classtype")
+                      ? SwigType_base(Getattr(n, "classtype"))
+                      : SwigType_base(Getattr(n, "name"));
+  String *ctype = normalizeType(cname);
+
   // Definitions replace the forward declaration
-  // when they become available
+  // when they become available except for typedefs
+  // where there can be multiple typedefs
   Hash *existing = parent->state.types(ctype);
+
+  if (existing && opaque) {
+    Delete(ctype);
+    return;
+  }
   if (existing) {
-    if (!GetFlag(existing, "forward")) {
+    if (!GetFlag(existing, "forward") && !GetFlag(existing, "opaque")) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
                    "Redefinition for %s: %s -> %s\n",
                    ctype, jsname, Getattr(existing, "name"));
@@ -830,24 +878,18 @@ void TYPESCRIPT::registerType(Node *n) {
     if (!Equal(jsname, Getattr(existing, "name"))) {
       Swig_warning(WARN_PARSE_REDEFINED, input_file, line_number,
                    "JS type of definition for %s does not match forward "
-                   "declaration: %s -> %s\n",
+                   "declaration: %s (%s) -> %s\n", cname,
                    ctype, jsname, Getattr(existing, "name"));
     }
   }
+  if (js_debug_tstypes) {
+    Printf(stdout, "%s:%d registering %s (%s) (C/C++) ==> %s (JS) (%s%s)\n",
+           Getfile(n), Getline(n), cname, ctype, jsname,
+           opaque ? "opaque typedef ": "",
+           forward ? "forward declaration" : "definition");
+  }
   parent->state.types(ctype, jsnode);
-  // This is an ugly kludge that works around the fact
-  // that for C code, the type may get requested both as
-  // struct Name and simply Name and that equivalence might
-  // not be set up unless there is at least one plain argument
-  // or variable
-  // TODO: The real solution would be to export the
-  // r_resolved system from typesys.c and drop the custom
-  // TypeScript types tracking
-  if (!CPlusPlus) {
-    String *altname = NewStringf("struct %s", ctype);
-    parent->state.types(altname, jsnode);
-    Delete(altname);
-  } 
+  Delete(ctype);
 }
 
 /**********************************************************************
@@ -870,6 +912,7 @@ class JAVASCRIPT:public Language {
   virtual int staticmemberfunctionHandler(Node *n);
   virtual int classHandler(Node *n);
   virtual int classforwardDeclaration(Node *n);
+  virtual int cDeclaration(Node *n);
   virtual int enumDeclaration(Node *n);
   virtual int functionWrapper(Node *n);
   virtual int constantWrapper(Node *n);
@@ -945,19 +988,31 @@ String *TYPESCRIPT::emitArguments(Node *n) {
       Append(args, ": ");
       Append(args, type);
 
-      String *ctype = SwigType_namestr(SwigType_base(Getattr(p, "type")));
+      String *ctype = normalizeType(Getattr(p, "type"), false);
 
-      List *equiv_types = SwigType_get_equiv_types(ctype);
+      // TODO: try to compare equivalent types as full types
+      // This requires that all used variations (refs, pointers...)
+      // are also registered
+      // (this would lead to problems only if a pointer and a reference
+      // or a plain object have different JS types)
+      List *equiv_types = SwigType_get_equiv_types(SwigType_base(ctype));
       if (equiv_types) {
         for (int i = 0; i < Len(equiv_types); i++) {
-          String *ctype = SwigType_namestr(SwigType_base(Getitem(equiv_types, i)));
+          String *ctype = normalizeType(Getitem(equiv_types, i));
           Hash *jstype = parent->state.types(ctype);
           if (jstype) {
             Printf(args, " | %s", Getattr(jstype, "name"));
           }
+          if (js_debug_tstypes) {
+            Printf(stdout, "\t%s (C++) => %s (JS) is equivalent\n",
+                   Getitem(equiv_types, i),
+                   jstype ? Getattr(jstype, "name") : "<not wrapped>");
+          }
+          Delete(ctype);
         }
         Delete(equiv_types);
       }
+      Delete(ctype);
     }
     if (tm != NULL) {
       p = Getattr(p, "tmap:ts:next");
@@ -1202,6 +1257,22 @@ int JAVASCRIPT::classforwardDeclaration(Node *n) {
      * when the full type becomes available
      */
     ts_emitter->registerType(n);
+  }
+  return SWIG_OK;
+}
+
+int JAVASCRIPT::cDeclaration(Node *n) {
+  emitter->switchNamespace(n);
+  int r = Language::cDeclaration(n);
+  if (r != SWIG_OK)
+    return r;
+  if (ts_emitter) {
+    /* This tracks forward typedefs that remain opaque
+     * Just as the above case, these will be eventually
+     * replaced with the definition if there is a definition
+     */
+    if (Cmp(Getattr(n, "kind"), "typedef") == 0)
+      ts_emitter->registerType(n);
   }
   return SWIG_OK;
 }

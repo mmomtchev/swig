@@ -80,6 +80,11 @@ CPP_TEST_CASES += \
 # https://github.com/mmomtchev/swig/issues/87
 typemap_out_optimal.cpptest: SWIGOPT += -w474
 
+# TypeScript now tracks many class names
+# and these tests rename classes
+napi_li_std_vector.cpptest: SWIGOPT += -w302
+li_std_vector.cpptest: SWIGOPT += -w302
+
 # napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
 ifneq (emcc, $(CC))
 CPP_TEST_CASES += \
