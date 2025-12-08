@@ -10,7 +10,7 @@ if (typeof print === 'undefined') {
   check(c instanceof static_const_member_2.Test_int, true);
 
   // TODO: At the moment static const is fully correct only for Node API
-  if (static_const_member_2.Test_int.prototype === 'undefined') {
+  if (typeof static_const_member_2.Test_int.prototype === 'undefined') {
     check(static_const_member_2.Test_int.forward_field, 1);
     check(static_const_member_2.Test_int.backward_field, 2);
     check(static_const_member_2.Test_int.cavity_flags, 3);
