@@ -953,6 +953,11 @@ String *TYPESCRIPT::emitArguments(Node *n) {
     return NewString("...args: any[]");
   }
 
+  if (Cmp(Getattr(params, "type"), "void") == 0) {
+    // A single void argument is a special case in C/C++
+    return NewString("");
+  }
+
   Swig_typemap_attach_parms("in", params, NULL);
   Swig_typemap_attach_parms("ts", params, NULL);
   Swig_typemap_attach_parms("tsout", params, NULL);
