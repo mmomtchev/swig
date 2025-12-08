@@ -27,7 +27,7 @@ if ((error)) {
 /* await */(namespace_class.EulerT3D.toFrame(1, 1, 1));
 
 var b = new namespace_class.BooT_i();
-b = new namespace_class.BooT_H();
+var b2 = new namespace_class.BooT_H();
 
 
 var f = new namespace_class.FooT_i();

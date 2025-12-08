@@ -51,18 +51,20 @@ export const $jsname: $tstype;
 
 /* -----------------------------------------------------------------------------
  * ts_class_header:  template for class header
- *   - $jsname:           JS name of the constant
+ *   - $jsname:           JS/TS name of the class
  *   - $jsparent:         Optional parent JS class, must be prefixed with " extends "
  *   - $tsqualifier:      Optional TS qualifier
  * ----------------------------------------------------------------------------- */
 %fragment("ts_class_header", "templates")
 %{
 export $tsqualifier class $jsname$jsparent {
+  private static readonly _SWIG_type_tag_$jsname: unique symbol;
+  readonly [$jsname._SWIG_type_tag_$jsname]: '$jsname';
 %}
 
 /* -----------------------------------------------------------------------------
  * ts_class_footer:  template for class footer
- *   - $jsname:           JS name of the constant
+ *   - $jsname:           JS/TS name of the class
  * ----------------------------------------------------------------------------- */
 %fragment("ts_class_footer", "templates")
 %{

@@ -12,12 +12,12 @@ var created = /* await */(nspace_extend.Outer.Inner1.Color.create());
 
 // constructors and destructors
 var color2 = new nspace_extend.Outer.Inner2.Color();
-color = new nspace_extend.Outer.Inner2.Color(color2);
+var color3 = new nspace_extend.Outer.Inner2.Color(color2);
 
 // class methods
-/* await */(color.colorInstanceMethod(20.0));
+/* await */(color3.colorInstanceMethod(20.0));
 /* await */(nspace_extend.Outer.Inner2.Color.colorStaticMethod(20.0));
-created = /* await */(nspace_extend.Outer.Inner2.Color.create());
+var created2 = /* await */(nspace_extend.Outer.Inner2.Color.create());
 
 // Same class different namespaces
 var col1 = new nspace_extend.Outer.Inner1.Color();
