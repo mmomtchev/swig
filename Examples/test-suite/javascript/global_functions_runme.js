@@ -23,6 +23,19 @@ if (fail) {
 
 fail = true;
 try {
+    // https://github.com/mmomtchev/swig/issues/152
+    // TypeScript will accept undefined for a void argument
+    // @ts-expect-error
+    /* await */(global_functions.global_void(undefined));
+} catch (e) {
+  fail = false;
+}
+if (fail) {
+  throw new Error("argument count check failed");
+}
+
+fail = true;
+try {
     // @ts-expect-error
     /* await */(global_functions.global_one());
 } catch (e) {
