@@ -72,6 +72,7 @@ CPP_TEST_CASES += \
 	napi_li_std_vector \
 	napi_callback \
 	extend_splitting \
+	typescript_type_restrictions \
 	cpp11_shared_ptr_const \
 	cpp11_shared_ptr_upcast \
 	cpp11_smart_pointer_compatibility
