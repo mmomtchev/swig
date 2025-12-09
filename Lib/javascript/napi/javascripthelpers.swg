@@ -454,7 +454,7 @@ Napi::Function SWIG_NAPI_Function(
     // The C/C++ function
     std::function<RET(ARGS...)> c_fn,
     // A function that will transform the given JS arguments to C++ args
-    std::function<void(Napi::Env, const Napi::CallbackInfo &, std::remove_const_t<std::remove_reference_t<ARGS>> & ...)> tmaps_in,
+    std::function<void(Napi::Env, const Napi::CallbackInfo &, std::decay_t<ARGS> & ...)> tmaps_in,
     // A function the will transform the returned C++ value to napi_value
     std::function<Napi::Value(Napi::Env, RET)> tmap_out
   ) {
@@ -467,10 +467,10 @@ Napi::Function SWIG_NAPI_Function(
     // We are always on the main thread
     Napi::Env env{info.Env()};
     // Convert the JS arguments into C++ 
-    std::tuple<std::remove_const_t<std::remove_reference_t<ARGS>>...> args;
+    std::tuple<std::decay_t<ARGS>...> args;
     // This trick allows to expand the tuple and pass
     // the values by reference
-    std::apply([&tmaps_in, &info, &env](std::remove_const_t<std::remove_reference_t<ARGS>> & ...args) {
+    std::apply([&tmaps_in, &info, &env](std::decay_t<ARGS> & ...args) {
       tmaps_in(env, info, args...);
     }, args);
     // The value returned by C++

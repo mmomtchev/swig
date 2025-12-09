@@ -25,7 +25,7 @@
   $result = SWIG_NAPI_Function<std::string, int, const std::string &>(
     env,
     // TODO: SwigValueWrapper gets in the way
-    static_cast<std::function<std::string(int, const std::string &)>>($1),
+    (std::function<std::string(int, const std::string &)>)($1),
     std::function<void(Napi::Env, const Napi::CallbackInfo &, int &, std::string &)>(
         [](Napi::Env env, const Napi::CallbackInfo &info, int &passcode, std::string &name) -> void {
         // TODO: this is ugly
