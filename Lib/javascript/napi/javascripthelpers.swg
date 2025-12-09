@@ -431,6 +431,55 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     return static_cast<RET>(call_context->c_ret);
   };
 };
-#endif
+#endif // NAPI_CPP_EXCEPTIONS
+%} // SWIG_NAPI_Callback
 
-%} // SWIG_NAPI_Callback fragment
+
+%fragment("SWIG_NAPI_Function", "header") %{
+/**
+ * This is an implementation of a factory that can produce
+ * JS functions from C++ std::function() or C function pointer
+ *
+ * It is used by the function pointer typemaps.
+ *
+ * The resulting functions (will) support being called both synchronously and asynchronously.
+ *
+ * Callbacks require exceptions!
+ */
+#include <functional>
+#include <tuple>
+template <typename RET, typename ...ARGS>
+Napi::Function SWIG_NAPI_Function(
+    Napi::Env env,
+    // The C/C++ function
+    std::function<RET(ARGS...)> c_fn,
+    // A function that will transform the given JS arguments to C++ args
+    std::function<void(Napi::Env, const Napi::CallbackInfo &, ARGS & ...)> tmaps_in,
+    // A function the will transform the returned C++ value to napi_value
+    std::function<Napi::Value(Napi::Env, RET)> tmap_out
+  ) {
+    // Here we are in the code that runs when JS/SWIG asks to transform
+    // the returned C/C++ function to JS function
+    // We are always on the main thread
+  Napi::Function js_fn = Napi::Function::New(env,
+    [tmaps_in, tmap_out, c_fn](const Napi::CallbackInfo &info) -> Napi::Value {
+    // Here we are in the code that runs when JS calls the returned function
+    // We are always on the main thread
+    Napi::Env env{info.Env()};
+    // Convert the JS arguments into C++ 
+    std::tuple<ARGS...> args;
+    // This trick allows to expand the tuple and pass
+    // the values by reference
+    std::apply([&tmaps_in, &info, &env](ARGS & ...args) {
+      tmaps_in(env, info, args...);
+    }, args);
+    // The value returned by C++
+    typename SWIG_remove_void<RET>::type c_ret;
+    c_ret = static_cast<SWIG_remove_void<RET>::type>(std::apply(c_fn, args));
+    Napi::Value js_ret = tmap_out(env, c_ret);
+    return js_ret;
+  });
+
+  return js_fn;
+}
+%} // SWIG_NAPI_Function fragment
