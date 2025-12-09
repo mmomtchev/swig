@@ -475,7 +475,7 @@ Napi::Function SWIG_NAPI_Function(
     }, args);
     // The value returned by C++
     typename SWIG_remove_void<RET>::type c_ret;
-    c_ret = static_cast<SWIG_remove_void<RET>::type>(std::apply(c_fn, args));
+    c_ret = static_cast<typename SWIG_remove_void<RET>::type>(std::apply(c_fn, args));
     Napi::Value js_ret = tmap_out(env, c_ret);
     return js_ret;
   });
