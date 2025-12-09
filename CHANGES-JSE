@@ -7,11 +7,16 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
-2025-12-06  mmomtchev
+2025-12-09  mmomtchev
+            [TypeScript] Fix the TypeScript definitions for C functions
+            declared as `fn(void)``
+            [mmomtchev/swig#152](https://github.com/mmomtchev/swig/issues/152)
+
+2025-12-08  mmomtchev
             [TypeScript] Extend the type tagging to all classes exported
             to TypeScript in order to prevent illegal substitutions
             with classes having identical duck-typing
-            [mmomtchev/swig#150](https://github.com/mmomtchev/swig/pull/150)
+            [mmomtchev/swig#150](https://github.com/mmomtchev/swig/issues/150)
 
 2025-12-06: mmomtchev
             Merge SWIG 4.4.1 from upstream
