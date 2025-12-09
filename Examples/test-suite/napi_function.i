@@ -21,11 +21,11 @@
 // ======================================================
 
 // The C++ case
-%typemap(out, fragment="SWIG_NAPI_Function") std::function<std::string(int, std::string)> ReturnCPPFunction {  
-  $result = SWIG_NAPI_Function<std::string, int, std::string>(
+%typemap(out, fragment="SWIG_NAPI_Function") std::function<std::string(int, const std::string &)> ReturnCPPFunction {  
+  $result = SWIG_NAPI_Function<std::string, int, const std::string &>(
     env,
     // TODO: SwigValueWrapper gets in the way
-    static_cast<std::function<std::string(int, std::string)>>($1),
+    static_cast<std::function<std::string(int, const std::string &)>>($1),
     std::function<void(Napi::Env, const Napi::CallbackInfo &, int &, std::string &)>(
         [](Napi::Env env, const Napi::CallbackInfo &info, int &passcode, std::string &name) -> void {
         // TODO: this is ugly
@@ -83,7 +83,7 @@
 #include <string>
 #include <stdio.h>
 
-std::function<std::string(int, std::string)> ReturnCPPFunction() {
+std::function<std::string(int, const std::string &)> ReturnCPPFunction() {
   return [](int passcode, const std::string &name) {
     if (passcode != 420)
       throw std::runtime_error{"Invalid passcode"};
