@@ -133,7 +133,6 @@ LDFLAGS_MULDEFS = @MULTIPLE_DEFS@
 extend_splitting.cpptest: LDFLAGS_MULDEFS=
 extend_constructor_destructor.cpptest: LDFLAGS_MULDEFS=
 char_strings_split.cpptest: LDFLAGS_MULDEFS=
-napi_function.cpptest: EXTRA_CXXFLAGS=-std=gnu++17
 
 # emscripten is cross-compilation, skip the platform flags
 ifeq (emcc, $(CC))
@@ -141,7 +140,7 @@ ifeq (emcc, $(CC))
         ifeq (, $(EMNAPI_DIR))
                 $(error emnapi not found)
         endif
-  	GYP_CXXFLAGS = -I@NODENAPI_DIR@ $(EXTRA_CXXFLAGS)
+  	GYP_CXXFLAGS = -I@NODENAPI_DIR@
   	GYP_TEMPLATE = wasm_template
   	SWIGOPT += -DSWIG_EMSCRIPTEN
   	EMNAPI_LIB = -lemnapi
@@ -156,7 +155,7 @@ ifeq (emcc, $(CC))
     expressions.cpptest: GYP_CFLAGS += \"-Wno-constant-logical-operand\",
     cpp11_userdefined_literals.cpptest: GYP_CFLAGS += \"-Wno-deprecated-literal-operator\",
 else
-  	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@ ${EXTRA_CXXFLAGS}
+  	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
   	GYP_TEMPLATE = node_template
 endif
 
