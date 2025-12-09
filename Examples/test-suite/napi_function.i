@@ -70,7 +70,8 @@
     ),
     [](Napi::Env env, char* c_result) -> Napi::Value {
       Napi::Value js_result;
-      $typemap(out, char*, 1=c_result, result=js_result, argnum=C result, owner=SWIG_POINTER_OWN)
+      $typemap(out, char*, 1=c_result, result=js_result, argnum=C result)
+      free(c_result);
       return js_result;
     }
   );
