@@ -74,7 +74,7 @@ jobs:
           CPPSTD: c++17
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '20'
+          VER: '24'
           CPPSTD: c++17
           ASAN: 1
         - SWIGLANG: javascript

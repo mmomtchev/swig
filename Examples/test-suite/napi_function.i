@@ -20,13 +20,27 @@
 // Create SWIG wrappers for calling std::function and function pointer
 // ===================================================================
 
-// The C case
+// For C we use a typedef
 %inline %{
-  typedef std::function<std::string(int, const std::string &)> CPPFunctionType;
   typedef char * (*CFunctionType)(int, const char *);
 %}
 
-%types(CPPFunctionType);
+// For C++ we instantiate the std::function template:
+//  * First things first, function is a JS keyword and must be renamed
+%rename(__CPPFunctionType) function;
+//  * However do not rename this particular type
+%rename(CPPFunctionType) std::function<std::string(int, const std::string &)>;
+//  * Provide a declaration for SWIG to chew on, it does not include <functional>
+namespace std {
+template <class R, class ...Args> class function {};
+}
+//  * Just for brevity
+%inline %{
+  using CPPFunctionType = std::function<std::string(int, const std::string &)>;
+%}
+//  * Instantiate the template with a JS name so that SWIG
+//    knows about it, it will have to delete this object
+%template(CPPFunctionType) std::function<std::string(int, const std::string &)>;
 
 // Use SWIG to generate normal wrappers
 %inline %{
