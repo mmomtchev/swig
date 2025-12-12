@@ -132,6 +132,7 @@ LDFLAGS_MULDEFS = @MULTIPLE_DEFS@
 extend_splitting.cpptest: LDFLAGS_MULDEFS=
 extend_constructor_destructor.cpptest: LDFLAGS_MULDEFS=
 char_strings_split.cpptest: LDFLAGS_MULDEFS=
+cpp11_std_function.cpptest: LDFLAGS_MULDEFS=
 
 # emscripten is cross-compilation, skip the platform flags
 ifeq (emcc, $(CC))

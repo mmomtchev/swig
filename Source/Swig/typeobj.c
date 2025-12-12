@@ -1227,8 +1227,9 @@ List *SwigType_templateargslist(const SwigType *t) {
             parens++;
           next++;
         }
+      } else {
+        next++;
       }
-      next++;
     }
     one_arg = NewStringWithSize(c, (int)(next - c));
     Append(l, one_arg);
