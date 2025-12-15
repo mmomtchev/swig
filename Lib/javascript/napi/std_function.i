@@ -28,9 +28,11 @@
 %define %napi_std_function(NAME, RET, ...)
 
 %typemap(out) std::function<RET(__VA_ARGS__)> {
-  $result = Napi::Function::New(env, [$1](const Napi::CallbackInfo &info) -> Napi::Value {
+  // The std::function is stored as a copy in the Callable lambda
+  std::function<RET(__VA_ARGS__)> fn = $1;
+  $result = Napi::Function::New(env, [fn](const Napi::CallbackInfo &info) -> Napi::Value {
     // We are slightly bending the const rules here, but we know that this works
-    const_cast<Napi::CallbackInfo &>(info).SetData(reinterpret_cast<void *>(const_cast<std::function<RET(__VA_ARGS__)> *>(&$1)));
+    const_cast<Napi::CallbackInfo &>(info).SetData(reinterpret_cast<void *>(const_cast<std::function<RET(__VA_ARGS__)> *>(&fn)));
     return _wrap__##NAME##_call(info);
   }, "call_cpp_function_"#NAME);
 }
