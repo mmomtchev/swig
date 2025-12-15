@@ -259,8 +259,7 @@ $ yo napi-module                     # the choice of template is irrelevant, SWI
 $ npm install node-addon-api@latest  # the yeoman version is outdated
 $ swig -javascript -napi -c++ -o src/example.cc example.i
 $ node-gyp configure
-$ node-gyp build
-</pre>
+$ node-gyp build</pre>
 </div>
 <p>There is also the <a href="https://github.com/mmomtchev/node-magickwand"><code>node-magickwand</code></a> project that can be used as a tutorial for building and publishing a complex C++ library to
   npm as a ready-to-use real-world binary module.</p>
@@ -273,8 +272,7 @@ $ node-gyp build
 <pre>
 const binary = require('@mapbox/node-pre-gyp');
 const dll = require(binding_path);
-module.exports = require(binding_path);
-</pre>
+module.exports = require(binding_path);</pre>
 </div>
 
 <p>In this case, it will the filename of this wrapper that will have to be specified to <code>-exports</code>.</p>
@@ -408,8 +406,7 @@ A simple example would have the following structure:
 - app.js
 - node_modules
   / example
-  ... (as known from node.js)
-</pre>
+  ... (as known from node.js)</pre>
 </div>
 
 <p>
@@ -702,8 +699,7 @@ at emitKey (readline.js:1095:12)</pre>
 // Refer to the section on C++ templates for this statement
 %template (IntVector) std::vector&lt;int&gt;;
 void consume(std::vector&lt;int&gt; const &amp;vec);
-std::vector&lt;int&gt; produce();
-</pre>
+std::vector&lt;int&gt; produce();</pre>
 </div>
 <p>JavaScript</p>
 <div class="code">
@@ -713,8 +709,7 @@ vec.set(0, 10);
 vec.set(1, 20);
 consume(vec);
 vec = produce();
-let last = vec.get(vec.size() - 1);
-</pre>
+let last = vec.get(vec.size() - 1);</pre>
 </div>
 </li>
 
@@ -734,8 +729,7 @@ void consume(std::vector&lt;int&gt; const &amp;vec);
 void produce1(std::vector&lt;int&gt;);
 
 %apply(std::vector RETURN & ) { std::vector produce2 };
-std::vector&lt;int&gt; &amp;produce2();
-</pre>
+std::vector&lt;int&gt; &amp;produce2();</pre>
 </div>
 <p>JavaScript</p>
 <div class="code">
@@ -744,8 +738,7 @@ consume([10, 20]);
 let vec1 = produce1();
 let vec2 = produce2();
 let last1 = vec1[vec1.length - 1];
-let last2 = vec2[vec2.length - 1];
-</pre>
+let last2 = vec2[vec2.length - 1];</pre>
 </div>
 <p>Converting the containers is supported only with Node-API and it is currently implemented only for <code>std::vector</code>, <code>std::map indexed</code> by <code>std::string</code> and <code>std::pair</code>. The current implementation requires that the container elements are default-constructible. There is limited support for non-copyable elements that is unit-tested with <code>std::unique_ptr</code> but it does not cover certain cases such as returning <code>const</code> references to static containers of static non-copyable elements. Refer to <code>Examples/test-suite/napi_li_std_vector.i</code> for an example for handling this case.</p>
 </li>
@@ -762,8 +755,7 @@ let last2 = vec2[vec2.length - 1];
     <div class="code">
       <pre>
 %include &lt;arraybuffer.i&gt;
-%apply(void **arraybuffer_data, size_t *arraybuffer_len) { (uint8_t **data, size_t *len) };
-</pre>
+%apply(void **arraybuffer_data, size_t *arraybuffer_len) { (uint8_t **data, size_t *len) };</pre>
   </div>
   <p></p>
   <div class="code">
@@ -1020,8 +1012,7 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
 %inline {
 template &lt;typename RET, typename... ARGS&gt;
 RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) { return fn(args...); }
-}
-  </pre>
+}</pre>
 </div>
 
 <p>Additionally, <code>%extend</code> can be used to add a <code>call()</code> method to this type of object:</p>
@@ -1032,8 +1023,7 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
   int call(int a, int b) {
     return (*$self)(a, b);
   }
-}
-  </pre>
+}</pre>
 </div>
 
 <p>A function pointer is a primitive type and cannot be extended as it does not have a wrapper. The best way to deal with it is to create a wrapping <code>struct</code> and to extend this structure:</p>
@@ -1060,8 +1050,7 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
   int call(int a, int b) {
     return (*$self-&gt;fn)(a, b);
   }
-}
-  </pre>
+}</pre>
 </div>
 
 
@@ -1073,8 +1062,7 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
     // For C++ std::function
     %napi_std_function(cpp_function, int, int, int);
     // For a C function pointer
-    %napi_funcptr(c_funcptr, int, int, int);
-  </pre>
+    %napi_funcptr(c_funcptr, int, int, int);</pre>
 </div>
 
 <p>The first parameter is the name of the type as it will appear in JavaScript, the second one is the return type and the rest are the function arguments.</p>
@@ -1168,8 +1156,7 @@ if(js_exception)
     'dependencies': [
       '&lt;!@(node -p "require(\'node-addon-api\').targets"):node_addon_api_except'
     ]
-  }
-</pre>
+  }</pre>
 </div>
 <p>In this case, nothing else is needed for the C++ exceptions to be passed to JavaScript.</p>
 <p>Support for building Node-API modules without enabling C++ exceptions (<code>-fno-exceptions</code> compiler option) is currently incomplete and not unit tested.</p>
@@ -1187,8 +1174,7 @@ if(js_exception)
 // or generate async wrappers without suffix (this is the Node.js built-in class library convention)
 %feature("async", "1");
 // eventually, do not generate an async version for Klass::alwaysSync()
-%feature("async", "0") Klass::alwaysSync
-</pre>
+%feature("async", "0") Klass::alwaysSync</pre>
 </div>
         
 <p>By default, only synchronous wrappers are generated. Only global functions and class methods can be asynchronous. Constructors, getters and setters are always synchronous.</p>
@@ -1210,8 +1196,7 @@ if(js_exception)
 function fn() {
   let obj = new asyncObj();  // This is a SWIG wrapped object
   obj.asyncMethod().then((r) => console.log(r));
-}
-</pre>
+}</pre>
 </div>
 <p><code>fn()</code> will potentially exit before the asynchronous operation has completed. There is nothing guaranteeing that <code>obj</code> won't be collected by the GC right after the synchronous parsing of the input arguments of <code>asyncMethod()</code> - as this is the last reference to the JS object. Destroying the JS object will also destroy the underlying wrapped C/C++ object. In order to prevent this, an asynchronous wrapper must acquire persistent references to all objects that it will access. Persistence is fully automatic, SWIG will generate a <code>SWIG_Persist</code> method in all asynchronous tasklets that will acquire persistent references to all objects present in the input arguments of the function for the duration of the asynchronous execution.
 </p>
@@ -1225,8 +1210,7 @@ Asynchornous wrappers allow access to concurrent programming, meaning that multi
 Locking must be enabled with <code>%feature</code>:
 <div class="code">
 <pre>
-%feature("async:locking", "1");
-</pre>
+%feature("async:locking", "1");</pre>
 </div>
 <p>
 This will enable the inclusion of the async locking typemaps in both synchronous and asynchronous methods.
@@ -1248,8 +1232,7 @@ This will enable the inclusion of the async locking typemaps in both synchronous
 // Apply locking to all objects
 %apply SWIGTYPE  LOCK {SWIGTYPE};
 %apply SWIGTYPE *LOCK {SWIGTYPE *};
-%apply SWIGTYPE &LOCK {SWIGTYPE &};
-</pre>
+%apply SWIGTYPE &LOCK {SWIGTYPE &};</pre>
 </div>
 
 <p>Locking can also be enabled or disabled on specific classes or specific methods:</p>
@@ -1257,8 +1240,7 @@ This will enable the inclusion of the async locking typemaps in both synchronous
 <div class="code">
 <pre>
 %feature("async:locking", "1");
-%feature("async:locking", "0") Klass:UnsafeMethod;
-</pre>
+%feature("async:locking", "0") Klass:UnsafeMethod;</pre>
 </div>
 
 <p>When locking is disabled for a specific class, this means that all of its methods won't apply the <code>lock</code> typemaps at all. This is different from specifying an empty <code>lock</code> typemap for a specific class, in which case all wrappers won't apply locking only for this class. Here is an example:</p>
@@ -1269,8 +1251,7 @@ This will enable the inclusion of the async locking typemaps in both synchronous
 %apply SWIGTYPE *LOCK {SWIGTYPE *};
 %apply SWIGTYPE &LOCK {SWIGTYPE &};
 %feature("async:locking", "0") UnsafeClass;
-%typemap(lock) ReadonlyClass *, ReadonlyClass & "";
-</pre>
+%typemap(lock) ReadonlyClass *, ReadonlyClass & "";</pre>
 </div>
 
 <p>In this example, all methods of <code>UnsafeClass</code> won't apply any locking - for any type of argument. Methods of other classes will still apply locking to objects of <code>UnsafeClass</code>. On the other side, objects of <code>ReadonlyClass</code> will never be locked - when calling its own methods or when using such an object as an argument in another function.</p>
@@ -1284,8 +1265,7 @@ This will enable the inclusion of the async locking typemaps in both synchronous
 <pre>
 const obj = new SwigObj(); // Create a new wrapped object that has locking enabled
 const p = obj.doAsync();   // Launch a background asynchronous operation without await
-const x = obj.x;           // Use a getter to access a member
-</pre>
+const x = obj.x;           // Use a getter to access a member</pre>
 </div>
 <p>
 If locking for <code>SwigObj</code> is enabled, the last operation will have to lock <code>obj</code> - which has already been locked by the background operation. This will effectively block the main thread until the background operation completes. This can cause network buffer overflows in server code and UI freezing in desktop applications.
@@ -1329,8 +1309,7 @@ Another potential weakness of the async framework is thread starvation due to th
       [ptr](){ptr->wrunlock();}
     }});
   }
-}
-</pre>
+}</pre>
 </div>
 
 <p><code>SWIG_locks</code> is the list of locks that have to be acquired for the operation. SWIG will take care of acquiring them in the correct order. Each lock consists of a unique identifier of type <code>void *</code> and two lambdas used for locking and unlocking.</p>
@@ -1349,8 +1328,7 @@ Another potential weakness of the async framework is thread starvation due to th
 // on the type of the wrapper (sync/async)
 %typemap(check) int positive {
   if ($1 <= 0) SWIG_exception_fail(SWIG_ValueError, "must be positive");
-}
-</pre>
+}</pre>
 </div>
 
 <H2><a name="Typescript">28.7 Typescript</a></H2>
@@ -1368,8 +1346,7 @@ Another potential weakness of the async framework is thread starvation due to th
 <pre>
 %typemap(ts) char*, std::string, std::string *, std::string &   "string";
 %typemap(ts) bool                                               "boolean";
-%typemap(ts) float, double                                      "number";
-</pre>
+%typemap(ts) float, double                                      "number";</pre>
 </div>
 <p>
 All valid TypeScript type manipulations can be used in the typemap - including generics, unions, intersection or even <code>infer</code>.</p>
@@ -1382,8 +1359,7 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 %typemap(argout) (void **buffer_data, size_t *buffer_len) {
   // code to transform buffer_data / buffer_len arguments into a returned value
 }
-%typemap(tsout)  (void **buffer_data, size_t *buffer_len) "Buffer";
-</pre>
+%typemap(tsout)  (void **buffer_data, size_t *buffer_len) "Buffer";</pre>
 </div>
 </li>
 </ul>
@@ -1416,8 +1392,7 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 
 <em># the emnapi glue code that allows C++ to parse JavaScript values
 # after installing emnapi (npm install emnapi)</em>
--I <em>[the output of `node -p "require('emnapi').include"`]</em>
-</pre>
+-I <em>[the output of `node -p "require('emnapi').include"`]</em></pre>
 </div>
 
 <li><p>Library / Additional sources</p>
@@ -1436,14 +1411,12 @@ emnapi/packages/emnapi/src/uv/threadpool.c
 emnapi/packages/emnapi/src/uv/unix/loop.c
 emnapi/packages/emnapi/src/uv/unix/thread.c
 emnapi/packages/emnapi/src/uv/unix/async.c
-emnapi/packages/emnapi/src/uv/unix/core.c
-</pre>
+emnapi/packages/emnapi/src/uv/unix/core.c</pre>
 </div>
 <li><p>Option 2: link with the precompiled static library <code>emnapi.a</code> (no async) or <code>emnapi-mt.a</code> (w/ async)</p></li>
 <div class="code">
 <pre>
--lemnapi -L./node_modules/emnapi/lib/wasm32-emscripten
-</pre>
+-lemnapi -L./node_modules/emnapi/lib/wasm32-emscripten</pre>
 </div>
 </ul>
 
@@ -1470,8 +1443,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 -sEXPORT_NAME=<em>[module-name]</em>
 
 <em># required by emnapi</em>
---bind
-</pre>
+--bind</pre>
 </div>
 </li>
 
@@ -1480,8 +1452,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <pre>
 <em># By default, set the worker pool size to the same value
 # as the default one in Node.js/libuv:</em>
--pthread -DEMNAPI_WORKER_POOL_SIZE=4
-</pre>
+-pthread -DEMNAPI_WORKER_POOL_SIZE=4</pre>
 </div>
 </li>
 
@@ -1490,16 +1461,14 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <pre>
 <em># By default, set the worker pool size to the same value
 # as the default one in Node.js/libuv:</em>
--pthread -DEMNAPI_WORKER_POOL_SIZE=4 -sPTHREAD_POOL_SIZE=4
-</pre>
+-pthread -DEMNAPI_WORKER_POOL_SIZE=4 -sPTHREAD_POOL_SIZE=4</pre>
 </div>
 </li>
 
 <li><p>Additional compiler settings for a debug build - these add extra checks and will enrich WASM stack-traces with function names</p>
 <div class="code">
 <pre>
--gsource-map
-</pre>
+-gsource-map</pre>
 </div>
 </li>
 
@@ -1507,8 +1476,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <div class="code">
 <pre>
 <em># Reduce ASSERTIONS to 1 if you have exceptions about missing integer truncation</em>
--gsource-map -sSAFE_HEAP=1 -sASSERTIONS=2 -sSTACK_OVERFLOW_CHECK=2
-</pre>
+-gsource-map -sSAFE_HEAP=1 -sASSERTIONS=2 -sSTACK_OVERFLOW_CHECK=2</pre>
 </div>
 </li>
 
@@ -1525,8 +1493,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c
 <pre>
 const emnapi = require('@emnapi/runtime');
 module.exports = require('./build/Release/<em>[module-name]</em>')()
-  .then((m) => m.emnapiInit({context: emnapi.getDefaultContext()}));
-</pre>
+  .then((m) => m.emnapiInit({context: emnapi.getDefaultContext()}));</pre>
 </div>
 
 <p>If using TypeScript with WASM, the generated typings will be compatible but it will be necessary to take into account that the whole API is now hidden behind a <code>Promise</code> - example for an <code>index.d.ts</code>:</p>
@@ -1535,8 +1502,7 @@ module.exports = require('./build/Release/<em>[module-name]</em>')()
 <pre>
 // Import the original SWIG-generated typings and re-export everything in a Promise
 declare const <em>module_name</em>: Promise&lt;typeof import(&#39;<em>module_name</em>&#39;)&gt;;
-export default <em>module_name</em>;
-</pre>
+export default <em>module_name</em>;</pre>
 </div>
 
 <H3><a name="Javascript_WASM_async">28.8.4 Using asynchronous wrappers with WASM</code></a></H3>
@@ -1574,8 +1540,7 @@ export default <em>module_name</em>;
 %inline %{
 const char *version = "1.0.0";
 int add(int a, int b) { return a + b; }
-%}
-</pre>
+%}</pre>
 </div>
 
 <p>must become:</p>
@@ -1590,8 +1555,7 @@ int add(int a, int b);
 %wrapper %{
 const char *version = "1.0.0";
 int add(int a, int b) { return a + b; }
-%}
-</pre>
+%}</pre>
 </div>
 
 <H2><a name="Javascript_context">28.10 Storing and Using a Context per JavaScript Isolate</a></H2>
@@ -1618,16 +1582,14 @@ struct my_instance_data {
   env.AddCleanupHook([instance_data]() {
     delete instance_data;
   });
-}
-</pre>
+}</pre>
 </div>
 
 <p>Once this structure is created, you will be able to use it in every typemap:</p>
 
 <div class="code">
   <pre>
-auto instance_data = static_cast<my_instance_data *>(SWIG_NAPI_GetInstanceData(env))->context;
-</pre>
+auto instance_data = static_cast<my_instance_data *>(SWIG_NAPI_GetInstanceData(env))->context;</pre>
 </div>
 
 <p>Never use the Node-API built-in <code>Env::SetInstanceData</code> as this pointer is used internally by SWIG. The <code>env</code> variable is automatically available in every context.</p>
