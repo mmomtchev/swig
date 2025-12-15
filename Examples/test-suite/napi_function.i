@@ -55,3 +55,37 @@ extern "C" c_funcptr return_function_ptr() {
   };
 }
 %}
+
+// This is an example in the JavaScript manual.
+// Ensure that it works.
+%typemap(out) char *CWrappedFuncPtr::call {
+  $typemap(out, char *);
+  free($1);
+}
+
+%typemap(out) char* (*return_function_ptr2) (int, const char*) {
+  CWrappedFuncPtr r;
+  r.fn = $1;
+  $typemap(out, CWrappedFuncPtr, 1=r);
+}
+
+%typemap(in) CWrappedFuncPtr {
+  $typemap(in, char* (*) (int, const char*), input=$input.fn);
+}
+
+%typemap(ts) char* (*return_function_ptr2) (int, const char*) "CWrappedFuncPtr";
+
+%inline %{
+struct CWrappedFuncPtr {
+  c_funcptr fn;
+};
+extern "C" c_funcptr return_function_ptr2() {
+  return return_function_ptr();
+};
+%}
+
+%extend CWrappedFuncPtr {
+  char *call(int pass, const char *name) {
+    return (*$self->fn)(pass, name);
+  }
+}

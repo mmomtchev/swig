@@ -64,3 +64,10 @@ try {
 }
 if (!pass) throw new Error('call did not throw');
 
+// Test the example in the manual
+var fn3 = /* await */(napi_function.return_function_ptr2());
+var r3 = /* await */(fn3.call(42, 'Chapai'));
+if (r3 !== 'Chapai passed the C test')
+  throw new Error('failed function pointer call');
+// @ts-expect-error
+r3 = 42;

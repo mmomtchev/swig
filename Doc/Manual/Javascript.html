@@ -1011,16 +1011,16 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
 
 <div class="code">
   <pre>
-    %rename(__cpp_function) function; // function is a reserved keyword in JS
-    %rename(myCPPFunction) std::function&lt;int(int, int)&gt;;
-    %template(myCPPFunction) std::function&lt;int(int, int)&gt;;
-    %rename(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
-    %template(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
+%rename(__cpp_function) function; // function is a reserved keyword in JS
+%rename(myCPPFunction) std::function&lt;int(int, int)&gt;;
+%template(myCPPFunction) std::function&lt;int(int, int)&gt;;
+%rename(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
+%template(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
 
-    %inline {
-    template &lt;typename RET, typename... ARGS&gt;
-    RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) { return fn(args...); }
-    }
+%inline {
+template &lt;typename RET, typename... ARGS&gt;
+RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) { return fn(args...); }
+}
   </pre>
 </div>
 
@@ -1028,13 +1028,38 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
 
 <div class="code">
   <pre>
-    %extend std::function&lt;int(int, int)&gt; {
-      int call(int a, int b) {
-        return (*$self)(a, b);
-      }
-    }
+%extend std::function&lt;int(int, int)&gt; {
+  int call(int a, int b) {
+    return (*$self)(a, b);
+  }
+}
   </pre>
 </div>
+
+<p>A function pointer is a primitive type and cannot be extended as it does not have a wrapper. The best way to deal with it is to create a wrapping <code>struct</code> and to extend this structure:</p>
+
+<div class="code">
+  <pre>
+%typemap(out) int (*return_function_ptr) (int, int) {
+  CWrappedFuncPtr r;
+  r.fn = $1;
+  $typemap(out, CWrappedFuncPtr, 1=r);
+}
+
+%typemap(in) CWrappedFuncPtr {
+  $typemap(in, int (*) (int, int), input=$input.fn);
+}
+
+%inline %{ struct CWrappedFuncPtr { c_funcptr fn; }; %}
+
+%extend CWrappedFuncPtr {
+  char *call(int a, int b) {
+    return (*$self-&gt;fn)(a, b);
+  }
+}
+  </pre>
+</div>
+
 
 <p>SWIG Node-API also provides built-in transforms that convert directly the returned <code>std::function</code> or C function pointer to a JavaScript function. While this certainly improves the native feel of the interface, it has two significant limitations: these transformed functions cannot be passed back as arguments to C/C++ methods and they are always either synchronous or asynchronous. The above method using <code>%extend</code> allows to create both a synchronous and asynchronous entrypoint. In order to use the built-in transforms, simply add:</p>
 
