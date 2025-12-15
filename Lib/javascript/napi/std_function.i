@@ -43,6 +43,8 @@
   $1 = *reinterpret_cast<std::function<RET(__VA_ARGS__)> *>(info.Data());
 }
 
+%typemap(ts) std::function<RET(__VA_ARGS__)> "typeof _" #NAME "_call";
+
 %rename(NAME) std::function<RET(__VA_ARGS__)>;
 %template(NAME) std::function<RET(__VA_ARGS__)>;
 %template(_##NAME##_call) _SWIG_call_std_function<RET, __VA_ARGS__>;
@@ -86,6 +88,8 @@ typedef RET (*NAME)(__VA_ARGS__);
 %typemap(in, numinputs=0) RET (*_swig_funcptr)(__VA_ARGS__) {
   $1 = *reinterpret_cast<RET (*) (__VA_ARGS__)>(info.Data());
 }
+
+%typemap(ts) RET (*)(__VA_ARGS__) "typeof _" #NAME "_call";
 
 %rename(NAME) NAME;
 %template(_##NAME##_call) _SWIG_call_funcptr<RET, __VA_ARGS__>;
