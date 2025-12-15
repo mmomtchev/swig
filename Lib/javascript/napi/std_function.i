@@ -8,7 +8,10 @@
  *
  *   %napi_std_function(cpp_function, std::string, int, const std::string &);
  *
- * The first argument is the name of the JS type
+ * The first argument is the name of the JS type.
+ *
+ *   %feature("sync", "0")  _SWIG_call_std_function<std::string, int, const std::string &>;
+ *   %feature("async", "1") _SWIG_call_std_function<std::string, int, const std::string &>;
  */
 
 %rename(_cpp_std_function, regextarget=1, fullname=1) "^std::function";
@@ -52,7 +55,12 @@
  *
  *   %napi_funcptr(c_funcptr, char *, int, const char *);
  *
- * The first argument is the name of the JS type
+ * The first argument is the name of the JS type.
+ *
+ * For an async transform, add:
+ *
+ *   %feature("sync", "0")  _SWIG_call_funcptr<char *, int, const char *>;
+ *   %feature("async", "1") _SWIG_call_funcptr<char *, int, const char *>;
  */
 
 
