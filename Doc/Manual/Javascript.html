@@ -892,6 +892,10 @@ This allows for more seamless integration at the price of copying the array at e
 
 <H3><a name="Javascript_function_example">28.4.7 <code>std::function</code> and plain C functions pointers</a></H3>
 
+<p>At the moment, only SWIG Node-API supports function.</p>
+
+<p><H4>JavaScript function to C/C++ function</H4></p>
+
 <p>SWIG Node-API provides a built-in helper fragment that can transform JavaScript functions passed as arguments into <code>std::function</code> or - with some quirks and limitations - to a plain C function pointer.</p>
 
 <p>Currently, SWIG does not provide the necessary language features needed to implement a generic function typemap and a separate user typemap must be declared for each function signature. There is a built-in helper <code>SWIG_NAPI_Callback</code> that takes care of most of the complexity required in order to generate the trampoline. <code>SWIG_NAPI_Callback</code> returns a <code>std::function</code> which when called from C++ will convert the arguments, invoke the JavaScript callback and convert back the returned value. It also automatically handles asynchronous execution, including async callbacks. The function returned is trivially copy-constructible and can be copied and kept on the C++ side. Deleting its last copy will release the resources that it holds. It can be called from any thread and it is fully reentrant. If it is called on the main thread, it will enter JavaScript synchronously. If it is called on any other thread, it will wait for JavaScript to be ready to execute it. Asynchronous JavaScript callbacks are supported only when the caller is asynchronous too - ie the returned function is called from a background thread. In this case the if the function is called concurrently from multiple threads, the JavaScript will also be reentrant - meaning that a first invocation may be waiting on an <code>await</code> statement when a second invocation is made. In all other cases, concurrent calls will result sequential execution of the JavaScript callbacks.</p>
@@ -1001,6 +1005,51 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
 
 <p>Asynchronous JavaScript callbacks are supported only if the multithreading support is enabled - ie everywhere except the special monothreaded WASM build that does not require COOP/COEP. If the returned value is a <code>Promise</code> it will be automatically resolved while the C++ code waits on a semaphore.</p>
 
+<p><H4>C/C++ function to JS function</H4></p>
+
+<p>When the underlying C/C++ code returns functions, the native wrapping support of SWIG can be used to wrap them. If you define the following template and instantiate it for a given <code>std::function</code> type, SWIG will generate a global function called <code>myCPPFunctionCall(fn: myCPPFunction, a: number, b: number): number</code> that can be used to call this function object:</p>
+
+<div class="code">
+  <pre>
+    %rename(__cpp_function) function; // function is a reserved keyword in JS
+    %rename(myCPPFunction) std::function&lt;int(int, int)&gt;;
+    %template(myCPPFunction) std::function&lt;int(int, int)&gt;;
+    %rename(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
+    %template(myCPPFunctionCall) _SWIG_call_std_function&lt;int, int, int&gt;;
+
+    %inline {
+    template &lt;typename RET, typename... ARGS&gt;
+    RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) { return fn(args...); }
+    }
+  </pre>
+</div>
+
+<p>Additionally, <code>%extend</code> can be used to add a <code>call()</code> method to this type of object:</p>
+
+<div class="code">
+  <pre>
+    %extend std::function&lt;int(int, int)&gt; {
+      int call(int a, int b) {
+        return (*$self)(a, b);
+      }
+    }
+  </pre>
+</div>
+
+<p>SWIG Node-API also provides built-in transforms that convert directly the returned <code>std::function</code> or C function pointer to a JavaScript function. While this certainly improves the native feel of the interface, it has two significant limitations: these transformed functions cannot be passed back as arguments to C/C++ methods and they are always either synchronous or asynchronous. The above method using <code>%extend</code> allows to create both a synchronous and asynchronous entrypoint. In order to use the built-in transforms, simply add:</p>
+
+<div class="code">
+  <pre>
+    %include &lt;std_function.i&gt;
+    // For C++ std::function
+    %napi_std_function(cpp_function, int, int, int);
+    // For a C function pointer
+    %napi_funcptr(c_funcptr, int, int, int);
+  </pre>
+</div>
+
+<p>The first parameter is the name of the type as it will appear in JavaScript, the second one is the return type and the rest are the function arguments.</p>
+
 <H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
 
 <H3><a name="Javascript_jsc_exceptions">28.5.1 Handling Exceptions in JavascriptCore</a></H3>
@@ -1097,7 +1146,7 @@ if(js_exception)
 <p>Support for building Node-API modules without enabling C++ exceptions (<code>-fno-exceptions</code> compiler option) is currently incomplete and not unit tested.</p>
 
 <H2><a name="Javascript_async">28.6 Asynchronous Execution</a></H2>
-<p>The Node-API generator supports generating asynchronous wrappers. This feature is tightly linked to Node.js and libuv and mimics the semantics of the built-in class library. An asynchronous version of a function parses its arguments on the main thread and then queues the execution of the underlying C/C++ method in one of the existing background threads of the libuv pool. It then returns a <code>Promise</code> that resolves or rejects with the return value of the C/C++ function. The JavaScript code can continue its execution while the operation is running. This also allows launching multiple parallel instances of the C/C++ methods when these are reentrant. Otherwise, special locking must be implemented. By default, Node.js launches 4 worker threads which are also used by the internal class library for performing asynchonous file I/O (ie <code>fs.readFile()</code>). This behaviour can be adjusted via the environment variable <code>UV_THREADPOOL_SIZE</code>. For best results, this should be equal to the number of physical CPU cores.</p>
+<p>The Node-API generator supports generating asynchronous wrappers. This feature is tightly linked to Node.js and libuv and mimics the semantics of the built-in class library. An asynchronous version of a function parses its arguments on the main thread and then queues the execution of the underlying C/C++ method in one of the existing background threads of the libuv pool. It then returns a <code>Promise</code> that resolves or rejects with the return value of the C/C++ function. The JavaScript code can continue its execution while the operation is running. This also allows launching multiple parallel instances of the C/C++ methods when these are reentrant. Otherwise, special locking must be implemented. By default, Node.js launches 4 worker threads which are also used by the internal class library for performing asynchronous file I/O (ie <code>fs.readFile()</code>). This behaviour can be adjusted via the environment variable <code>UV_THREADPOOL_SIZE</code>. For best results, this should be equal to the number of physical CPU cores.</p>
 
 <p>Generation of asynchronous wrappers can be globally enabled from the CLI by passing <code>-async</code> option or by using <code>%feature</code>:</p>
 <div class="code">
@@ -1557,7 +1606,7 @@ auto instance_data = static_cast<my_instance_data *>(SWIG_NAPI_GetInstanceData(e
 <H2><a name="Javascript_implementation">28.11 Implementation</a></H2>
 
 
-<p>The Javascript Module implementation has taken a very different approach compared to other language modules in order to support different Javacript interpreters.</p>
+<p>The Javascript Module implementation has taken a very different approach compared to other language modules in order to support different JavaScript interpreters.</p>
 
 <H3><a name="Javascript_source_code">28.11.1 Source Code</a></H3>
 
