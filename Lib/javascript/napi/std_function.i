@@ -32,7 +32,7 @@
   }, "call_cpp_function_"#NAME);
 }
 
-%typemap(in, numinputs=0) std::function<RET(__VA_ARGS__)> {
+%typemap(in, numinputs=0) std::function<RET(__VA_ARGS__)> _swig_std_fn {
   if (!info.Data())
     SWIG_NAPI_Raise(env, "Do not call this function directly");
   $1 = *reinterpret_cast<std::function<RET(__VA_ARGS__)> *>(info.Data());
@@ -60,8 +60,8 @@
 // these are static const pointers to code in the text section of the binary
 %inline %{
 template <typename RET, typename... ARGS>
-RET _SWIG_call_funcptr(RET (*fn)(ARGS...), ARGS ...args) {
-  return fn(args...);
+RET _SWIG_call_funcptr(RET (*_swig_funcptr)(ARGS...), ARGS ...args) {
+  return _swig_funcptr(args...);
 }
 %}
 
@@ -73,7 +73,7 @@ typedef RET (*NAME)(__VA_ARGS__);
   $result = Napi::Function::New(env,  _wrap__##NAME##_call, "call_c_function_ptr_"#NAME, (void *)$1);
 }
 
-%typemap(in, numinputs=0) RET (*)(__VA_ARGS__) {
+%typemap(in, numinputs=0) RET (*_swig_funcptr)(__VA_ARGS__) {
   $1 = *reinterpret_cast<RET (*) (__VA_ARGS__)>(info.Data());
 }
 
