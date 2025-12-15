@@ -86,6 +86,8 @@ typedef RET (*NAME)(__VA_ARGS__);
 }
 
 %typemap(in, numinputs=0) RET (*_swig_funcptr)(__VA_ARGS__) {
+  if (!info.Data())
+    SWIG_NAPI_Raise(env, "Do not call this function directly");
   $1 = *reinterpret_cast<RET (*) (__VA_ARGS__)>(info.Data());
 }
 

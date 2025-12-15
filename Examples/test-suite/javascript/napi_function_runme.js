@@ -47,3 +47,20 @@ try {
   pass = true;
 }
 if (!pass) throw new Error('call did not throw');
+
+// These should not crash
+pass = false;
+try {
+  /* await */(napi_function._cpp_function_call(420, 'Anka'));
+} catch {
+  pass = true;
+}
+if (!pass) throw new Error('call did not throw');
+pass = false;
+try {
+  /* await */(napi_function._c_funcptr_call(42, 'Anka'));
+} catch {
+  pass = true;
+}
+if (!pass) throw new Error('call did not throw');
+
