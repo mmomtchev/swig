@@ -1040,7 +1040,7 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
 
 <div class="code">
   <pre>
-%typemap(out) int (*return_function_ptr) (int, int) {
+%typemap(out) int (*) (int, int) {
   CWrappedFuncPtr r;
   r.fn = $1;
   $typemap(out, CWrappedFuncPtr, 1=r);
@@ -1050,7 +1050,11 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
   $typemap(in, int (*) (int, int), input=$input.fn);
 }
 
-%inline %{ struct CWrappedFuncPtr { c_funcptr fn; }; %}
+%inline %{
+  struct CWrappedFuncPtr {
+    int (*fn)(int, int);
+  };
+%}
 
 %extend CWrappedFuncPtr {
   char *call(int a, int b) {
