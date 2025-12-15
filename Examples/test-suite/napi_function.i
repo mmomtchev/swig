@@ -21,7 +21,7 @@
 
 %napi_std_function(cpp_function, std::string, int, const std::string &);
 %napi_funcptr(c_funcptr, char *, int, const char *);
-
+%newobject _SWIG_call_funcptr<char *, int, const char*>;
 
 %inline %{
 typedef char *(*c_funcptr)(int, const char *);
