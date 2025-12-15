@@ -1057,7 +1057,7 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
 %}
 
 %extend CWrappedFuncPtr {
-  char *call(int a, int b) {
+  int call(int a, int b) {
     return (*$self-&gt;fn)(a, b);
   }
 }
