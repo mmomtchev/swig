@@ -10,6 +10,12 @@
 %warnfilter(SWIGWARN_RUBY_WRONG_NAME) globalinstance3;
 %warnfilter(SWIGWARN_TYPEMAP_SWIGTYPELEAK);
 
+%typemap(in) foo1 * {
+  foo1 v;
+  $typemap(in, foo1, 1=v);
+  $1 = &v;
+}
+
 %inline %{
 
 #if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
@@ -37,10 +43,8 @@ bar2(enum foo2 x) {}
 void 
 bar3(foo3 x) {}
 
-#ifdef __cplusplus
 void
-barconst(const foo1 &) {}
-#endif
+barptr(const foo1 *) {}
 
 enum sad { boo, hoo = 5 };
 
