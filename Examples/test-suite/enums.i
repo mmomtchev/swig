@@ -37,8 +37,10 @@ bar2(enum foo2 x) {}
 void 
 bar3(foo3 x) {}
 
+#ifdef __cplusplus
 void
 barconst(const foo1 &) {}
+#endif
 
 enum sad { boo, hoo = 5 };
 
