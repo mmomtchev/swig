@@ -29,3 +29,5 @@ if (cpp_enum.Foo.hi != cpp_enum.Hello) {
   console.error(cpp_enum.Foo.hi);
   throw "Error";
 }
+
+/* await */(cpp_enum.accept_td_enum_ptr(cpp_enum.ON));

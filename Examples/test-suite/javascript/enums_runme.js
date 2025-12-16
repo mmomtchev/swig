@@ -4,7 +4,6 @@ var enums = require("enums");
 /* await */(enums.bar2(enums.FGHJI));
 /* await */(enums.bar3(enums.ABCDE));
 /* await */(enums.bar1(enums.CSP_ITERATION_BWD));
-/* await */(enums.barptr(enums.CSP_ITERATION_BWD));
 
 let ok = false
 try {

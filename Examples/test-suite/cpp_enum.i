@@ -4,6 +4,11 @@ The primary purpose of this testcase is to ensure that enums used along with the
 
 %module cpp_enum
 
+%typemap(in) td_enum * (td_enum td_enum_val) {
+  $typemap(in, td_enum, 1=td_enum_val);
+  $1 = &td_enum_val;
+}
+
 %inline %{
 
 #if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
@@ -13,6 +18,7 @@ The primary purpose of this testcase is to ensure that enums used along with the
 #endif
 
 enum SOME_ENUM {ENUM_ONE, ENUM_TWO};
+typedef enum {OFF, ON} td_enum;
 
 struct StructWithEnums {
     StructWithEnums() : some_enum(ENUM_ONE) {};
@@ -44,6 +50,8 @@ extern "C"
 {
  enum {Hi, Hello } hi;
 }
+
+void accept_td_enum_ptr(const td_enum *) {}
 
 %}
 
