@@ -220,9 +220,6 @@ int SwigType_typedef(const SwigType *type, const_String_or_char_ptr name) {
   /* Printf(stdout, "typedef %s %s\n", type, name); */
   if (Getattr(current_typetab, name))
     return -1;			/* Already defined */
-  if (Strcmp(type, name) == 0) {	/* Can't typedef a name to itself */
-    return 0;
-  }
 
   /* Check if 'type' is already a scope.  If so, we create an alias in the type
      system for it.  This is needed to make strange nested scoping problems work
