@@ -7,6 +7,18 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
+2023-23-26  mmomtchev
+            [JavaScript] Node-API specific support for wrapping
+            `std::function` and function pointers
+
+2025-12-15  mmomtchev
+            Support for expanding parameter packs in templates in general
+            and `std::function` in particular
+            [swig/swig#3297](https://github.com/swig/swig/issues/3297)
+            [swig/swig#3021](https://github.com/swig/swig/issues/3021)
+            [swig/swig#3172](https://github.com/swig/swig/issues/3172)
+            [swig/swig#341](https://github.com/swig/swig/issues/341)
+
 2025-12-09  mmomtchev
             [TypeScript] Fix the TypeScript definitions for C functions
             declared as `fn(void)``
