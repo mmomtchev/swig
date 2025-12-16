@@ -891,9 +891,11 @@ String *SwigType_rcaststr(const SwigType *s, const_String_or_char_ptr name) {
 	clear = 0;
       }
     } else if (SwigType_isenum(element) && cparse_cplusplus) {
+      String *bs = SwigType_namestr(element);
+      Replaceall(bs, "enum ", "");
       Insert(result, 0, " ");
-      Insert(result, 0, element);
-      Delslice(result, 0, 5);
+      Insert(result, 0, bs);
+      Delete(bs);
     } else if (SwigType_ispointer(element)) {
       Insert(result, 0, "*");
       if ((forwardelement) && ((SwigType_isfunction(forwardelement) || (SwigType_isarray(forwardelement))))) {
