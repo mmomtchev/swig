@@ -37,6 +37,9 @@ bar2(enum foo2 x) {}
 void 
 bar3(foo3 x) {}
 
+void
+barconst(const foo1 &) {}
+
 enum sad { boo, hoo = 5 };
 
 #ifdef __cplusplus /* For Octave and g++ which compiles C test code as C++ */

@@ -1012,6 +1012,8 @@ String *SwigType_rcaststr(const SwigType *s, const_String_or_char_ptr name) {
     element = nextelement;
   }
   Delete(elements);
+  if (Strstr(s, "enum"))
+    clear = 1;
 
   const char *ref = isreference ? "*" : "";
   // Can't move cast without a named value
