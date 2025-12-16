@@ -10,10 +10,9 @@
 %warnfilter(SWIGWARN_RUBY_WRONG_NAME) globalinstance3;
 %warnfilter(SWIGWARN_TYPEMAP_SWIGTYPELEAK);
 
-%typemap(in) foo1 * {
-  foo1 v;
-  $typemap(in, foo1, 1=v);
-  $1 = &v;
+%typemap(in) foo1 * (foo1 enum_foo1) {
+  $typemap(in, foo1, 1=enum_foo1);
+  $1 = &enum_foo1;
 }
 
 %inline %{
