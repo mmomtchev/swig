@@ -930,8 +930,13 @@ class TypePass:private Dispatcher {
 	SwigType *t = NewStringf("enum %s", nname);
 	SwigType_typedef(t, name);
       } else {
-	SwigType *t = NewStringf("enum %s", name);
-	SwigType_typedef(t, name);
+        if (!Getattr(n, "unnamed")) {
+          SwigType *t = NewStringf("enum %s", name);
+          SwigType_typedef(t, name);
+        } else {
+          SwigType *t = NewStringf("enum $%s", name);
+          SwigType_typedef(t, name);
+        }
       }
       Delete(scope);
     }
