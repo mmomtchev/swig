@@ -1041,16 +1041,13 @@ RET _SWIG_call_std_function(std::function&lt;RET(ARGS...)&gt; fn, ARGS ...args) 
 }
 
 %inline %{
-  struct CWrappedFuncPtr {
-    int (*fn)(int, int);
-  };
-%}
-
-%extend CWrappedFuncPtr {
-  int call(int a, int b) {
-    return (*$self-&gt;fn)(a, b);
+struct CWrappedFuncPtr {
+  c_funcptr fn;
+  int call(int a, b) {
+    return (*fn)(a, b);
   }
-}</pre>
+};
+%}</pre>
 </div>
 
 

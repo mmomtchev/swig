@@ -78,14 +78,11 @@ extern "C" c_funcptr return_function_ptr() {
 %inline %{
 struct CWrappedFuncPtr {
   c_funcptr fn;
+  char *call(int pass, const char *name) {
+    return (*fn)(pass, name);
+  }
 };
 extern "C" c_funcptr return_function_ptr2() {
   return return_function_ptr();
 };
 %}
-
-%extend CWrappedFuncPtr {
-  char *call(int pass, const char *name) {
-    return (*$self->fn)(pass, name);
-  }
-}
