@@ -18,7 +18,8 @@ SWIG_NAPI_GetModule(Napi::Env env);
 
 EnvInstanceData::EnvInstanceData(Napi::Env env, swig_module_info *swig_module) :
   env(env), SWIG_NAPI_ObjectWrapCtor(NULL), SWIG_NAPI_PackedObjectWrapCtor(NULL),
-  ctor(NULL), swig_module(swig_module), module_instance_data(NULL) {
+  ctor(NULL), swig_module(swig_module), module_instance_data(NULL),
+  environment_has_shutdown(false) {
   ctor = new Napi::FunctionReference*[swig_module->size + 1];
   for (size_t i = 0; i <= swig_module->size; i++) {
     ctor[i] = NULL;
@@ -41,6 +42,9 @@ SWIGRUNTIME void
 SWIG_NAPI_SetModule(Napi::Env env, swig_module_info *swig_module) {
   auto data = new EnvInstanceData(env, swig_module);
   env.SetInstanceData(data);
+  env.AddCleanupHook([data]() {
+    data->environment_has_shutdown = true;
+  });
 }
 
 SWIGRUNTIME swig_module_info *

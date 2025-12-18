@@ -250,14 +250,8 @@ fail:
 template <typename SWIG_OBJ_WRAP>
 $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {
   auto instace_data = this->Env().template GetInstanceData<EnvInstanceData>();
-  if (instace_data == nullptr) {
-    fprintf(stderr, "instance data is null\n");
-    std::abort();
-  }
-  if (instace_data->module_instance_data == nullptr) {
-    fprintf(stderr, "module instance data is null\n");
-    std::abort();
-  }
+  if (instace_data->environment_has_shutdown)
+    return;
   this->SWIG_Finalize();
 }
 %}
@@ -275,14 +269,8 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {
 template <typename SWIG_OBJ_WRAP>
 ${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {
   auto instace_data = this->Env().template GetInstanceData<EnvInstanceData>();
-  if (instace_data == nullptr) {
-    fprintf(stderr, "instance data is null\n");
-    std::abort();
-  }
-  if (instace_data->module_instance_data == nullptr) {
-    fprintf(stderr, "module instance data is null\n");
-    std::abort();
-  }
+  if (instace_data->environment_has_shutdown)
+    return;
   this->SWIG_Finalize();
   auto arg1 = reinterpret_cast<$jstype>(this->self);
   if (this->owned && arg1) {

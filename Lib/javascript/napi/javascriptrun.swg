@@ -152,6 +152,7 @@ struct EnvInstanceData {
     std::mutex lock;
   } js_main_thread;
 #endif
+  bool environment_has_shutdown;
   EnvInstanceData(Napi::Env, swig_module_info *);
   ~EnvInstanceData();
 };
