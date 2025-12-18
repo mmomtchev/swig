@@ -32,6 +32,10 @@
 #endif
 #include <napi.h>
 
+#if defined(SWIG_NAPI_USE_BASIC_FINALIZERS) && !defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER)
+#warning SWIG_NAPI_USE_BASIC_FINALIZERS defined, but Node.js lacks support for basic finalizers
+#endif
+
 #include <limits.h>
 #include <stdlib.h>
 #include <assert.h>
