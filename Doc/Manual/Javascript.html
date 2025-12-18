@@ -245,7 +245,7 @@ require("./build/Release/example")</pre>
 </div>
 <p>A more detailed explanation is given in the <a href="#Javascript_examples">Examples</a> section.</p>
 
-<p>Starting from Node.js versions v21.6.0 / v20.12.0 / v18.20.0, Node-API has experimental support for a very important performance optimization called Basic Finalizers. Basic Finalizers allow to deallocate C++ objects directly from the context of the garbage collector without waiting for JavaScript. Without this, C++ objects must be deallocated on the Node.js event loop, which means that in fully synchronous code, they are never deallocated. Code produced by SWIG JSE supports using this feature. The support is still considered experimental and the generated module must be compiled with <code>-DSWIG_NAPI_USE_BASIC_FINALIZERS</code>.</p>
+<p>Starting from Node.js versions v21.6.0 / v20.12.0 / v18.20.0, Node-API has experimental support for a very important performance optimization called Basic Finalizers. Basic Finalizers allow to deallocate C++ objects directly from the context of the garbage collector without waiting for JavaScript. Without this, C++ objects must be deallocated on the Node.js event loop, which means that in fully synchronous code, they are never deallocated. Code produced by SWIG JSE supports using this feature. The support is still considered experimental and the generated module must be compiled with <code>-DSWIG_NAPI_USE_BASIC_FINALIZERS</code>. Basic finalizers require building with <code>node-addon-api</code> version 8.5.0 or later and compiling in C++20 mode.</p>
 
 <H4><a name="Javascript_using_yeoman">28.3.1.1 Using <code>yeoman</code> to generate a Node-API skeleton</a></H4>
 
