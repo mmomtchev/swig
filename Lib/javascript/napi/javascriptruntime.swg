@@ -21,7 +21,9 @@
 
 #endif // defined(_CPPUNWIND) || defined(__EXCEPTIONS)
 
+#if defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
 #define NAPI_EXPERIMENTAL
+#endif
 #ifndef NAPI_VERSION
 #define NAPI_VERSION 8
 #elif NAPI_VERSION < 8
