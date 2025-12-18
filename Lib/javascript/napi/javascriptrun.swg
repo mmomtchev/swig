@@ -211,7 +211,11 @@ class SWIG_NAPI_ObjectWrap_templ : public Napi::ObjectWrap<SWIG_OBJ_WRAP> {
     Napi::Value ToString(const Napi::CallbackInfo &info);
 
   protected:
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
     void SWIG_Finalize(Napi::BasicEnv env);
+#else
+    void SWIG_Finalize(Napi::Env env);
+#endif
 
   private:
     // Every wrapped object has an associated async lock
