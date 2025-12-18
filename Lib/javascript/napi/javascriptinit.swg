@@ -34,6 +34,7 @@ EnvInstanceData::~EnvInstanceData() {
   delete [] ctor;
   delete SWIG_NAPI_ObjectWrapCtor;
   delete SWIG_NAPI_PackedObjectWrapCtor;
+  module_instance_data = nullptr;
 }
 
 SWIGRUNTIME void
