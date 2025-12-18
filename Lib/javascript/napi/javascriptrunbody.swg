@@ -128,7 +128,7 @@ Napi::Function SWIG_NAPI_PackedObjectWrap_inst::GetClass(Napi::Env env) {
 
 #ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
 SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {}
-SWIG_NAPI_PackedObjectWrap_inst::Finalize(Napi::BasicEnv env) {
+void SWIG_NAPI_PackedObjectWrap_inst::Finalize(Napi::BasicEnv env) {
   this->SWIG_Finalize(env);
   if (this->owned) {
     delete[] static_cast<uint8_t *>(this->self);

@@ -21,11 +21,7 @@
 
 #endif // defined(_CPPUNWIND) || defined(__EXCEPTIONS)
 
-// This gives us
-// Branch Node.js v10.x - from v10.20.0
-// Branch Node.js v12.x - from v12.17.0
-// Everything from Node.js v14.0.0 on
-// Our limiting feature is napi_set_instance_data
+#define NAPI_EXPERIMENTAL
 #ifndef NAPI_VERSION
 #define NAPI_VERSION 8
 #elif NAPI_VERSION < 8

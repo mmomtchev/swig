@@ -2,7 +2,6 @@
  * SWIG Node-API runtime : declarations
  * ---------------------------------------------------------------------------*/
 
-#include <napi.h>
 #if NAPI_HAS_THREADS
 #include <thread>
 #include <queue>

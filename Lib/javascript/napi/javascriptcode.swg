@@ -1217,6 +1217,11 @@ fail:
         std::map<std::string, $jsmangledname_templ::PropertyDescriptor> &
       );
       static Napi::Function GetClass(Napi::Env);
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+    virtual void Finalize(Napi::BasicEnv env) override {
+      $jsmangledname_templ::Finalize(env);
+    }
+#endif
   };
 %}
 
