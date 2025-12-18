@@ -266,7 +266,12 @@ void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::JS_veto_set_variable(const Napi:
 }
 
 template <typename SWIG_OBJ_WRAP>
-void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize(Napi::BasicEnv) {
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
+void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize(Napi::BasicEnv)
+#else
+void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize(Napi::Env)
+#endif
+{
   if (this->finalizer) {
     (*this->finalizer)();
     delete this->finalizer;
