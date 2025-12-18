@@ -211,7 +211,7 @@ class SWIG_NAPI_ObjectWrap_templ : public Napi::ObjectWrap<SWIG_OBJ_WRAP> {
     Napi::Value ToString(const Napi::CallbackInfo &info);
 
   protected:
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
     void SWIG_Finalize(Napi::BasicEnv env);
 #else
     void SWIG_Finalize(Napi::Env env);
@@ -300,7 +300,7 @@ public:
     std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &,
     std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &
   );
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
   virtual void Finalize(Napi::BasicEnv) override;
 #endif
 };

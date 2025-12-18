@@ -57,7 +57,11 @@ case "$SWIGLANG" in
 					$RETRY npm install -g node-gyp
 					$RETRY npx -g node-gyp install
 				fi
-				$RETRY npm install -g node-addon-api@8.5.0
+				if [ "$CPPSTD" == "c++17" ] || [ "$CPPSTD" == "c++20" ] ; then
+					$RETRY npm install -g node-addon-api@8.5.0
+				else
+					$RETRY npm install -g node-addon-api@8.1.0
+				fi
 				if [ "$COMPILER" == "emscripten" ]; then
 				        $RETRY npm install --ignore-scripts -g emnapi @emnapi/runtime
 				fi

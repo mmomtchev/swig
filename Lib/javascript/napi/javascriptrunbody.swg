@@ -126,7 +126,7 @@ Napi::Function SWIG_NAPI_PackedObjectWrap_inst::GetClass(Napi::Env env) {
 }
 
 
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
 SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {}
 void SWIG_NAPI_PackedObjectWrap_inst::Finalize(Napi::BasicEnv env) {
   this->SWIG_Finalize(env);

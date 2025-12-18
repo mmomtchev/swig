@@ -247,7 +247,7 @@ fail:
 %fragment ("js_dtor", "templates")
 %{
 // js_dtor
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
 template <typename SWIG_OBJ_WRAP>
 $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {}
 template <typename SWIG_OBJ_WRAP>
@@ -272,7 +272,7 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {
 %fragment ("js_dtoroverride", "templates")
 %{
 // js_dtoroverride
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
 template <typename SWIG_OBJ_WRAP>
 ${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {}
 template <typename SWIG_OBJ_WRAP>
@@ -1155,7 +1155,7 @@ fail:
  * ----------------------------------------------------------------------------- */
 %fragment("jsnapi_class_dtor_declaration", "templates")
 %{
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
   virtual void Finalize(Napi::BasicEnv) override;
 #endif
     virtual ~$jsmangledname_templ();
@@ -1217,7 +1217,7 @@ fail:
         std::map<std::string, $jsmangledname_templ::PropertyDescriptor> &
       );
       static Napi::Function GetClass(Napi::Env);
-#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
     virtual void Finalize(Napi::BasicEnv env) override {
       $jsmangledname_templ::Finalize(env);
     }
