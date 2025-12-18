@@ -1,22 +1,22 @@
-# The SWIG Node-API initialiaztion leaks (because of a deprecated form the PropertyDescriptor API)
+# All leaks listed here are non-repeat offenders
+# (ie they happen only a fixed number of times per process execution)
+
+# List maintained at
+# https://gist.github.com/mmomtchev/07fad9af00bc6faa9c404e614de908da
+# git clone https://gist.github.com/07fad9af00bc6faa9c404e614de908da.git
+
+# Use with
+# export LSAN_OPTIONS=suppressions=$(pwd)/napi-leaks-suppression.txt
+
+# With Node.js 24+ there has been a dramatic improvement in V8
+# compared to previous versions, leaving only a few cases
+
+# Known leaks in Node-API
 leak:napi_module_register
+leak:napi_register_module_v1
 
-# these use the (still) unsupported in JS %delobject directive
-leak:default_constructor_wrap.cxx
-leak:import_nomodule_wrap.cxx
-leak:inherit_missing_wrap.cxx
+# Known leaks in the Node.js 24 runtime
+leak:node::contextify::Contextify
 
-# these tests are leaking by design
-leak:li_cdata_wrap.cxx
-leak:li_cdata_cpp_wrap.cxx
-leak:li_typemaps_wrap.cxx
-leak:reference_global_vars_wrap.cxx
-leak:template_typemaps_typedef_wrap.cxx
-leak:template_typemaps_typedef2_wrap.cxx
-leak:typedef_struct_wrap.cxx
-leak:typemap_arrays_wrap.cxx
-leak:cpp11_shared_ptr_upcast_wrap.cxx
-
-# SWIG design limits
-# https://www.swig.org/Doc4.2/SWIGDocumentation.html#Python_nn30
-leak:cpp11_null_pointer_constant_wrap.cxx
+# Known leaks in V8
+# (none atm)

@@ -86,8 +86,9 @@ jobs:
           cacheid: -napi
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++11
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           ASAN: 1
           cacheid: -napi-asan
         - SWIGLANG: javascript
@@ -96,65 +97,74 @@ jobs:
           CPPSTD: c++11
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -async -w470
           desc: Async
           cacheid: -napi-async
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           ASAN: 1
           desc: Async+ASAN
           cacheid: -napi-async-locked-asan
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: Async w/ locking
           cacheid: -napi-async-locked
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -typescript
           desc: TypeScript
           cacheid: -napi-typescript
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -typescript -async -w470
           desc: TypeScript w/ async
           cacheid: -napi-typescript-async
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -split
           desc: Code splitting
           cacheid: -napi-splitting
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           SWIG_FEATURES: -split -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: Async w/ splitting & locking
           cacheid: -napi-splitting-async
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           COMPILER: emscripten
           desc: WASM
           cacheid: -napi-wasm
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '18'
-          CPPSTD: c++14
+          VER: '24'
+          CPPSTD: c++20
+          CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           COMPILER: emscripten
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: WASM w/ async & locking
