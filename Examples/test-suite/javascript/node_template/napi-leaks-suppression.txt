@@ -14,6 +14,10 @@
 # Known leaks in Node-API
 leak:napi_module_register
 leak:napi_register_module_v1
+# This is not really a leak since exposing the GC and calling it
+# will trigger the WeakCallback of the ExternalWrapper
+# However Node (V8?) is particularly lazy when it comes to deleting it
+leak:napi_create_external
 
 # Known leaks in the Node.js 24 runtime
 leak:node::contextify::Contextify
