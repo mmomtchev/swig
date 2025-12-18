@@ -212,7 +212,7 @@ class SWIG_NAPI_ObjectWrap_templ : public Napi::ObjectWrap<SWIG_OBJ_WRAP> {
     Napi::Value ToString(const Napi::CallbackInfo &info);
 
   protected:
-    void SWIG_Finalize();
+    void SWIG_Finalize(Napi::BasicEnv env);
 
   private:
     // Every wrapped object has an associated async lock
@@ -263,7 +263,7 @@ void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::JS_veto_set_variable(const Napi:
 }
 
 template <typename SWIG_OBJ_WRAP>
-void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize() {
+void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize(Napi::BasicEnv) {
   if (this->finalizer) {
     (*this->finalizer)();
     delete this->finalizer;
@@ -297,4 +297,7 @@ public:
     std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &,
     std::map<std::string, SWIG_NAPI_ObjectWrap_templ::PropertyDescriptor> &
   );
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+  virtual void Finalize(Napi::BasicEnv) override;
+#endif
 };

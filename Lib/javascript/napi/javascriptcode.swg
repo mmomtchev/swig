@@ -247,10 +247,19 @@ fail:
 %fragment ("js_dtor", "templates")
 %{
 // js_dtor
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+template <typename SWIG_OBJ_WRAP>
+$jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {}
+template <typename SWIG_OBJ_WRAP>
+void $jsmangledname_templ<SWIG_OBJ_WRAP>::Finalize(Napi::BasicEnv env) {
+  this->SWIG_Finalize(env);
+};
+#else
 template <typename SWIG_OBJ_WRAP>
 $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {
-  this->SWIG_Finalize();
+  this->SWIG_Finalize(this->Env());
 }
+#endif
 %}
 
 
@@ -263,15 +272,29 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::~$jsmangledname_templ() {
 %fragment ("js_dtoroverride", "templates")
 %{
 // js_dtoroverride
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
 template <typename SWIG_OBJ_WRAP>
-${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {
-  this->SWIG_Finalize();
+${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {}
+template <typename SWIG_OBJ_WRAP>
+void ${classname_mangled}_templ<SWIG_OBJ_WRAP>::Finalize(Napi::BasicEnv env) {
+  this->SWIG_Finalize(env);
   auto arg1 = reinterpret_cast<$jstype>(this->self);
   if (this->owned && arg1) {
     ${destructor_action}
     this->self = NULL;
   }
 }
+#else
+template <typename SWIG_OBJ_WRAP>
+${classname_mangled}_templ<SWIG_OBJ_WRAP>::~${classname_mangled}_templ() {
+  this->SWIG_Finalize(this->Env());
+  auto arg1 = reinterpret_cast<$jstype>(this->self);
+  if (this->owned && arg1) {
+    ${destructor_action}
+    this->self = NULL;
+  }
+}
+#endif
 %}
 
 
@@ -1132,6 +1155,9 @@ fail:
  * ----------------------------------------------------------------------------- */
 %fragment("jsnapi_class_dtor_declaration", "templates")
 %{
+#ifdef NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER
+  virtual void Finalize(Napi::BasicEnv) override;
+#endif
     virtual ~$jsmangledname_templ();
 %}
 
