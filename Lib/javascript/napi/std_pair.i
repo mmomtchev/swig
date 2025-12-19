@@ -65,8 +65,8 @@ namespace std {
   }
 }
 %typemap(freearg, match="in")   std::pair const &INPUT {
-  $typemap(in, $T0type, 1=$1->first);
-  $typemap(in, $T1type, 1=$1->second);
+  $typemap(freearg, $T0type, 1=$1->first);
+  $typemap(freearg, $T1type, 1=$1->second);
   delete $1;
 }
 %typemap(ts)        std::pair const &INPUT "[ $typemap(ts, $T0type), $typemap(ts, $T1type) ]";
@@ -108,8 +108,8 @@ namespace std {
   }
 }
 %typemap(freearg)   std::pair INPUT {
-  $typemap(in, $T0type, 1=$1.first);
-  $typemap(in, $T1type, 1=$1.second);
+  $typemap(freearg, $T0type, 1=$1.first);
+  $typemap(freearg, $T1type, 1=$1.second);
 }
 %typemap(ts)        std::pair INPUT = std::pair const &INPUT;
 
