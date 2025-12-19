@@ -7,7 +7,16 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
-2023-23-26  mmomtchev
+2025-12-19  mmomtchev
+            [JavaScript] Fix some leaks and primitive types support in
+            container typemaps (`vector`, `map` and `pair`). Nested containers
+            are not supported now, limited support may come back in a
+            later version.
+            [mmomtchev/swig#158](https://github.com/mmomtchev/swig/issues/158)
+            [mmomtchev/swig#159](https://github.com/mmomtchev/swig/issues/159)
+            [mmomtchev/swig#160](https://github.com/mmomtchev/swig/issues/160)
+
+2025-12-16  mmomtchev
             [JavaScript] Node-API specific support for wrapping
             `std::function` and function pointers
 
