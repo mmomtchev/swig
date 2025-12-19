@@ -13,6 +13,8 @@
 #define SWIG_FROM_DECL_ARGS SWIG_NAPI_FROM_DECL_ARGS
 #define SWIG_FROM_CALL_ARGS SWIG_NAPI_FROM_CALL_ARGS
 
+%typemap(freearg) SWIGTYPE "";
+
 /* Include fundamental fragemt definitions */
 %include <typemaps/fragments.swg>
 
