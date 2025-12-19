@@ -107,7 +107,7 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::vector const &INPUT (std::vector<std::function<void()>> vector_freeargs) {
+%typemap(in)        std::vector const &INPUT {
   if ($input.IsArray()) {
     $1 = new $*ltype;
     Napi::Array array = $input.As<Napi::Array>();
