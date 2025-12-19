@@ -103,9 +103,9 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
   }
 }
 %typemap(freearg)   std::map const &INPUT {
-  for (auto &&[key, val] : *$1) {
-    $typemap(freearg, std::string, 1=key);
-    $typemap(freearg, $T1type, 1=val);
+  for (auto &&e : *$1) {
+    $typemap(freearg, std::string, 1=e.first);
+    $typemap(freearg, $T1type, 1=e.second);
   }
   delete $1;
 }
@@ -147,9 +147,9 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
   }
 }
 %typemap(freearg)   std::map INPUT {
-  for (auto &&[key, val] : $1) {
-    $typemap(freearg, std::string, 1=key);
-    $typemap(freearg, $T1type, 1=val);
+  for (auto &&e : $1) {
+    $typemap(freearg, std::string, 1=e.first);
+    $typemap(freearg, $T1type, 1=e.second);
   }
 }
 %typemap(ts)        std::map INPUT = std::map const &INPUT;
