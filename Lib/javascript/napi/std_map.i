@@ -83,7 +83,7 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 //  * for values -> copies (objects must be copyable)
 //  * for references -> references to the JS objects
 //  * for pointers -> pointers to the JS objects
-%typemap(in)        std::map const &INPUT (std::vector<std::function<void()>> map_freeargs) {
+%typemap(in)        std::map const &INPUT {
   ASSERT_STRING_MAP;
   if ($input.IsObject()) {
     $1 = new $*ltype;
@@ -97,17 +97,16 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
       $1->emplace(c_key, SWIG_STD_MOVE(c_val));
-      map_freeargs.emplace_back([c_val, c_key]() {
-        $typemap(freearg, std::string, 1=c_key, argnum=object key);
-        $typemap(freearg, $T1type, 1=c_val, argnum=object value);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
   }
 }
-%typemap(freearg, match="in")   std::map const &INPUT {
-  for (auto &f : map_freeargs$argnum) f();
+%typemap(freearg)   std::map const &INPUT {
+  for (auto &&[key, val] : *$1) {
+    $typemap(freearg, std::string, 1=key);
+    $typemap(freearg, $T1type, 1=val);
+  }
   delete $1;
 }
 %typemap(ts)        std::map const &INPUT "Record<string, $typemap(ts, $T1type)>";
@@ -129,7 +128,7 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::map INPUT (std::vector<std::function<void()>> map_freeargs) {
+%typemap(in)        std::map INPUT {
   ASSERT_STRING_MAP;
   if ($input.IsObject()) {
     Napi::Object obj = $input.As<Napi::Object>();
@@ -142,17 +141,16 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
       $1.emplace(c_key, SWIG_STD_MOVE(c_val));
-      map_freeargs.emplace_back([c_val, c_key]() {
-        $typemap(freearg, std::string, 1=c_key, argnum=object key);
-        $typemap(freearg, $T1type, 1=c_val, argnum=object value);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
   }
 }
-%typemap(freearg, match="in")   std::map INPUT {
-  for (auto &f : map_freeargs$argnum) f();
+%typemap(freearg)   std::map INPUT {
+  for (auto &&[key, val] : $1) {
+    $typemap(freearg, std::string, 1=key);
+    $typemap(freearg, $T1type, 1=val);
+  }
 }
 %typemap(ts)        std::map INPUT = std::map const &INPUT;
 

@@ -44,7 +44,7 @@ namespace std {
 //  * for values -> copies (objects must be copyable)
 //  * for references -> references to the JS objects
 //  * for pointers -> pointers to the JS objects
-%typemap(in)        std::pair const &INPUT (std::vector<std::function<void()>> pair_freeargs) {
+%typemap(in)        std::pair const &INPUT {
   if ($input.IsArray() && $input.As<Napi::Array>().Length() == 2) {
     $1 = new $*ltype;
     Napi::Array array = $input.As<Napi::Array>();
@@ -53,25 +53,20 @@ namespace std {
       Napi::Value js_val = array.Get(static_cast<uint32_t>(0));
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=pair first element);
       $1->first = SWIG_STD_MOVE(c_val);
-      pair_freeargs.emplace_back([c_val]() {
-        $typemap(in, $T0type, 1=c_val, argnum=pair first element);
-      });
     }
     {
       $T1type c_val;
       Napi::Value js_val = array.Get(static_cast<uint32_t>(1));
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=pair second element);
       $1->second = SWIG_STD_MOVE(c_val);
-      pair_freeargs.emplace_back([c_val]() {
-        $typemap(in, $T1type, 1=c_val, argnum=pair first element);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array[2]", $symname, $argnum);
   }
 }
 %typemap(freearg, match="in")   std::pair const &INPUT {
-  for (auto &f : pair_freeargs$argnum) f();
+  $typemap(in, $T0type, 1=$1->first);
+  $typemap(in, $T1type, 1=$1->second);
   delete $1;
 }
 %typemap(ts)        std::pair const &INPUT "[ $typemap(ts, $T0type), $typemap(ts, $T1type) ]";
@@ -93,7 +88,7 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::pair INPUT (std::vector<std::function<void()>> pair_freeargs) {
+%typemap(in)        std::pair INPUT {
   if ($input.IsArray() && $input.As<Napi::Array>().Length() == 2) {
     Napi::Array array = $input.As<Napi::Array>();
     {
@@ -101,25 +96,20 @@ namespace std {
       Napi::Value js_val = array.Get(static_cast<uint32_t>(0));
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=pair first element);
       $1.first = SWIG_STD_MOVE(c_val);
-      pair_freeargs.emplace_back([c_val]() {
-        $typemap(in, $T0type, 1=c_val, argnum=pair first element);
-      });
     }
     {
       $T1type c_val;
       Napi::Value js_val = array.Get(static_cast<uint32_t>(1));
       $typemap(in, $T1type, input=js_val, 1=c_val, argnum=pair second element);
       $1.second = SWIG_STD_MOVE(c_val);
-      pair_freeargs.emplace_back([c_val]() {
-        $typemap(in, $T1type, 1=c_val, argnum=pair first element);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array[2]", $symname, $argnum);
   }
 }
-%typemap(freearg, match="in")   std::pair INPUT {
-  for (auto &f : pair_freeargs$argnum) f();
+%typemap(freearg)   std::pair INPUT {
+  $typemap(in, $T0type, 1=$1.first);
+  $typemap(in, $T1type, 1=$1.second);
 }
 %typemap(ts)        std::pair INPUT = std::pair const &INPUT;
 

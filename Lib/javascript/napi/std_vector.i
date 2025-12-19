@@ -116,16 +116,15 @@ namespace std {
       Napi::Value js_val = array.Get(i);
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
       $1->emplace_back(SWIG_STD_MOVE(c_val));
-      vector_freeargs.emplace_back([c_val]() {
-        $typemap(freearg, $T0type, 1=c_val, argnum=array value);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
   }
 }
 %typemap(freearg, match="in")   std::vector const &INPUT {
-  for (auto &f : vector_freeargs$argnum) f();
+  for (auto &&e : *$1) {
+    $typemap(freearg, $T0type, 1=e);
+  }
   delete $1;
 }
 %typemap(ts)        std::vector const &INPUT "$typemap(ts, $T0type)[]";
@@ -147,7 +146,7 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::vector INPUT (std::vector<std::function<void()>> vector_freeargs) {
+%typemap(in)        std::vector INPUT {
   if ($input.IsArray()) {
     Napi::Array array = $input.As<Napi::Array>();
     for (size_t i = 0; i < array.Length(); i++) {
@@ -155,16 +154,15 @@ namespace std {
       Napi::Value js_val = array.Get(i);
       $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
       $1.emplace_back(SWIG_STD_MOVE(c_val));
-      vector_freeargs.emplace_back([c_val]() {
-        $typemap(freearg, $T0type, 1=c_val, argnum=array value);
-      });
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
   }
 }
-%typemap(freearg, match="in")   std::vector INPUT {
-  for (auto &f : vector_freeargs$argnum) f();
+%typemap(freearg)   std::vector INPUT {
+  for (auto &&e : $1) {
+    $typemap(freearg, $T0type, 1=e);
+  }
 }
 %typemap(ts)        std::vector INPUT = std::vector const &INPUT;
 
