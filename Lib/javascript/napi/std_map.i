@@ -83,7 +83,8 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 //  * for values -> copies (objects must be copyable)
 //  * for references -> references to the JS objects
 //  * for pointers -> pointers to the JS objects
-%typemap(in)        std::map const &INPUT {
+// (this does not support non default-constructible types)
+%typemap(in)        std::map const &INPUT ($*1_ltype c_val) {
   ASSERT_STRING_MAP;
   if ($input.IsObject()) {
     $1 = new $*ltype;
@@ -91,19 +92,20 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
     Napi::Array keys = obj.GetPropertyNames();
     for (size_t i = 0; i < keys.Length(); i++) {
       std::string c_key;
-      $T1type c_val;
+      $T1type c_val_current;
       Napi::Value js_key = keys.Get(i);
       Napi::Value js_val = obj.Get(js_key);
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
-      $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
-      $1->emplace(c_key, SWIG_STD_MOVE(c_val));
+      $typemap(in, $T1type, input=js_val, 1=c_val_current, argnum=object value);
+      c_val.emplace(c_key, SWIG_STD_MOVE(c_val_current));
+      $1->emplace(c_key, SWIG_STD_MOVE(c_val.at(c_key)));
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
   }
 }
-%typemap(freearg)   std::map const &INPUT {
-  for (auto &&e : *$1) {
+%typemap(freearg, match="in")   std::map const &INPUT {
+  for (auto &&e : c_val$argnum) {
     $typemap(freearg, std::string, 1=e.first);
     $typemap(freearg, $T1type, 1=e.second);
   }
@@ -128,26 +130,28 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::map INPUT {
+// (this does not support non default-constructible types)
+%typemap(in)        std::map INPUT ($1_ltype c_val) {
   ASSERT_STRING_MAP;
   if ($input.IsObject()) {
     Napi::Object obj = $input.As<Napi::Object>();
     Napi::Array keys = obj.GetPropertyNames();
     for (size_t i = 0; i < keys.Length(); i++) {
       std::string c_key;
-      $T1type c_val;
+      $T1type c_val_current;
       Napi::Value js_key = keys.Get(i);
       Napi::Value js_val = obj.Get(js_key);
       $typemap(in, std::string, input=js_key, 1=c_key, argnum=object key);
-      $typemap(in, $T1type, input=js_val, 1=c_val, argnum=object value);
-      $1.emplace(c_key, SWIG_STD_MOVE(c_val));
+      $typemap(in, $T1type, input=js_val, 1=c_val_current, argnum=object value);
+      c_val.emplace(c_key, SWIG_STD_MOVE(c_val_current));
+      $1.emplace(c_key, SWIG_STD_MOVE(c_val.at(c_key)));
     }
   } else {
     %argument_fail(SWIG_TypeError, "object", $symname, $argnum);
   }
 }
-%typemap(freearg)   std::map INPUT {
-  for (auto &&e : $1) {
+%typemap(freearg, match="in")   std::map INPUT {
+  for (auto &&e : c_val$argnum) {
     $typemap(freearg, std::string, 1=e.first);
     $typemap(freearg, $T1type, 1=e.second);
   }
