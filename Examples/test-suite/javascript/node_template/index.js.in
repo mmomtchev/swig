@@ -1,1 +1,9 @@
 module.exports = require('./build/$build/$testcase');
+
+if (globalThis.gc) {
+  const process = require('node:process');
+  process.on('exit', () => {
+    console.log('GC exposed, forcing GC');
+    globalThis.gc();
+  });
+}
