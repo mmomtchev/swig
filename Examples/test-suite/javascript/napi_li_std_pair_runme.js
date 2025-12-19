@@ -30,9 +30,9 @@ check(typeof intPairRef === 'object');
 check(intPairRef[0] === 7);
 check(intPairRef[1] === 6);
 
-// Now test various input typemaps.Each of the wrapped C++ functions
-//(product1, product2 and product3) is expecting an argument of a
-// different type(see napi_li_std_pair.i).Typemaps should be in place to
+// Now test various input typemaps. Each of the wrapped C++ functions
+// (product1, product2 and product3) is expecting an argument of a
+// different type(see napi_li_std_pair.i). Typemaps should be in place to
 // convert this tuple into the expected argument type.
 check(/* await */(napi_li_std_pair.product1(intPair)) === 42);
 check(/* await */(napi_li_std_pair.product2(intPair)) === 42);

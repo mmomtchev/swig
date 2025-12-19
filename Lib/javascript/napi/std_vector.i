@@ -107,21 +107,26 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::vector const &INPUT {
+%typemap(in)        std::vector const &INPUT ($*1_ltype c_val) {
   if ($input.IsArray()) {
     $1 = new $*ltype;
     Napi::Array array = $input.As<Napi::Array>();
-    for (size_t i = 0; i < array.Length(); i++) {
-      $T0type c_val;
+    size_t len = array.Length();
+    $1->reserve(len);
+    c_val.resize(len);
+    for (size_t i = 0; i < len; i++) {
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
-      $1->emplace_back(SWIG_STD_MOVE(c_val));
+      $typemap(in, $T0type, input=js_val, 1=c_val.at(i), argnum=array value);
+      $1->emplace_back(SWIG_STD_MOVE(c_val.at(i)));
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
   }
 }
-%typemap(freearg)   std::vector const &INPUT {
+%typemap(freearg, match="in")   std::vector const &INPUT {
+  for (auto &&e : c_val$argnum) {
+    $typemap(freearg, $T0type, 1=e);
+  }
   delete $1;
 }
 %typemap(ts)        std::vector const &INPUT "$typemap(ts, $T0type)[]";
@@ -143,17 +148,24 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::vector INPUT {
+%typemap(in)        std::vector INPUT ($1_ltype c_val) {
   if ($input.IsArray()) {
     Napi::Array array = $input.As<Napi::Array>();
-    for (size_t i = 0; i < array.Length(); i++) {
-      $T0type c_val;
+    size_t len = array.Length();
+    $1.reserve(len);
+    c_val.resize(len);
+    for (size_t i = 0; i < len; i++) {
       Napi::Value js_val = array.Get(i);
-      $typemap(in, $T0type, input=js_val, 1=c_val, argnum=array value);
-      $1.emplace_back(SWIG_STD_MOVE(c_val));
+      $typemap(in, $T0type, input=js_val, 1=c_val.at(i), argnum=array value);
+      $1.emplace_back(SWIG_STD_MOVE(c_val.at(i)));
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array", $symname, $argnum);
+  }
+}
+%typemap(freearg, match="in")   std::vector INPUT {
+  for (auto &&e : c_val$argnum) {
+    $typemap(freearg, $T0type, 1=e);
   }
 }
 %typemap(ts)        std::vector INPUT = std::vector const &INPUT;

@@ -29,6 +29,7 @@
 
 %define JAVASCRIPT_ARRAYS_IN_DECL(NAME, CTYPE, ANY, ANYLENGTH)
 
+// TODO: This typemap cannot be used recursively
 %typemap(in, fragment=NAME)
     CTYPE[ANY]
     (std::unique_ptr<$*1_ltype[]> array_manager) {
