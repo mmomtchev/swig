@@ -125,14 +125,27 @@ Napi::Function SWIG_NAPI_PackedObjectWrap_inst::GetClass(Napi::Env env) {
   return Napi::ObjectWrap<SWIG_NAPI_PackedObjectWrap_inst>::DefineClass(env, "SwigPackedObject", {});
 }
 
-SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {
-  this->SWIG_Finalize();
+
+#if defined(NODE_API_EXPERIMENTAL_HAS_POST_FINALIZER) && defined(SWIG_NAPI_USE_BASIC_FINALIZERS)
+SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {}
+void SWIG_NAPI_PackedObjectWrap_inst::Finalize(Napi::BasicEnv env) {
+  this->SWIG_Finalize(env);
   if (this->owned) {
     delete[] static_cast<uint8_t *>(this->self);
     this->self = NULL;
     this->owned = false;
   }
 }
+#else
+SWIG_NAPI_PackedObjectWrap_inst::~SWIG_NAPI_PackedObjectWrap_inst() {
+  this->SWIG_Finalize(this->Env());
+  if (this->owned) {
+    delete[] static_cast<uint8_t *>(this->self);
+    this->self = NULL;
+    this->owned = false;
+  }
+}
+#endif
 
 SWIGRUNTIME bool SWIG_NAPI_IsWrappedObject(Napi::Env env, Napi::Object v) {
   SWIG_NAPI_ASSERT_NOTNULL_ENV;

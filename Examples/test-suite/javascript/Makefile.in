@@ -208,6 +208,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		DEBUG = 1
 		ASAN_PRELOAD = $(shell $(CC) -print-file-name=libasan.so)
 		LSAN_OPTIONS = suppressions=$(srcdir)/node_template/napi-leaks-suppression.txt
+		EXPOSE_GC = -expose-gc
 	endif
   ifneq (, $(DEBUG))
 		GYP_OPTS = --debug
@@ -308,7 +309,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 					RUNME=$*_ts_runme.mjs; \
 			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \
-				$(RUNTOOL) ${NODEJS} $${RUNME}; \
+				$(RUNTOOL) ${NODEJS} ${EXPOSE_GC} $${RUNME}; \
 		else \
 			if [ -n "$(TYPESCRIPT)" ]; then \
 				$(TSC) --noEmit $(TSCOPT) $*.d.ts ; \
