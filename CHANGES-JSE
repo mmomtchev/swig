@@ -7,6 +7,11 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
+2025-12-20  mmomtchev
+            [JavaScript] Optional support for basic finalizers to be enabled
+            at module compile time
+            [mmomtchev/swig#162](https://github.com/mmomtchev/swig/pull/162)
+
 2025-12-19  mmomtchev
             [JavaScript] Fix some leaks and primitive types support in
             container typemaps (`vector`, `map` and `pair`). Nested containers
