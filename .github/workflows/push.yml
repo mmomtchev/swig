@@ -21,7 +21,7 @@ jobs:
 
     # By default, the name of the build is the language used and SWIG options, but matrix entries
     # can define the additional "desc" field with any additional information to include in the name.
-    name: ${{ matrix.SWIGLANG || 'none' }}${{ matrix.PY2 }}${{matrix.ASAN && ' ASAN'}} ${{ matrix.ENGINE}} ${{ matrix.VER }} ${{ matrix.SWIG_FEATURES }} ${{ (matrix.compiler || 'gcc') }}${{ matrix.GCC }} ${{ matrix.CPPSTD }} ${{ matrix.CSTD }} ${{ matrix.desc }}
+    name: ${{ matrix.SWIGLANG || 'none' }}${{ matrix.PY2 }} ${{matrix.desc || format('{0} {1}{2} {3}', matrix.ENGINE, matrix.VER, matrix.ASAN && ' ASAN', matrix.SWIG_FEATURES)}} ${{matrix.compiler}} ${{matrix.GCC}} ${{matrix.CPPSTD}} ${{matrix.CSTD}}
 
     strategy:
       matrix:
@@ -92,7 +92,7 @@ jobs:
           VER: '24'
           CPPSTD: c++20
           SWIG_FEATURES: -async -w470
-          desc: Async
+          desc: async
           cacheid: -napi-async
         - SWIGLANG: javascript
           ENGINE: napi
@@ -100,14 +100,14 @@ jobs:
           CPPSTD: c++20
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           ASAN: 1
-          desc: Async+ASAN
+          desc: async+ASAN
           cacheid: -napi-async-locked-asan
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
-          desc: Async w/ locking
+          desc: async+lock
           cacheid: -napi-async-locked
         - SWIGLANG: javascript
           ENGINE: napi
@@ -121,28 +121,27 @@ jobs:
           VER: '24'
           CPPSTD: c++20
           SWIG_FEATURES: -typescript -async -w470
-          desc: TypeScript w/ async
+          desc: TS+async
           cacheid: -napi-typescript-async
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
           SWIG_FEATURES: -split
-          desc: Code splitting
+          desc: split
           cacheid: -napi-splitting
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
           SWIG_FEATURES: -split -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
-          desc: Async w/ splitting & locking
+          desc: async+split
           cacheid: -napi-splitting-async
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
           COMPILER: emscripten
-          desc: WASM
           cacheid: -napi-wasm
         - SWIGLANG: javascript
           ENGINE: napi
@@ -150,7 +149,7 @@ jobs:
           CPPSTD: c++20
           COMPILER: emscripten
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
-          desc: WASM w/ async & locking
+          desc: async
           cacheid: -napi-wasm-async
         - SWIGLANG: lua
         - SWIGLANG: octave
