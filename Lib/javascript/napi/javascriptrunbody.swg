@@ -415,18 +415,22 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
 
 SWIGRUNTIME
 Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const char *name, Napi::Value obj) {
-  if (result.IsUndefined()) {
-    result = Napi::Object::New(env);
-  } else if (!result.IsObject()) {
-    Napi::Object tmp = Napi::Object::New(env);
-    tmp.Set("result", result);
-    result = tmp;
+  Napi::Object result_obj;
+
+  if (result.IsUndefined() || !result.IsObject()) {
+    result_obj = Napi::Object::New(env);
+    result_obj.Set("result", result);
+  } else {
+    NAPI_CHECK_RESULT(result.ToObject(), result_obj);
   }
 
-  Napi::Object result_obj;
-  NAPI_CHECK_RESULT(result.ToObject(), result_obj);
+  if (result_obj.GetPropertyNames().Length() < 1) {
+    result_obj = Napi::Object::New(env);
+    result_obj.Set("result", result);
+  }
+
   result_obj.Set(name, obj);
-  return result;
+  return result_obj;
 
 #ifndef NAPI_CPP_EXCEPTIONS
 fail:

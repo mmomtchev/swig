@@ -629,9 +629,10 @@ int TYPESCRIPT::functionHandler(Node *n) {
     ret_type = NewString("any");
   } else if (Getattr(n, "ts:out")) {
     String *merge = nullptr;
+    bool first = true;
 
     ret_type = NewStringEmpty();
-    Append(ret_type, expandTSvars(ret_tm, n));
+
     Iterator tsout = First(Getattr(n, "ts:out"));
     while (tsout.item) {
       Parm *p = tsout.item;
@@ -656,16 +657,16 @@ int TYPESCRIPT::functionHandler(Node *n) {
       String *expanded = expandTSvars(tmap, p);
       if (Cmp(merge, "array") == 0 || Cmp(merge, "object") == 0 ||
           Cmp(merge, "list") == 0) {
-        Append(ret_type, ", ");
+        if (!first) Append(ret_type, ", ");
         Append(ret_type, expanded);
       } else if (Cmp(merge, "concat") == 0) {
-        Append(ret_type, " ");
+        if (!first) Append(ret_type, " ");
         Append(ret_type, expanded);
       } else if (Cmp(merge, "intersection") == 0) {
-        Append(ret_type, " & ");
+        if (!first) Append(ret_type, " & ");
         Append(ret_type, expanded);
       } else if (Cmp(merge, "union") == 0) {
-        Append(ret_type, " | ");
+        if (!first) Append(ret_type, " | ");
         Append(ret_type, expanded);
       } else if (Cmp(merge, "overwrite") == 0) {
         ret_type = expanded;
@@ -677,12 +678,23 @@ int TYPESCRIPT::functionHandler(Node *n) {
       }
 
       tsout = Next(tsout);
+      first = false;
     }
 
     if (Cmp(merge, "array") == 0) {
+      if (ret_tm && Len(ret_tm)) {
+        Insert(ret_type, 0, ", ");
+        Insert(ret_type, 0, ret_tm);
+        Insert(ret_type, 0, "result: ");
+      }
       Insert(ret_type, 0, "[ ");
       Append(ret_type, " ]");
     } else if (Cmp(merge, "object") == 0) {
+      if (ret_tm && Len(ret_tm)) {
+        Insert(ret_type, 0, ", ");
+        Insert(ret_type, 0, ret_tm);
+        Insert(ret_type, 0, "result: ");
+      }
       Insert(ret_type, 0, "{ ");
       Append(ret_type, " }");
     }
