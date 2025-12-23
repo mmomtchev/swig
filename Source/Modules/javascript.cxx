@@ -625,10 +625,10 @@ int TYPESCRIPT::functionHandler(Node *n) {
   
   String *ret_tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   String *ret_type = NULL;
-  if (GetFlag(n, "ts:varargs")) {
-    ret_type = NewString("any");
-  } else if (Getattr(n, "ts")) {
+  if (ret_tm) {
     ret_type = expandTSvars(ret_tm, n);
+  } else if (GetFlag(n, "ts:varargs")) {
+    ret_type = NewString("any");
   } else if (Getattr(n, "ts:out")) {
     String *merge = nullptr;
 
@@ -663,7 +663,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
       } else if (Cmp(merge, "concat") == 0) {
         Append(ret_type, " ");
         Append(ret_type, expanded);
-      } else if (Cmp(merge, "intersectop,") == 0) {
+      } else if (Cmp(merge, "intersection") == 0) {
         Append(ret_type, " & ");
         Append(ret_type, expanded);
       } else if (Cmp(merge, "union") == 0) {
