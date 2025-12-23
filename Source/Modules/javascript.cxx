@@ -625,9 +625,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
   
   String *ret_tm = Swig_typemap_lookup("ts", n, Getattr(n, NAME), NULL);
   String *ret_type = NULL;
-  if (ret_tm) {
-    ret_type = expandTSvars(ret_tm, n);
-  } else if (GetFlag(n, "ts:varargs")) {
+  if (GetFlag(n, "ts:varargs")) {
     ret_type = NewString("any");
   } else if (Getattr(n, "ts:out")) {
     String *merge = nullptr;
@@ -688,6 +686,8 @@ int TYPESCRIPT::functionHandler(Node *n) {
       Insert(ret_type, 0, "{ ");
       Append(ret_type, " }");
     }
+  } else if (ret_tm) {
+    ret_type = expandTSvars(ret_tm, n);
   } else {
     ret_type = NewString("any");
   }
