@@ -428,6 +428,8 @@ Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const
   result_obj.Set(name, obj);
   return result;
 
+#ifndef NAPI_CPP_EXCEPTIONS
 fail:
   return Napi::Value();
+#endif
 }
