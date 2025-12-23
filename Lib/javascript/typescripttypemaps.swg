@@ -40,15 +40,15 @@
 %enddef
 
 %define OUTPUT_TMAPS(Type)
-%typemap(tsout) Type *OUTPUT "$typemap(ts, Type)";
-%typemap(tsout) Type &OUTPUT "$typemap(ts, Type)";
+%typemap(tsout, merge="array") Type *OUTPUT "$typemap(ts, Type)";
+%typemap(tsout, merge="array") Type &OUTPUT "$typemap(ts, Type)";
 %enddef
 
 %define INOUT_TMAPS(Type)
-%typemap(ts)    Type *INOUT = Type *INPUT;
-%typemap(ts)    Type &INOUT = Type &INPUT;
-%typemap(tsout) Type *INOUT = Type *OUTPUT;
-%typemap(tsout) Type &INOUT = Type &OUTPUT;
+%typemap(ts)                    Type *INOUT = Type *INPUT;
+%typemap(ts)                    Type &INOUT = Type &INPUT;
+%typemap(tsout, merge="array")  Type *INOUT = Type *OUTPUT;
+%typemap(tsout, merge="array")  Type &INOUT = Type &OUTPUT;
 %enddef
 
 %define ALL_TMAPS(Type)
@@ -78,11 +78,11 @@ ALL_TMAPS(float)
 ALL_TMAPS(double)
 
 
-%typemap(tsout) SWIGTYPE *OUTPUT "$jstype";
-%typemap(tsout) SWIGTYPE &OUTPUT "$jstype";
+%typemap(tsout, merge="array") SWIGTYPE *OUTPUT "$jstype";
+%typemap(tsout, merge="array") SWIGTYPE &OUTPUT "$jstype";
 
-%typemap(tsout) SWIGTYPE *INOUT = SWIGTYPE *OUTPUT;
-%typemap(tsout) SWIGTYPE &INOUT = SWIGTYPE &OUTPUT;
+%typemap(tsout, merge="array") SWIGTYPE *INOUT = SWIGTYPE *OUTPUT;
+%typemap(tsout, merge="array") SWIGTYPE &INOUT = SWIGTYPE &OUTPUT;
 
 
 /**

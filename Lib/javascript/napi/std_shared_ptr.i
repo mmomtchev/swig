@@ -117,7 +117,7 @@
 #ifdef SWIGTYPESCRIPT
 %typemap(ts) std::shared_ptr<CONST TYPE>, std::shared_ptr<CONST TYPE> &
     "$typemap(ts, TYPE)"
-%typemap(tsout) std::shared_ptr<CONST TYPE> &OUTPUT
+%typemap(tsout, merge="array") std::shared_ptr<CONST TYPE> &OUTPUT
     "$typemap(ts, TYPE)"
 #endif
 

@@ -177,7 +177,7 @@ namespace std {
   }
   $result = array;
 }
-%typemap(tsout)             std::pair &OUTPUT "[ $typemap(ts, $T0type), $typemap(ts, $T1type) ]";
+%typemap(tsout, merge="overwrite")             std::pair &OUTPUT "[ $typemap(ts, $T0type), $typemap(ts, $T1type) ]";
 
 /* --------------------*/
 /* std::pair *OUTPUT   */
