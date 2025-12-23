@@ -423,6 +423,8 @@ Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const
     result = tmp;
   }
 
-  result.ToObject().Set(name, obj);
+  Napi::Object result_obj;
+  NAPI_CHECK_RESULT(result.ToObject(), result_obj);
+  result_obj.Set(name, obj);
   return result;
 }
