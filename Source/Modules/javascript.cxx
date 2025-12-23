@@ -644,7 +644,8 @@ int TYPESCRIPT::functionHandler(Node *n) {
       if (current_merge && Cmp(merge, current_merge) != 0) {
         Swig_error(Getfile(p), Getline(p),
             "Mismatched merging strategies in 'tsout' typemap: %s != %s\n",
-        merge, current_merge);
+            merge, current_merge);
+        return SWIG_ERROR;
       }
       if (!merge) {
         Swig_warning(
@@ -662,8 +663,19 @@ int TYPESCRIPT::functionHandler(Node *n) {
       } else if (Cmp(merge, "concat") == 0) {
         Append(ret_type, " ");
         Append(ret_type, expanded);
+      } else if (Cmp(merge, "intersectop,") == 0) {
+        Append(ret_type, " & ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "union") == 0) {
+        Append(ret_type, " | ");
+        Append(ret_type, expanded);
       } else if (Cmp(merge, "overwrite") == 0) {
         ret_type = expanded;
+      } else {
+        Swig_error(Getfile(p), Getline(p),
+            "Invalid merging strategy in 'tsout' typemap: %s\n",
+            merge);
+        return SWIG_ERROR;
       }
 
       tsout = Next(tsout);
