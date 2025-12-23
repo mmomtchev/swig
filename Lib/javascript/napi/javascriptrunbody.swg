@@ -406,3 +406,23 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
   arr.Set(arr.Length(), obj);
   return arr;
 }
+
+
+/* ---------------------------------------------------------------------------
+ * JavaScript specific support for adding a named field in a returned object
+ *
+ * ---------------------------------------------------------------------------*/
+
+SWIGRUNTIME
+Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const char *name, Napi::Value obj) {
+  if (result.IsUndefined()) {
+    result = Napi::Object::New(env);
+  } else if (!result.IsObject()) {
+    Napi::Object tmp = Napi::Object::New(env);
+    tmp.Set("result", result);
+    result = tmp;
+  }
+
+  result.ToObject().Set(name, obj);
+  return result;
+}

@@ -627,8 +627,16 @@ int TYPESCRIPT::functionHandler(Node *n) {
   String *ret_type = NULL;
   if (GetFlag(n, "ts:varargs")) {
     ret_type = NewString("any");
-  } else if (GetFlag(n, "ts:out")) {
-    ret_type = expandTSvars(Getattr(n, "ts:out"), n);
+  } else if (Getattr(n, "ts:out")) {
+    ret_type = NewString("[ ");
+    Append(ret_type, expandTSvars(ret_tm, n));
+    Iterator tsout = First(Getattr(n, "ts:out"));
+    while (tsout.item) {
+      Append(ret_type, ", ");
+      Append(ret_type, tsout.item);
+      tsout = Next(tsout);
+    }
+    Append(ret_type, " ]");
   } else {
     ret_type = expandTSvars(ret_tm, n);
   }
@@ -968,7 +976,11 @@ String *TYPESCRIPT::emitArguments(Node *n) {
     String *tm = Getattr(p, "tmap:ts");
     String *tm_out = Getattr(p, "tmap:tsout");
     if (tm_out) {
-      Setattr(n, "ts:out", tm_out);
+      if (!Getattr(n, "ts:out")) {
+        Setattr(n, "ts:out", NewList());
+      }
+      String *expanded = expandTSvars(tm_out, p);
+      Append(Getattr(n, "ts:out"), expanded);
     }
     if (tm != NULL && Getattr(p, "tmap:in") &&
         !checkAttribute(p, "tmap:in:numinputs", "0")) {

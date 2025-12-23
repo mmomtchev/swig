@@ -40,8 +40,8 @@
 %enddef
 
 %define OUTPUT_TMAPS(Type)
-%typemap(tsout) Type *OUTPUT "$typemap(ts, Type)[]";
-%typemap(tsout) Type &OUTPUT "$typemap(ts, Type)[]";
+%typemap(tsout) Type *OUTPUT "$typemap(ts, Type)";
+%typemap(tsout) Type &OUTPUT "$typemap(ts, Type)";
 %enddef
 
 %define INOUT_TMAPS(Type)
