@@ -3,9 +3,8 @@
 // Test the (partially implemented) support for retuning arguments as named fields in an object
 
 // INPUT
-%typemap(in) SWIGTYPE *INPUT, SWIGTYPE &INPUT {
-  $*1_ltype val;
-  $typemap(in, $*1_type, 1=val);
+%typemap(in) SWIGTYPE *INPUT ($*1_ltype val), SWIGTYPE &INPUT ($*1_ltype val) {
+  $typemap(in, $*1_ltype, 1=val);
   $1 = &val;
 }
 
@@ -20,8 +19,17 @@
 }
 %typemap(tsout, merge="object") SWIGTYPE *OUTPUT_FIELD, SWIGTYPE &OUTPUT_FIELD "$1_name: $typemap(ts, $*1_ltype)";
 
+// INOUT_FIELD
+%typemap(in) SWIGTYPE *INOUT_FIELD = SWIGTYPE *INPUT;
+%typemap(in) SWIGTYPE &INOUT_FIELD = SWIGTYPE &INPUT;
+%typemap(argout) SWIGTYPE *INOUT_FIELD = SWIGTYPE *OUTPUT_FIELD;
+%typemap(argout) SWIGTYPE &INOUT_FIELD = SWIGTYPE &OUTPUT_FIELD;
+%typemap(tsout) SWIGTYPE *INOUT_FIELD = SWIGTYPE *OUTPUT_FIELD;
+%typemap(tsout) SWIGTYPE &INOUT_FIELD = SWIGTYPE &OUTPUT_FIELD;
+
+// Alternate names
 %apply SWIGTYPE *OUTPUT_FIELD { int *OUTPUT_FIELD2 };
-%apply int &INOUT { int &INOUT2 };
+%apply SWIGTYPE &INOUT_FIELD { int &INOUT_FIELD2 };
 
 %newobject out_foo;
 %inline %{
@@ -95,37 +103,36 @@ void outr_double(double x, double &OUTPUT_FIELD) {  OUTPUT_FIELD = x; }
 void outr_longlong(long long x, long long &OUTPUT_FIELD) {  OUTPUT_FIELD = x; }
 void outr_ulonglong(unsigned long long x, unsigned long long &OUTPUT_FIELD) {  OUTPUT_FIELD = x; }
 
-/*
-void inout_bool(bool *INOUT) {  *INOUT = *INOUT; }
-void inout_int(int *INOUT) {  *INOUT = *INOUT; }
-void inout_short(short *INOUT) {  *INOUT = *INOUT; }
-void inout_long(long *INOUT) {  *INOUT = *INOUT; }
-void inout_uint(unsigned int *INOUT) {  *INOUT = *INOUT; }
-void inout_ushort(unsigned short *INOUT) {  *INOUT = *INOUT; }
-void inout_ulong(unsigned long *INOUT) {  *INOUT = *INOUT; }
-void inout_uchar(unsigned char *INOUT) {  *INOUT = *INOUT; }
-void inout_schar(signed char *INOUT) {  *INOUT = *INOUT; }
-void inout_float(float *INOUT) {  *INOUT = *INOUT; }
-void inout_double(double *INOUT) {  *INOUT = *INOUT; }
-void inout_longlong(long long *INOUT) {  *INOUT = *INOUT; }
-void inout_ulonglong(unsigned long long *INOUT) {  *INOUT = *INOUT; }
 
-void inoutr_bool(bool &INOUT) {  INOUT = INOUT; }
-void inoutr_int(int &INOUT) {  INOUT = INOUT; }
-void inoutr_short(short &INOUT) {  INOUT = INOUT; }
-void inoutr_long(long &INOUT) {  INOUT = INOUT; }
-void inoutr_uint(unsigned int &INOUT) {  INOUT = INOUT; }
-void inoutr_ushort(unsigned short &INOUT) {  INOUT = INOUT; }
-void inoutr_ulong(unsigned long &INOUT) {  INOUT = INOUT; }
-void inoutr_uchar(unsigned char &INOUT) {  INOUT = INOUT; }
-void inoutr_schar(signed char &INOUT) {  INOUT = INOUT; }
-void inoutr_float(float &INOUT) {  INOUT = INOUT; }
-void inoutr_double(double &INOUT) {  INOUT = INOUT; }
-void inoutr_longlong(long long &INOUT) {  INOUT = INOUT; }
-void inoutr_ulonglong(unsigned long long &INOUT) {  INOUT = INOUT; }
+void inout_bool(bool *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_int(int *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_short(short *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_long(long *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_uint(unsigned int *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_ushort(unsigned short *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_ulong(unsigned long *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_uchar(unsigned char *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_schar(signed char *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_float(float *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_double(double *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_longlong(long long *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
+void inout_ulonglong(unsigned long long *INOUT_FIELD) {  *INOUT_FIELD = *INOUT_FIELD; }
 
-void inoutr_int2(int &INOUT, int &INOUT2) {  INOUT = INOUT; INOUT2 = INOUT2;}
-*/
+void inoutr_bool(bool &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_int(int &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_short(short &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_long(long &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_uint(unsigned int &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_ushort(unsigned short &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_ulong(unsigned long &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_uchar(unsigned char &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_schar(signed char &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_float(float &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_double(double &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_longlong(long long &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+void inoutr_ulonglong(unsigned long long &INOUT_FIELD) {  INOUT_FIELD = INOUT_FIELD; }
+
+void inoutr_int2(int &INOUT_FIELD, int &INOUT_FIELD2) {  INOUT_FIELD = INOUT_FIELD; INOUT_FIELD2 = INOUT_FIELD2;}
 %}
 
 

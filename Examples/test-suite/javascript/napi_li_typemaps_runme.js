@@ -24,16 +24,16 @@ check_object(/* await */(napi_li_typemaps.out_double(22.22)), { result: undefine
 check_object(/* await */(napi_li_typemaps.outr_double(22.22)), { result: undefined, OUTPUT_FIELD: 22.22 });
 
 // Check double INOUT typemaps
-//check_object(/* await */(napi_li_typemaps.inout_double(22.22)), { result: undefined, OUTPUT_FIELD: 22.22 });
-//check_object(/* await */(napi_li_typemaps.inoutr_double(22.22)), { result: undefined, OUTPUT_FIELD: 22.22 });
+check_object(/* await */(napi_li_typemaps.inout_double(22.22)), { result: undefined, INOUT_FIELD: 22.22 });
+check_object(/* await */(napi_li_typemaps.inoutr_double(22.22)), { result: undefined, INOUT_FIELD: 22.22 });
 
 // check long long
 check(/* await */(napi_li_typemaps.in_ulonglong(20)), 20);
 check(/* await */(napi_li_typemaps.inr_ulonglong(20)), 20);
 check_object(/* await */(napi_li_typemaps.out_ulonglong(20)), { result: undefined, OUTPUT_FIELD: 20 });
 check_object(/* await */(napi_li_typemaps.outr_ulonglong(20)), { result: undefined, OUTPUT_FIELD: 20 });
-//check_object(/* await */(napi_li_typemaps.inout_ulonglong(20)), { result: undefined, OUTPUT_FIELD: 20 });
-//check_object(/* await */(napi_li_typemaps.inoutr_ulonglong(20)), { result: undefined, OUTPUT_FIELD: 20 });
+check_object(/* await */(napi_li_typemaps.inout_ulonglong(20)), { result: undefined, INOUT_FIELD: 20 });
+check_object(/* await */(napi_li_typemaps.inoutr_ulonglong(20)), { result: undefined, INOUT_FIELD: 20 });
 
 // check bools
 check(/* await */(napi_li_typemaps.in_bool(true)), true);
@@ -42,11 +42,11 @@ check_object(/* await */(napi_li_typemaps.out_bool(true)), { result: undefined, 
 check_object(/* await */(napi_li_typemaps.outr_bool(false)), { result: undefined, OUTPUT_FIELD: false });
 
 
-//check_object(/* await */(napi_li_typemaps.inout_bool(true)), [true]);
-//check_object(/* await */(napi_li_typemaps.inoutr_bool(false)), [false]);
+check_object(/* await */(napi_li_typemaps.inout_bool(true)), { result: undefined, INOUT_FIELD: true });
+check_object(/* await */(napi_li_typemaps.inoutr_bool(false)), { result: undefined, INOUT_FIELD: false });
 
 // the others
-//check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), [1, 2]);
+check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), { result: undefined, INOUT_FIELD: 1, INOUT_FIELD2: 2 });
 
 var fi = /* await */(napi_li_typemaps.out_foo(10));
 check(fi.result.a, 10);
