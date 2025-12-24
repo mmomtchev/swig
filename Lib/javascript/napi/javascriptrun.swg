@@ -49,6 +49,8 @@ SWIGRUNTIME
 int SWIG_NAPI_ConvertPacked(Napi::Value valRef, void *ptr, size_t size, swig_type_info *type);
 SWIGRUNTIME
 Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Value obj);
+SWIGRUNTIME
+Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const char *name, Napi::Value obj);
 
 // Node-API specific features
 using SWIG_NAPI_Finalizer = std::function<void()>;
