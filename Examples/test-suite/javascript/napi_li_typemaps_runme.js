@@ -46,7 +46,7 @@ check_object(/* await */(napi_li_typemaps.inout_bool(true)), { INOUT_FIELD: true
 check_object(/* await */(napi_li_typemaps.inoutr_bool(false)), { INOUT_FIELD: false });
 
 // the others
-check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), { INOUT_FIELD: 1, INOUT_FIELD2: 2 });
+check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), { INOUT_FIELD: 1, inout2: 2 });
 
 // return object
 var fi = /* await */(napi_li_typemaps.out_foo(10));

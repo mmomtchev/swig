@@ -31,6 +31,14 @@
 %apply SWIGTYPE *OUTPUT_FIELD { int *OUTPUT_FIELD2 };
 %apply SWIGTYPE &INOUT_FIELD { int &INOUT_FIELD2 };
 
+// Renaming of a field (the stop-gap solution)
+%typemap(argout) int &INOUT_FIELD2 {
+  Napi::Value js_out;
+  $typemap(out, $*1_ltype, 1=*$1, result=js_out)
+  $result = SWIG_NAPI_AppendOutputField(env, $result, "inout2", js_out);
+}
+%typemap(tsout) int &INOUT_FIELD2 "inout2: number";
+
 // Test renaming result
 %typemap(out) Foo *out_foo_status {
   Napi::Value js_out;
