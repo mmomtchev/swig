@@ -17,7 +17,7 @@
   $typemap(out, $*1_ltype, 1=*$1, result=js_out)
   $result = SWIG_NAPI_AppendOutputField(env, $result, "$1_name", js_out);
 }
-%typemap(tsout, merge="object") SWIGTYPE *OUTPUT_FIELD, SWIGTYPE &OUTPUT_FIELD "$1_name: $typemap(ts, $*1_ltype)";
+%typemap(tsout, merge="object") SWIGTYPE *OUTPUT_FIELD, SWIGTYPE &OUTPUT_FIELD "$typemap(ts, $*1_ltype)";
 
 // INOUT_FIELD
 %typemap(in) SWIGTYPE *INOUT_FIELD = SWIGTYPE *INPUT;
@@ -35,7 +35,7 @@
 %typemap(argout) int &INOUT_FIELD2 {
   Napi::Value js_out;
   $typemap(out, $*1_ltype, 1=*$1, result=js_out)
-  $result = SWIG_NAPI_AppendOutputField(env, $result, "inout2", js_out);
+  %append_output_field("inout2", js_out);
 }
 %typemap(tsout) int &INOUT_FIELD2 "inout2: number";
 
@@ -43,7 +43,7 @@
 %typemap(out) Foo *out_foo_status {
   Napi::Value js_out;
   $typemap(out, Foo*, result=js_out)
-  $result = SWIG_NAPI_AppendOutputField(env, $result, "status", js_out);
+  %append_output_field("status", js_out);
 }
 %typemap(ts) Foo *out_foo_status "status: $typemap(ts, Foo *)";
 

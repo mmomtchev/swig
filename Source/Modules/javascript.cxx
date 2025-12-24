@@ -628,7 +628,7 @@ int TYPESCRIPT::functionHandler(Node *n) {
   if (GetFlag(n, "ts:varargs")) {
     ret_type = NewString("any");
   } else if (Getattr(n, "ts:out")) {
-    String *merge = nullptr;
+    String *merge = Getattr(n, "tmap:ts:merge");
     bool first = true;
 
     ret_type = NewStringEmpty();
@@ -655,9 +655,15 @@ int TYPESCRIPT::functionHandler(Node *n) {
       }
 
       String *expanded = expandTSvars(tmap, p);
-      if (Cmp(merge, "array") == 0 || Cmp(merge, "object") == 0 ||
-          Cmp(merge, "list") == 0) {
+      if (Cmp(merge, "array") == 0 || Cmp(merge, "list") == 0) {
         if (!first) Append(ret_type, ", ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "object") == 0) {
+        if (!first) Append(ret_type, ", ");
+        if (!Strchr(expanded, ':')) {
+          Append(ret_type, Getattr(p, "name"));
+          Append(ret_type, ": ");
+        }
         Append(ret_type, expanded);
       } else if (Cmp(merge, "concat") == 0) {
         if (!first) Append(ret_type, " ");
