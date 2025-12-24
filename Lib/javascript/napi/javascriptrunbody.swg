@@ -420,7 +420,7 @@ Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const
   bool has_marker;
   NAPI_CHECK_RESULT(Napi::Symbol::For(env, "SWIG_concatenated_object"), marker);
 
-  if (result.IsUndefined()) {
+  if (result.IsUndefined() || result.IsEmpty()) {
     result_obj = Napi::Object::New(env);
     result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
   } else {

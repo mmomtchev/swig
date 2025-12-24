@@ -35,7 +35,7 @@
 %typemap(out) Foo *out_foo_status {
   Napi::Value js_out;
   $typemap(out, Foo*, result=js_out)
-  $result = SWIG_NAPI_AppendOutputField(env, env.Undefined(), "status", js_out);
+  $result = SWIG_NAPI_AppendOutputField(env, $result, "status", js_out);
 }
 %typemap(ts) Foo *out_foo_status "status: $typemap(ts, Foo *)";
 
