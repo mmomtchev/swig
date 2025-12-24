@@ -48,8 +48,7 @@ check_object(/* await */(napi_li_typemaps.outr_bool(false)), { result: undefined
 // the others
 //check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), [1, 2]);
 
-//var fi = /* await */(napi_li_typemaps.out_foo(10));
-/* @_ts-ignore : too twisted to support */
-//check(fi[0].a, 10);
-//check(fi[1], 20);
-//check(fi[2], 30);
+var fi = /* await */(napi_li_typemaps.out_foo(10));
+check(fi.result.a, 10);
+check(fi.OUTPUT_FIELD, 20);
+check(fi.OUTPUT_FIELD2, 30);

@@ -416,19 +416,21 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
 SWIGRUNTIME
 Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const char *name, Napi::Value obj) {
   Napi::Object result_obj;
-  Napi::Array props;
+  Napi::Symbol marker = Napi::Symbol::For(env, "SWIG_concatenated_object");
 
-  if (result.IsUndefined() || !result.IsObject()) {
+  if (result.IsUndefined()) {
     result_obj = Napi::Object::New(env);
     result_obj.Set("result", result);
+    result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
   } else {
     NAPI_CHECK_RESULT(result.ToObject(), result_obj);
   }
 
-  NAPI_CHECK_RESULT(result_obj.GetPropertyNames(), props);
-  if (props.Length() < 1) {
+  if (!result_obj.Has(marker)) {
+    Napi::Object tmp = result_obj;
     result_obj = Napi::Object::New(env);
-    result_obj.Set("result", result);
+    result_obj.Set("result", tmp);
+    result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
   }
 
   result_obj.Set(name, obj);

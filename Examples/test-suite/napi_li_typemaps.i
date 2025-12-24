@@ -15,7 +15,7 @@
 }
 %typemap(argout) SWIGTYPE *OUTPUT_FIELD, SWIGTYPE &OUTPUT_FIELD {
   Napi::Value js_out;
-  $typemap(out, $*1_ltype, 1=val$argnum, result=js_out)
+  $typemap(out, $*1_ltype, 1=*$1, result=js_out)
   $result = SWIG_NAPI_AppendOutputField(env, $result, "$1_name", js_out);
 }
 %typemap(tsout, merge="object") SWIGTYPE *OUTPUT_FIELD, SWIGTYPE &OUTPUT_FIELD "$1_name: $typemap(ts, $*1_ltype)";
