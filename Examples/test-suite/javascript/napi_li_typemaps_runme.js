@@ -48,7 +48,18 @@ check_object(/* await */(napi_li_typemaps.inoutr_bool(false)), { INOUT_FIELD: fa
 // the others
 check_object(/* await */(napi_li_typemaps.inoutr_int2(1, 2)), { INOUT_FIELD: 1, INOUT_FIELD2: 2 });
 
+// return object
 var fi = /* await */(napi_li_typemaps.out_foo(10));
 check(fi.result.a, 10);
 check(fi.OUTPUT_FIELD, 20);
 check(fi.OUTPUT_FIELD2, 30);
+
+// rename result
+var fi2 = /* await */(napi_li_typemaps.out_foo_status(10));
+check(fi2.status.a, 10);
+check(fi2.OUTPUT_FIELD, 20);
+check(fi2.OUTPUT_FIELD2, 30);
+
+// remove result
+var fi3 = /* await */(napi_li_typemaps.out_foo_void(10));
+check_object(fi3, { OUTPUT_FIELD: 20, OUTPUT_FIELD2: 30 });

@@ -693,7 +693,8 @@ int TYPESCRIPT::functionHandler(Node *n) {
       if (ret_tm && Len(ret_tm) && Cmp(ret_tm, "void") != 0) {
         Insert(ret_type, 0, ", ");
         Insert(ret_type, 0, ret_tm);
-        Insert(ret_type, 0, "result: ");
+        if (!Strchr(ret_tm, ':'))
+          Insert(ret_type, 0, "result: ");
       }
       Insert(ret_type, 0, "{ ");
       Append(ret_type, " }");

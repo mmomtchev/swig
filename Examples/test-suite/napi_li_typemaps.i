@@ -31,6 +31,20 @@
 %apply SWIGTYPE *OUTPUT_FIELD { int *OUTPUT_FIELD2 };
 %apply SWIGTYPE &INOUT_FIELD { int &INOUT_FIELD2 };
 
+// Test renaming result
+%typemap(out) Foo *out_foo_status {
+  Napi::Value js_out;
+  $typemap(out, Foo*, result=js_out)
+  $result = SWIG_NAPI_AppendOutputField(env, env.Undefined(), "status", js_out);
+}
+%typemap(ts) Foo *out_foo_status "status: $typemap(ts, Foo *)";
+
+// Test removing result
+%typemap(out) Foo *out_foo_void { 
+  $result = env.Undefined();
+}
+%typemap(ts) Foo *out_foo_void "void";
+
 %newobject out_foo;
 %inline %{
 
@@ -88,6 +102,27 @@ struct Foo *out_foo(int a, int *OUTPUT_FIELD, int *OUTPUT_FIELD2) {
   *OUTPUT_FIELD2 = a * 3;
   return f;
 }
+
+struct Foo *out_foo_status(int a, int *OUTPUT_FIELD, int *OUTPUT_FIELD2) {
+  struct Foo *f = new struct Foo();
+  f->a = a;
+  *OUTPUT_FIELD = a * 2;
+  struct Foo *f2 = new struct Foo();
+  f2->a = a;
+  *OUTPUT_FIELD2 = a * 3;
+  return f;
+}
+
+struct Foo *out_foo_void(int a, int *OUTPUT_FIELD, int *OUTPUT_FIELD2) {
+  struct Foo *f = new struct Foo();
+  f->a = a;
+  *OUTPUT_FIELD = a * 2;
+  struct Foo *f2 = new struct Foo();
+  f2->a = a;
+  *OUTPUT_FIELD2 = a * 3;
+  return f;
+}
+
 
 void outr_bool(bool x, bool &OUTPUT_FIELD) {  OUTPUT_FIELD = x; }
 void outr_int(int x, int &OUTPUT_FIELD) {  OUTPUT_FIELD = x; }
