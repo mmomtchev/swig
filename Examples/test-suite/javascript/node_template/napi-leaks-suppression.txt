@@ -38,7 +38,6 @@ leak:inherit_missing_wrap.cxx
 # these tests are leaking by design
 leak:li_cdata_wrap.cxx
 leak:li_cdata_cpp_wrap.cxx
-leak:li_typemaps_wrap.cxx
 leak:reference_global_vars_wrap.cxx
 leak:template_typemaps_typedef_wrap.cxx
 leak:template_typemaps_typedef2_wrap.cxx
