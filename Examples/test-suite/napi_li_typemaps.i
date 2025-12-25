@@ -52,8 +52,12 @@
   $result = env.Undefined();
 }
 %typemap(ts) Foo *out_foo_void "void";
+%typemap(ret) Foo *out_foo_void {
+  delete $1;
+}
 
 %newobject out_foo;
+%newobject out_foo_status;
 %inline %{
 
 struct Foo { int a; };
