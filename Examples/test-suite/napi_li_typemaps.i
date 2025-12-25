@@ -105,8 +105,6 @@ struct Foo *out_foo(int a, int *OUTPUT_FIELD, int *OUTPUT_FIELD2) {
   struct Foo *f = new struct Foo();
   f->a = a;
   *OUTPUT_FIELD = a * 2;
-  struct Foo *f2 = new struct Foo();
-  f2->a = a;
   *OUTPUT_FIELD2 = a * 3;
   return f;
 }
