@@ -63,3 +63,17 @@ check(fi2.OUTPUT_FIELD2, 30);
 // remove result
 var fi3 = /* await */(napi_li_typemaps.out_foo_void(10));
 check_object(fi3, { OUTPUT_FIELD: 20, OUTPUT_FIELD2: 30 });
+
+// real world example
+var r = /* await */(napi_li_typemaps.return_multiple_values(-1));
+check_object(r, { value1: 1, value2: -2, value3: -1 });
+r = /* await */(napi_li_typemaps.return_multiple_values(1));
+check_object(r, { value1: -1, value2: true, value3: 1 });
+var pass = false;
+try {
+  /* await */(napi_li_typemaps.return_multiple_values(0));
+} catch (e) {
+  if (e.message.match(/Zero/))
+    pass = true;
+}
+if (!pass) throw new Error('Did not throw');

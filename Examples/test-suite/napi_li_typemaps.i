@@ -178,6 +178,49 @@ void inoutr_ulonglong(unsigned long long &INOUT_FIELD) {  INOUT_FIELD = INOUT_FI
 void inoutr_int2(int &INOUT_FIELD, int &INOUT_FIELD2) {  INOUT_FIELD = INOUT_FIELD; INOUT_FIELD2 = INOUT_FIELD2;}
 %}
 
+// special handling
+// return { value1: number, value2: number | boolean, value3: number }
+//
+
+// Generic handling for those arguments
+%apply SWIGTYPE *INOUT_FIELD { int *value1 };
+%apply SWIGTYPE *OUTPUT_FIELD { int *value3 };
+%typemap(in) bool *value2b = SWIGTYPE *OUTPUT_FIELD;
+%typemap(in) int *value2i = SWIGTYPE *OUTPUT_FIELD;
+
+// Specific handling for the value2 pair
+%typemap(argout) (bool *value2b, int *value2i) {
+  Napi::Value js_out;
+  if (*$1) {
+    $typemap(out, bool, 1=*$1, result=js_out)
+  } else {
+    $typemap(out, int, 1=*$2, result=js_out)
+  }
+  %append_output_field("value2", js_out);
+}
+%typemap(tsout, merge="object") (bool *value2b, int *value2i) "value2: number | boolean";
+%typemap(out) int return_multiple_values {
+  if ($1 < 0)
+    SWIG_Raise("Zero");
+}
+%typemap(ts) int return_multiple_values "void";
+%inline %{
+int return_multiple_values(int *value1, bool *value2b, int *value2i, int *value3) {
+  if (*value1 > 0) {
+    *value2b = true;
+    *value2i = 2;
+  } else if (*value1 < 0) {
+    *value2b = false;
+    *value2i = -2;
+  } else {
+    return -1;
+  }
+  *value3 = *value1;
+  *value1 = -*value1;
+  return 0;
+}
+%}
+
 
 
 
