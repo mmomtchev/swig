@@ -56,8 +56,8 @@ LANG=-python
 # Note: -module overrides %module in the .i file.
 MODULE_OPTION=-module $*
 nomodule.ctest: MODULE_OPTION =
-napi_typescript_typemaps_mismatch1.cpptest: LANG=-javascript -napi -typescript
-napi_typescript_typemaps_mismatch2.cpptest: LANG=-javascript -napi -typescript
+cpp_napi_typescript_typemaps_mismatch1.cpptest: LANG=-javascript -napi -typescript
+cpp_napi_typescript_typemaps_mismatch2.cpptest: LANG=-javascript -napi -typescript
 
 # Portable dos2unix / fromdos for stripping CR
 FROMDOS       = tr -d '\r'
