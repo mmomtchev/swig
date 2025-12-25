@@ -1,0 +1,1 @@
+napi_typescript_typemaps_mismatch1.i:7: Error: Mismatched merging strategies in 'tsout' typemap: object != array

@@ -183,10 +183,10 @@ void inoutr_int2(int &INOUT_FIELD, int &INOUT_FIELD2) {  INOUT_FIELD = INOUT_FIE
 // Generic handling for those arguments
 %apply SWIGTYPE *INOUT_FIELD { int *value1 };
 %apply SWIGTYPE *OUTPUT_FIELD { int *value3 };
-%typemap(in) bool *value2b = SWIGTYPE *OUTPUT_FIELD;
-%typemap(in) int *value2i = SWIGTYPE *OUTPUT_FIELD;
 
 // Specific handling for the value2 pair
+%typemap(in) bool *value2b = SWIGTYPE *OUTPUT_FIELD;
+%typemap(in) int *value2i = SWIGTYPE *OUTPUT_FIELD;
 %typemap(argout) (bool *value2b, int *value2i) {
   Napi::Value js_out;
   if (*$1) {
@@ -201,7 +201,7 @@ void inoutr_int2(int &INOUT_FIELD, int &INOUT_FIELD2) {  INOUT_FIELD = INOUT_FIE
   if ($1 < 0)
     SWIG_Raise("Zero");
 }
-%typemap(ts) int return_multiple_values "void";
+%typemap(ts, marge="object") int return_multiple_values "void";
 %inline %{
 int return_multiple_values(int *value1, bool *value2b, int *value2i, int *value3) {
   if (*value1 > 0) {
@@ -218,7 +218,3 @@ int return_multiple_values(int *value1, bool *value2b, int *value2i, int *value3
   return 0;
 }
 %}
-
-
-
-

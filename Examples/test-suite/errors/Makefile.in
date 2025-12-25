@@ -49,10 +49,15 @@ include $(srcdir)/../common.mk
 # whatever we do here.
 $(DOXYGEN_ERROR_TEST_CASES): SWIGOPT += -doxygen
 
+# Most tests use Python
+LANG=-python
+
 # Unique module names are obtained from the .i file name (required for parallel make).
 # Note: -module overrides %module in the .i file.
 MODULE_OPTION=-module $*
 nomodule.ctest: MODULE_OPTION =
+napi_typescript_typemaps_mismatch1.cpptest: LANG=-javascript -napi -typescript
+napi_typescript_typemaps_mismatch2.cpptest: LANG=-javascript -napi -typescript
 
 # Portable dos2unix / fromdos for stripping CR
 FROMDOS       = tr -d '\r'
@@ -63,12 +68,12 @@ STRIP_SRCDIR = sed -e 's|\\|/|g' -e 's|^$(SRCDIR)||'
 # Rules for the different types of tests
 %.cpptest:
 	$(ECHO_PROGRESS) "$(ACTION)ing errors testcase $*"
-	-$(SWIGINVOKE) -c++ -python -Wall -Fstandard $(MODULE_OPTION) $(SWIGOPT) $(SRCDIR)$*.i 2>&1 | $(FROMDOS) | $(STRIP_SRCDIR) > $*.$(ERROR_EXT)
+	-$(SWIGINVOKE) -c++ ${LANG} -Wall -Fstandard $(MODULE_OPTION) $(SWIGOPT) $(SRCDIR)$*.i 2>&1 | $(FROMDOS) | $(STRIP_SRCDIR) > $*.$(ERROR_EXT)
 	$(COMPILETOOL) diff -c $(SRCDIR)$*.stderr $*.$(ERROR_EXT)
 
 %.ctest:
 	$(ECHO_PROGRESS) "$(ACTION)ing errors testcase $*"
-	-$(SWIGINVOKE) -python -Wall -Fstandard $(MODULE_OPTION) $(SWIGOPT) $(SRCDIR)$*.i 2>&1 | $(FROMDOS) | $(STRIP_SRCDIR) > $*.$(ERROR_EXT)
+	-$(SWIGINVOKE) ${LANG} -Wall -Fstandard $(MODULE_OPTION) $(SWIGOPT) $(SRCDIR)$*.i 2>&1 | $(FROMDOS) | $(STRIP_SRCDIR) > $*.$(ERROR_EXT)
 	$(COMPILETOOL) diff -c $(SRCDIR)$*.stderr $*.$(ERROR_EXT)
 
 %.clean:
