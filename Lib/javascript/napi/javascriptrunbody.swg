@@ -425,13 +425,12 @@ Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const
     result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
   } else {
     NAPI_CHECK_RESULT(result.ToObject(), result_obj);
-  }
-
-  NAPI_CHECK_RESULT(result_obj.Has(marker), has_marker);
-  if (!has_marker) {
-    result_obj = Napi::Object::New(env);
-    result_obj.Set("result", result);
-    result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
+    NAPI_CHECK_RESULT(result_obj.Has(marker), has_marker);
+    if (!has_marker) {
+      result_obj = Napi::Object::New(env);
+      result_obj.Set("result", result);
+      result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
+    }
   }
 
   result_obj.Set(name, obj);
