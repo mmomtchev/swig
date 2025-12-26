@@ -1415,7 +1415,7 @@ Another potential weakness of the async framework is thread starvation due to th
 <pre>
 %typemap(ts) char*, std::string, std::string *, std::string &   "string";
 %typemap(ts) bool                                               "boolean";
-%typemap(ts) float, double                                       "number";</pre>
+%typemap(ts) float, double                                      "number";</pre>
 </div>
 <p>
 All valid TypeScript type manipulations can be used in the typemap - including generics, unions, intersection or even <code>infer</code>.</p>
