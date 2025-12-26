@@ -429,9 +429,8 @@ Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const
 
   NAPI_CHECK_RESULT(result_obj.Has(marker), has_marker);
   if (!has_marker) {
-    Napi::Object tmp = result_obj;
     result_obj = Napi::Object::New(env);
-    result_obj.Set("result", tmp);
+    result_obj.Set("result", result);
     result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
   }
 

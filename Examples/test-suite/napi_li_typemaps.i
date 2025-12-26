@@ -104,6 +104,9 @@ void out_double(double x, double *OUTPUT_FIELD) {  *OUTPUT_FIELD = x; }
 void out_longlong(long long x, long long *OUTPUT_FIELD) {  *OUTPUT_FIELD = x; }
 void out_ulonglong(unsigned long long x, unsigned long long *OUTPUT_FIELD) {  *OUTPUT_FIELD = x; }
 
+/* Test with non-object */
+bool ret_bool(bool x, bool *OUTPUT_FIELD) { *OUTPUT_FIELD = x; return x; }
+
 /* Tests a returning a wrapped pointer and an OUTPUT_FIELD argument */
 struct Foo *out_foo(int a, int *OUTPUT_FIELD, int *OUTPUT_FIELD2) {
   struct Foo *f = new struct Foo();
