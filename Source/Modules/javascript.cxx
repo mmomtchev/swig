@@ -627,10 +627,88 @@ int TYPESCRIPT::functionHandler(Node *n) {
   String *ret_type = NULL;
   if (GetFlag(n, "ts:varargs")) {
     ret_type = NewString("any");
-  } else if (GetFlag(n, "ts:out")) {
-    ret_type = expandTSvars(Getattr(n, "ts:out"), n);
-  } else {
+  } else if (Getattr(n, "ts:out")) {
+    String *merge = Getattr(n, "tmap:ts:merge");
+    bool first = true;
+
+    ret_type = NewStringEmpty();
+
+    Iterator tsout = First(Getattr(n, "ts:out"));
+    while (tsout.item) {
+      Parm *p = tsout.item;
+      String *tmap = Getattr(p, "tmap:tsout");
+      String *current_merge = Getattr(p, "tmap:tsout:merge");
+      if (!merge && current_merge)
+        merge = current_merge;
+      if (current_merge && Cmp(merge, current_merge) != 0) {
+        Swig_error(Getfile(p), Getline(p),
+            "Mismatched merging strategies in 'tsout' typemap: %s != %s\n",
+            merge, current_merge);
+        return SWIG_ERROR;
+      }
+      if (!merge) {
+        Swig_warning(
+            WARN_LANG_DEPRECATED, Getfile(p), Getline(p),
+            "Using 'tsout' typemaps without a merging strategy is deprecated"
+            " and will stop working in a future version\n");
+        merge = NewString("overwrite");
+      }
+
+      String *expanded = expandTSvars(tmap, p);
+      if (Cmp(merge, "array") == 0 || Cmp(merge, "list") == 0) {
+        if (!first) Append(ret_type, ", ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "object") == 0) {
+        if (!first) Append(ret_type, ", ");
+        if (!Strchr(expanded, ':')) {
+          Append(ret_type, Getattr(p, "name"));
+          Append(ret_type, ": ");
+        }
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "concat") == 0) {
+        if (!first) Append(ret_type, " ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "intersection") == 0) {
+        if (!first) Append(ret_type, " & ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "union") == 0) {
+        if (!first) Append(ret_type, " | ");
+        Append(ret_type, expanded);
+      } else if (Cmp(merge, "overwrite") == 0) {
+        ret_type = expanded;
+      } else {
+        Swig_error(Getfile(p), Getline(p),
+            "Invalid merging strategy in 'tsout' typemap: %s\n",
+            merge);
+        return SWIG_ERROR;
+      }
+
+      tsout = Next(tsout);
+      first = false;
+    }
+
+    if (Cmp(merge, "array") == 0) {
+      if (ret_tm && Len(ret_tm) && Cmp(ret_tm, "void") != 0) {
+        Insert(ret_type, 0, ", ");
+        Insert(ret_type, 0, ret_tm);
+        Insert(ret_type, 0, "result: ");
+      }
+      Insert(ret_type, 0, "[ ");
+      Append(ret_type, " ]");
+    } else if (Cmp(merge, "object") == 0) {
+      if (ret_tm && Len(ret_tm) && Cmp(ret_tm, "void") != 0) {
+        Insert(ret_type, 0, ", ");
+        Insert(ret_type, 0, ret_tm);
+        if (!Strchr(ret_tm, ':'))
+          Insert(ret_type, 0, "result: ");
+      }
+      Insert(ret_type, 0, "{ ");
+      Append(ret_type, " }");
+    }
+  } else if (ret_tm) {
     ret_type = expandTSvars(ret_tm, n);
+  } else {
+    ret_type = NewString("any");
   }
   Delete(ret_tm);
 
@@ -968,7 +1046,10 @@ String *TYPESCRIPT::emitArguments(Node *n) {
     String *tm = Getattr(p, "tmap:ts");
     String *tm_out = Getattr(p, "tmap:tsout");
     if (tm_out) {
-      Setattr(n, "ts:out", tm_out);
+      if (!Getattr(n, "ts:out")) {
+        Setattr(n, "ts:out", NewList());
+      }
+      Append(Getattr(n, "ts:out"), p);
     }
     if (tm != NULL && Getattr(p, "tmap:in") &&
         !checkAttribute(p, "tmap:in:numinputs", "0")) {

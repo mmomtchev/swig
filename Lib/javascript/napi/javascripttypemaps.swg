@@ -41,6 +41,7 @@
 
 /* append output */
 #define SWIG_AppendOutput(result, obj)  SWIG_NAPI_AppendOutput(env, result, obj)
+#define SWIG_AppendOutputField(result, name, obj)  SWIG_NAPI_AppendOutputField(env, result, name, obj)
 
 /* set constant */
 #define SWIG_SetConstant(name, obj)

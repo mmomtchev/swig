@@ -406,3 +406,38 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
   arr.Set(arr.Length(), obj);
   return arr;
 }
+
+
+/* ---------------------------------------------------------------------------
+ * JavaScript specific support for adding a named field in a returned object
+ *
+ * ---------------------------------------------------------------------------*/
+
+SWIGRUNTIME
+Napi::Value SWIG_NAPI_AppendOutputField(Napi::Env env, Napi::Value result, const char *name, Napi::Value obj) {
+  Napi::Object result_obj;
+  Napi::Symbol marker;
+  bool has_marker;
+  NAPI_CHECK_RESULT(Napi::Symbol::For(env, "SWIG_concatenated_object"), marker);
+
+  if (result.IsUndefined() || result.IsEmpty()) {
+    result_obj = Napi::Object::New(env);
+    result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
+  } else {
+    NAPI_CHECK_RESULT(result.ToObject(), result_obj);
+    NAPI_CHECK_RESULT(result_obj.Has(marker), has_marker);
+    if (!has_marker) {
+      result_obj = Napi::Object::New(env);
+      result_obj.Set("result", result);
+      result_obj.DefineProperty(Napi::PropertyDescriptor::Value(marker, marker));
+    }
+  }
+
+  result_obj.Set(name, obj);
+  return result_obj;
+
+#ifndef NAPI_CPP_EXCEPTIONS
+fail:
+  return Napi::Value();
+#endif
+}

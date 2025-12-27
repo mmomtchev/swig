@@ -222,7 +222,7 @@ namespace std {
   }
   $result = array;
 }
-%typemap(tsout)      std::vector &OUTPUT "$typemap(ts, $T0type)[]";
+%typemap(tsout, merge="overwrite")      std::vector &OUTPUT "$typemap(ts, $T0type)[]";
 
 /* --------------------*/
 /* std::vector *OUTPUT */

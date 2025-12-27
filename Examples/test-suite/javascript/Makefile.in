@@ -70,6 +70,7 @@ CPP_TEST_CASES += \
 	napi_li_std_map \
 	napi_li_std_pair \
 	napi_li_std_vector \
+	napi_li_typemaps \
 	napi_callback \
 	napi_function \
 	extend_splitting \

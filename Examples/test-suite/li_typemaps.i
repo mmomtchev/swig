@@ -56,8 +56,6 @@ struct Foo *out_foo(int a, int *OUTPUT, int *OUTPUT2) {
   struct Foo *f = new struct Foo();
   f->a = a;
   *OUTPUT = a * 2;
-  struct Foo *f2 = new struct Foo();
-  f2->a = a;
   *OUTPUT2 = a * 3;
   return f;
 }

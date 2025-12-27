@@ -4,6 +4,8 @@
  * Javascript typemaps
  * ----------------------------------------------------------------------------- */
 
+#define %append_output_field(name, obj)               $result = SWIG_AppendOutputField($result, name, obj) 
+
 %include <typemaps/swigmacros.swg>
 
 %include <javascripttypemaps.swg>
