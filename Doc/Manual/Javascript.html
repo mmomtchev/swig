@@ -988,9 +988,11 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
         // some mechanism to free this object after the last call
         // Transferring the ownership to a unique_ptr allows to handle
         // the exception case.
-        // If the function will never be deleted, you shoud also use the
+        // If the function will never be deleted, you should also use the
         // do_not_wait_for_destruction argument of SWIG_NAPI_Callback to
         // signal that the event loop should not wait for its destruction.
+        // Do not cut corners and do not store it in a static variable!
+        // It will make your module crash when used with worker_threads!
         auto fn_ = std::unique_ptr&lt;cb_t&gt;(reinterpret_cast&lt;cb_t*&gt;(data));
         auto result = (*fn_)(arg1, arg2);
         return result;
