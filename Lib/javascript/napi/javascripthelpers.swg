@@ -324,7 +324,8 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   // can be called only on the JS thread
   std::function<void(Napi::Env, std::vector<napi_value> &, ARGS...)> tmaps_in,
   std::function<RET(Napi::Env, Napi::Value)> tmap_out,
-  Napi::Value this_value
+  Napi::Value this_value,
+  bool do_not_wait_for_destruction = false
 ) {
   Napi::Env env{js_callback.Env()};
   if (!js_callback.IsFunction())
@@ -376,6 +377,8 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
     0,
     1
   );
+  if (do_not_wait_for_destruction)
+    napi_context->tsfn.Unref(env);
 #endif
   napi_context->jsfn_ref = Napi::Persistent(js_callback.As<Napi::Function>());
   napi_context->this_value_ref = Napi::Persistent(this_value);

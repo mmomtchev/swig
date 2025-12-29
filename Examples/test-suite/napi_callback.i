@@ -61,7 +61,8 @@
     ),
     /// Empty output typemap
     [](Napi::Env env, Napi::Value) -> void {},
-    env.Global()
+    env.Global(),
+    true
   );
 }
 
@@ -119,6 +120,7 @@ std::string GiveMeFive(std::function<std::string(int, const std::string &)> give
 std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &)> giver);
 std::string GiveMeFive_C(std::string (*giver)(void *, int, const std::string &), void *context);
 void JustCall(std::function<void()> cb);
+void PermanentWithoutDelete(std::function<void()> cb);
 %}
 
 // The function definitions -> goes to the code
@@ -135,10 +137,26 @@ void JustCall(std::function<void()> cb) {
   cb();
 }
 
+void JustCall_C(void (*cb)(void *), void *context) {
+  cb(context);
+}
+
 std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &)> giver) {
   std::string r = "";
   for (size_t i = 0; i < 10; i++)
     r += giver(i, ".");
   return r;
+}
+
+void PermanentWithoutDelete(std::function<void()> cb) {
+  // This leaks memory, in the real world this function will have to be stored
+  // somewhere - the environment instance context is a very good choice.
+  using cb_t = decltype(cb);
+  auto *copy = new cb_t{cb};
+  JustCall_C([](void *data) -> void {
+      auto cb_ = reinterpret_cast<cb_t*>(data);
+      (*cb_)();
+    },
+    copy);
 }
 %}

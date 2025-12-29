@@ -41,7 +41,6 @@
 <li><a href="#Javascript_C_arrays_example"><code>C</code> (flat pointer) arrays</a>
 <li><a href="#Javascript_smart_pointer_example">Smart pointers</a>
 <li><a href="#Javascript_function_example"><code>std::function</code> and plain C functions pointers</a>
-<li><a href="#Javascript_argout_example">Return values in arguments</a>
 </ul>
 <li><a href="#Javascript_exceptions">Exceptions</a>
 <ul>
@@ -988,7 +987,10 @@ std::string fn_C_ptr_wrapper(std::function&lt;std::string(int, const std::string
         // If the function will be called repeatedly, there must be
         // some mechanism to free this object after the last call
         // Transferring the ownership to a unique_ptr allows to handle
-        // the exception case
+        // the exception case.
+        // If the function will never be deleted, you shoud also use the
+        // do_not_wait_for_destruction argument of SWIG_NAPI_Callback to
+        // signal that the event loop should not wait for its destruction.
         auto fn_ = std::unique_ptr&lt;cb_t&gt;(reinterpret_cast&lt;cb_t*&gt;(data));
         auto result = (*fn_)(arg1, arg2);
         return result;
@@ -1066,75 +1068,6 @@ struct CWrappedFuncPtr {
 </div>
 
 <p>The first parameter is the name of the type as it will appear in JavaScript, the second one is the return type and the rest are the function arguments.</p>
-
-<H3><a name="Javascript_argout_example">28.4.8 Return values in arguments</a></H3>
-
-<p>A very common design pattern in C and C++ is to use function arguments to return multiple values - typically by using a raw pointer in C or a reference in C++. In languages such as JavaScript, this is usually done by returning an array or an object with named fields.</p>
-
-<p>In SWIG, this feature is covered by the <code>argout</code> typemaps. SWIG provides built-in helpers to deal with the three possible situations: an argument replaces the return value, an argument is added to the returned array or an argument is added to the returned object with named fields.</p>
-
-<p>Most built-in typemaps support this transformation out of the box - by using the <code>OUTPUT</code> variable name. <code>OUTPUT</code> is somewhat automatic - if the function returns <code>void</code>, the first <code>OUTPUT</code> argument will replace the return value. If the function returns a value or if there are multiple return arguments, it will return an array. The following will apply this handling to any <code>int *out_value</code> arguments:</p>
-
-<div class="code">
-  <pre>
-%apply int *OUTPUT { int *out_value };</pre>
-</div>
-
-<p>Other transformations require custom typemaps using the various built-in handlers. For example the following typemap, which is a built-in typemap, transforms any arguments of the form <code>void **buffer_data, size_t *buffer_len</code> into a return value, replacing whatever return value the original function had <em>(this example typemap does not support being built without C++ exceptions enabled for simplicity)</em>:</p>
-
-<div class="code">
-  <pre>
-%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) ($*1_ltype temp_data, size_t temp_len) {
-  $1 = &temp_data;
-  $2 = &temp_len;
-}
-%typemap(argout) (void **buffer_data, size_t *buffer_len) {
-  if (*$1 != NULL) {
-    Napi::Buffer<char> buf = Napi::Buffer<char>::Copy(env, static_cast<char *>(*$1), *$2);
-    $result = buf;
-  } else {
-    $result = env.Null();
-  }
-}</pre>
-</div>
-
-<p>Manually adding the value to a return array can be done with the <code>%append_output</code> built-in macro which takes a <code>Napi::Value</code> argument - this will recreate the behaviour of the <code>OUTPUT</code> typemaps:</p>
-
-<div class="code">
-  <pre>
-%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) ($*1_ltype temp_data, size_t temp_len) {
-  $1 = &temp_data;
-  $2 = &temp_len;
-}
-%typemap(argout) (void **buffer_data, size_t *buffer_len) {
-  if (*$1 != NULL) {
-    Napi::Buffer<char> buf = Napi::Buffer<char>::Copy(env, static_cast<char *>(*$1), *$2);
-    %append_output(buf);
-  } else {
-    SWIG_Raise("Function failed");
-  }
-}</pre>
-</div>
-
-<p>In order to create a named field in a return object, the macro <code>%append_output_field</code> should be used:</p>
-
-<div class="code">
-  <pre>
-%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) ($*1_ltype temp_data, size_t temp_len) {
-  $1 = &temp_data;
-  $2 = &temp_len;
-}
-%typemap(argout) (void **buffer_data, size_t *buffer_len) {
-  if (*$1 != NULL) {
-    Napi::Buffer<char> buf = Napi::Buffer<char>::Copy(env, static_cast<char *>(*$1), *$2);
-    %append_output_field("buffer", buf);
-  } else {
-    SWIG_Raise("Function failed");
-  }
-}</pre>
-</div>
-
-<p>In this case, the original return value of the function will be placed in a field named <code>result</code> with <code>buffer</code> being a second field. If the original return value is <code>void</code>, then only <code>buffer</code> will be present. In order to use a different name for the original return value of the function, an <code>out</code> typemap with the function return type and eventually its name should use the same macro to preprocess its return value. Refer to the <a href="#Typescript">TypeScript section</a> for more information on handling the TypeScript types in this case.</p>
 
 <H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
 
@@ -1421,32 +1354,15 @@ Another potential weakness of the async framework is thread starvation due to th
 All valid TypeScript type manipulations can be used in the typemap - including generics, unions, intersection or even <code>infer</code>.</p>
 </li>
 <li>
-<p>The <code>tsout</code> typemap modifies the return type of a function that has an argument of the specified type. Its main use is as a counterpart to an <code>argout</code> typemap that has transformed an argument into a return value. For example, the built-in Node-API typemaps for handling <code>Buffer</code> (see the section on <a href="#Javascript_Buffer_example"><code>Buffer</code></a>) TypeScript typemaps contain:</p>
+<p>The <code>tsout</code> typemap modifies the return type of a function that has an argument of the specified type. Its main use is as a counterpart to an <code>argout</code> typemap that has transformed an argument into a return value. For example, this built-in Node-API TypeScript typemaps contain:</p>
 
 <div class="code">
 <pre>
-%typemap(in, numinputs=0) (void **buffer_data, size_t *buffer_len) ($*1_ltype temp_data, size_t temp_len) {
-  $1 = &temp_data;
-  $2 = &temp_len;
-}
 %typemap(argout) (void **buffer_data, size_t *buffer_len) {
-  if (*$1 != NULL) {
-    Napi::Buffer<char> buf = Napi::Buffer<char>::Copy(env, static_cast<char *>(*$1), *$2);
-    NAPI_CHECK_RESULT(buf.As<Napi::Value>(), $result);
-  } else {
-    $result = env.Null();
-  }
+  // code to transform buffer_data / buffer_len arguments into a returned value
 }
-%typemap(tsout, merge="overwrite")  (void **buffer_data, size_t *buffer_len) "Buffer";</pre>
+%typemap(tsout)  (void **buffer_data, size_t *buffer_len) "Buffer";</pre>
 </div>
-
-<p>In this example the <code>Buffer</code> object replaces the original return value of the function. The <code>merge</code> argument tells the TypeScript generator how the <code>argout</code> map handles this return value. It can either replace the original value, create an array or create an object:</p>
-<div class="code">
-  <pre>
-%typemap(tsout, merge="array") (void **buffer1_data, size_t *buffer1_len) "Buffer";</pre>
-%typemap(tsout, merge="object") (void **buffer2_data, size_t *buffer2_len) "buf: Buffer";</pre>
-</div>
-<p>Note that the TypeScript map only signals the TypeScript generator the behaviour of the <code>argout</code> map, which is the one that actually handles the return value. If the merging strategy is <code>array</code>, then the type returned by the function will be <code>[ T, Buffer ]</code> with <code>T</code> being the original returned type. If it is an object, it will be <code>{ result: T, buf: Buffer }</code>. When constructing an object the field name is optional - if it is present it will be used, otherwise the name of the first argument will be used. If a function has multiple <code>argout</code>/<code>tsout</code> typemaps applied to different arguments, these must use the same merging strategy, otherwise SWIG will raise an error when generating the code. <code>ts</code> typemaps usually do not have a merging strategy. If a <code>ts</code> typemap contains a merging strategy, its only meaning will be to raise an error when it is used together with incompatible <code>tsout</code> typemaps. Refer to the <a href="#Javascript_argout_example">section about handling returned values in arguments</a> for an in-depth discussion of the <code>argout</code> typemaps.</p>
 </li>
 </ul>
 
