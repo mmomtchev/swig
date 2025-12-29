@@ -16,9 +16,9 @@
   }
 }
 
-// The async unit testing always defines this
-// Use it to test if the build passes with native threads disabled
-#ifndef SWIG_NAPI_FULL_LOCKING
+// The async unit testing defines this
+// Used to test if the build passes with native threads disabled
+#ifndef SWIG_ASYNC_TESTING
 %begin %{
 #define NAPI_HAS_THREADS 0
 %}

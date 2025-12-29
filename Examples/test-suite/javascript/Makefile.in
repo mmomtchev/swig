@@ -120,7 +120,7 @@ inherit_missing.cpptest: SWIGOPT += -w351
 smart_pointer_static.cpptest: SWIGOPT += -w351 -w516
 
 ifneq (, $(ASYNC))
-	SWIGOPT += -async
+	SWIGOPT += -async -DSWIG_ASYNC_TESTING=1
 endif
 ifneq (, $(ASYNC_LOCKING))
 	ASYNC = 1
