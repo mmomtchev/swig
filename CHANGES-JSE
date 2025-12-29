@@ -7,6 +7,19 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.12
 ===========================
 
+2025-12-27  mmomtchev
+            [TypeScript] Significant overhaul of the `tsout` typemaps in order
+            to support automatic type generation together with
+            `%append_output_field`
+            [mmomtchev/swig#165](https://github.com/mmomtchev/swig/issues/165)
+            Old `tsout` typemaps still work, but emit a warning that they
+            must be updated with the new `merge` argument
+
+2025-12-27  mmomtchev
+            [JavaScript] Provide `%apppend_output_field` macro for adding
+            additional values to a structured object with named fields
+            [mmomtchev/swig#166](https://github.com/mmomtchev/swig/issues/166)
+
 2025-12-20  mmomtchev
             [JavaScript] Optional support for basic finalizers to be enabled
             at module compile time
