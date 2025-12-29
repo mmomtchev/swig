@@ -175,8 +175,10 @@ struct SWIG_NAPI_Callback_Call_Context {
   // The value returned to C++ and its barrier
   typename SWIG_remove_void<RET>::type c_ret;
   std::string error_msg;
+#if NAPI_HAS_THREADS
   std::mutex m;
   std::condition_variable cv;
+#endif
   bool ready;
   bool error;
 
@@ -277,10 +279,12 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
     call_context->error_msg = err.what();
   }
 
+#if NAPI_HAS_THREADS
   // Unblock the C++ thread (same thing as above)
   std::lock_guard<std::mutex> lock{call_context->m};
   call_context->ready = true;
   call_context->cv.notify_one();
+#endif
 }
 
 // A JS trampoline is an std::function with a custom destructor
@@ -417,15 +421,15 @@ std::function<RET(ARGS...)> SWIG_NAPI_Callback(
       // Asynchronous call
       napi_context->tsfn.BlockingCall(call_context.get());
     }
+    // This is the main thread barrier
+    std::unique_lock<std::mutex> lock{call_context->m};
+    call_context->cv.wait(lock, [&call_context]{ return call_context->ready; });
+
 #else // NAPI_HAS_THREADS
     // Only synchronous call
     Napi::Function js_cb = napi_context->jsfn_ref.Value();
     SWIG_NAPI_Callback_CallJS(js_cb.Env(), js_cb, &napi_context->this_value_ref, call_context.get());
 #endif // NAPI_HAS_THREADS
-
-    // This is the main thread barrier
-    std::unique_lock<std::mutex> lock{call_context->m};
-    call_context->cv.wait(lock, [&call_context]{ return call_context->ready; });
 
     if (call_context->error) throw std::runtime_error{call_context->error_msg};
 
