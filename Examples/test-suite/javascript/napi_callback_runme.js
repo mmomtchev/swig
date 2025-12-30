@@ -153,3 +153,12 @@ const napi_callback = require('napi_callback');
   }
   if (!third) throw new Error('Third exception not correctly propagated');
 }
+
+
+// Permanent callback that is never deleted
+let didCall = false;
+/* await */(napi_callback.PermanentWithoutDelete(/* async */() => {
+  didCall = true;
+}));
+if (!didCall)
+  throw new Error(`permanent did not call`);
