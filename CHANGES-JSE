@@ -4,8 +4,18 @@ See the RELEASENOTES file for a summary of changes in each release.
 Issue # numbers mentioned below can be found on Github. For more details, add
 the issue number to the end of the URL: https://github.com/swig/swig/issues/
 
-Version 5.0.12
+Version 5.0.12 (30 Dec 2025)
 ===========================
+
+2025-12-29  mmomtchev
+            [JavaScript] Fix building on Linux with the `SWIG_NAPI_Callback``
+            fragment and no native threads
+            [mmomtchev/swig#172](https://github.com/mmomtchev/swig/issues/172)
+
+2025-12-29  mmomtchev
+            [JavaScript] Support permanent `SWIG_NAPI_Callback` that are never
+            deleted and do not prevent the event loop from exiting
+            [mmomtchev/swig#171](https://github.com/mmomtchev/swig/issues/171)
 
 2025-12-27  mmomtchev
             [TypeScript] Significant overhaul of the `tsout` typemaps in order
