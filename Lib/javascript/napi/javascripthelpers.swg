@@ -320,8 +320,6 @@ void SWIG_NAPI_Callback_CallJS(Napi::Env env,
 //     the local variables is destroyed
 //
 template <typename RET, typename ...ARGS>
-// TODO: Update the SWIG build process with the new node-addon-api
-// gyp files, they define now the default visibility
 std::function<RET(ARGS...)> SWIG_NAPI_Callback(
   Napi::Value js_callback,
   // These perform argument and return value conversions and
