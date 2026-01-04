@@ -187,7 +187,7 @@ static_assert(std::is_same<std::string, std::remove_cv<std::remove_reference<$T0
   }
   $result = obj;
 }
-%typemap(ts)        std::map RETURN = std::map const &INPUT;
+%typemap(ts)        std::map &RETURN = std::map const &INPUT;
 
 /* --------------------*/
 /* std::map *RETURN    */
