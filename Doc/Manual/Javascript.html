@@ -221,14 +221,24 @@ $ sudo npm install -g node-gyp</pre>
 <div class="code">
 <pre>
 {
-  "targets": [
+  &quot;targets&quot;: [
     {
-      "target_name": "example",
-      "sources": [ "example.cxx", "example_wrap.cxx" ]
+      &quot;target_name&quot;: &quot;example&quot;,
+      &quot;sources&quot;: [ &quot;example.cxx&quot;, &quot;example_wrap.cxx&quot; ],
+      &quot;cflags_cc&quot;: [ &quot;-fvisibility=hidden&quot; ],
+      &quot;xcode_settings&quot;: {
+        &quot;OTHER_CPLUSPLUSFLAGS&quot;: [ &quot;-fvisibility=hidden&quot; ]
+      }
     }
   ]
 }</pre>
 </div>
+<p>It is also strongly recommended to set the default GNU visibility to <code>hidden</code> with GNU C/C++ compilers such as <code>gcc</code> and <code>clang</code> using the
+  <code>-fvisibility=hidden</code> name. This is especially important on macOS where the dynamic linker will treat the Node.js shared module symbols as being part of a global namespace. Otherwise,
+  multiple modules defining the same symbols will be sharing code in an unpredictable manner. On Linux, Node.js itself uses the <code>RTLD_LOCAL</code> <code>dlopen</code> flag to prevent this
+  behaviour. On Windows, DLLs never share symbols unless specifically linked together at compile time. Unlike other SWIG modules, Node-API modules are currently completely independant and do not share
+  types as there is no way to make this to work for WASM.</p>
+
 <p>First create the wrapper using SWIG:</p>
 <div class="shell">
 <pre>
