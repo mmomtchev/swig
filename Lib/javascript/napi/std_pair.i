@@ -44,27 +44,27 @@ namespace std {
 //  * for values -> copies (objects must be copyable)
 //  * for references -> references to the JS objects
 //  * for pointers -> pointers to the JS objects
-%typemap(in)        std::pair const &INPUT ($*ltype c_val) {
+%typemap(in)        std::pair const &INPUT ($*ltype c_pair_val) {
   if ($input.IsArray() && $input.As<Napi::Array>().Length() == 2) {
     $1 = new $*ltype;
     Napi::Array array = $input.As<Napi::Array>();
     {
-      Napi::Value js_val = array.Get(static_cast<uint32_t>(0));
-      $typemap(in, $T0type, input=js_val, 1=c_val.first, argnum=pair first element);
-      $1->first = SWIG_STD_MOVE(c_val.first);
+      Napi::Value js_pair_val = array.Get(static_cast<uint32_t>(0));
+      $typemap(in, $T0type, input=js_pair_val, 1=c_pair_val.first, argnum=pair first element);
+      $1->first = SWIG_STD_MOVE(c_pair_val.first);
     }
     {
-      Napi::Value js_val = array.Get(static_cast<uint32_t>(1));
-      $typemap(in, $T1type, input=js_val, 1=c_val.second, argnum=pair second element);
-      $1->second = SWIG_STD_MOVE(c_val.second);
+      Napi::Value js_pair_val = array.Get(static_cast<uint32_t>(1));
+      $typemap(in, $T1type, input=js_pair_val, 1=c_pair_val.second, argnum=pair second element);
+      $1->second = SWIG_STD_MOVE(c_pair_val.second);
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array[2]", $symname, $argnum);
   }
 }
 %typemap(freearg, match="in")   std::pair const &INPUT {
-  $typemap(freearg, $T0type, 1=$c_val$argnum.first);
-  $typemap(freearg, $T1type, 1=$c_val$argnum.second);
+  $typemap(freearg, $T0type, 1=$c_pair_val$argnum.first);
+  $typemap(freearg, $T1type, 1=$c_pair_val$argnum.second);
   delete $1;
 }
 %typemap(ts)        std::pair const &INPUT "[ $typemap(ts, $T0type), $typemap(ts, $T1type) ]";
@@ -86,26 +86,26 @@ namespace std {
 //  * for pointers -> pointers to the JS objects
 // (all input arguments are protected from the GC for the duration of the operation
 // and this includes the JS array that contains the references)
-%typemap(in)        std::pair INPUT ($ltype c_val) {
+%typemap(in)        std::pair INPUT ($ltype c_pair_val) {
   if ($input.IsArray() && $input.As<Napi::Array>().Length() == 2) {
     Napi::Array array = $input.As<Napi::Array>();
     {
-      Napi::Value js_val = array.Get(static_cast<uint32_t>(0));
-      $typemap(in, $T0type, input=js_val, 1=c_val.first, argnum=pair first element);
-      $1.first = SWIG_STD_MOVE(c_val.first);
+      Napi::Value js_pair_val = array.Get(static_cast<uint32_t>(0));
+      $typemap(in, $T0type, input=js_pair_val, 1=c_pair_val.first, argnum=pair first element);
+      $1.first = SWIG_STD_MOVE(c_pair_val.first);
     }
     {
-      Napi::Value js_val = array.Get(static_cast<uint32_t>(1));
-      $typemap(in, $T1type, input=js_val, 1=c_val.second, argnum=pair second element);
-      $1.second = SWIG_STD_MOVE(c_val.second);
+      Napi::Value js_pair_val = array.Get(static_cast<uint32_t>(1));
+      $typemap(in, $T1type, input=js_pair_val, 1=c_pair_val.second, argnum=pair second element);
+      $1.second = SWIG_STD_MOVE(c_pair_val.second);
     }
   } else {
     %argument_fail(SWIG_TypeError, "Array[2]", $symname, $argnum);
   }
 }
 %typemap(freearg, match="in")   std::pair INPUT {
-  $typemap(freearg, $T0type, 1=c_val$argnum.first);
-  $typemap(freearg, $T1type, 1=c_val$argnum.second);
+  $typemap(freearg, $T0type, 1=c_pair_val$argnum.first);
+  $typemap(freearg, $T1type, 1=c_pair_val$argnum.second);
 }
 %typemap(ts)        std::pair INPUT = std::pair const &INPUT;
 
@@ -116,14 +116,14 @@ namespace std {
 %typemap(out)       std::pair RETURN {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    Napi::Value js_val;
-    $typemap(out, $T0type, 1=$1.first, result=js_val, argnum=pair first element);
-    array.Set(static_cast<uint32_t>(0), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T0type, 1=$1.first, result=js_pair_val, argnum=pair first element);
+    array.Set(static_cast<uint32_t>(0), js_pair_val);
   }
   {
-    Napi::Value js_val;
-    $typemap(out, $T1type, 1=$1.second, result=js_val, argnum=pair second element);
-    array.Set(static_cast<uint32_t>(1), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T1type, 1=$1.second, result=js_pair_val, argnum=pair second element);
+    array.Set(static_cast<uint32_t>(1), js_pair_val);
   }
   $result = array;
 }
@@ -136,14 +136,14 @@ namespace std {
 %typemap(out)       std::pair &RETURN {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    Napi::Value js_val;
-    $typemap(out, $T0type, 1=$1->first, result=js_val, argnum=pair first element);
-    array.Set(static_cast<uint32_t>(0), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T0type, 1=$1->first, result=js_pair_val, argnum=pair first element);
+    array.Set(static_cast<uint32_t>(0), js_pair_val);
   }
   {
-    Napi::Value js_val;
-    $typemap(out, $T1type, 1=$1->second, result=js_val, argnum=pair second element);
-    array.Set(static_cast<uint32_t>(1), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T1type, 1=$1->second, result=js_pair_val, argnum=pair second element);
+    array.Set(static_cast<uint32_t>(1), js_pair_val);
   }
   $result = array;
 }
@@ -166,14 +166,14 @@ namespace std {
 %typemap(argout)  std::pair &OUTPUT {
   Napi::Array array = Napi::Array::New(env, 2);
   {
-    Napi::Value js_val;
-    $typemap(out, $T0type, 1=_global_temp_pair.first, result=js_val, argnum=pair first element);
-    array.Set(static_cast<uint32_t>(0), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T0type, 1=_global_temp_pair.first, result=js_pair_val, argnum=pair first element);
+    array.Set(static_cast<uint32_t>(0), js_pair_val);
   }
   {
-    Napi::Value js_val;
-    $typemap(out, $T1type, 1=_global_temp_pair.second, result=js_val, argnum=pair second element);
-    array.Set(static_cast<uint32_t>(1), js_val);
+    Napi::Value js_pair_val;
+    $typemap(out, $T1type, 1=_global_temp_pair.second, result=js_pair_val, argnum=pair second element);
+    array.Set(static_cast<uint32_t>(1), js_pair_val);
   }
   $result = array;
 }
