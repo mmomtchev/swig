@@ -1464,6 +1464,16 @@ All valid TypeScript type manipulations can be used in the typemap - including g
 <p>Note that the TypeScript map only signals the TypeScript generator the behaviour of the <code>argout</code> map, which is the one that actually handles the return value. If the merging strategy is <code>array</code>, then the type returned by the function will be <code>[ T, Buffer ]</code> with <code>T</code> being the original returned type. If it is an object, it will be <code>{ result: T, buf: Buffer }</code>. When constructing an object the field name is optional - if it is present it will be used, otherwise the name of the first argument will be used. If a function has multiple <code>argout</code>/<code>tsout</code> typemaps applied to different arguments, these must use the same merging strategy, otherwise SWIG will raise an error when generating the code. <code>ts</code> typemaps usually do not have a merging strategy. If a <code>ts</code> typemap contains a merging strategy, its only meaning will be to raise an error when it is used together with incompatible <code>tsout</code> typemaps. Refer to the <a href="#Javascript_argout_example">section about handling returned values in arguments</a> for an in-depth discussion of the <code>argout</code> typemaps.</p>
 </li>
 </ul>
+<p>When TypeScript is enabled, there is an <code>%insert</code> section that can be used to manually add custom TypeScript fragments to the generated definitions:</p>
+<div class="code">
+  <pre>
+#ifdef SWIGTYPESCRIPT
+%insert("typescript") {
+export type MyNumber = number;
+}
+#endif
+</pre>
+</div>
 
 <H2><a name="Javascript_WASM">28.8 Compiling to WASM</a></H2>
 
