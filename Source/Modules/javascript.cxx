@@ -357,6 +357,8 @@ public:
   TYPESCRIPT(JSEmitter *_parent);
   virtual ~TYPESCRIPT() {}
 
+  virtual int initialize(Node *);
+
   virtual int functionHandler(Node *);
   virtual int variableHandler(Node *);
   virtual int constructorHandler(Node *);
@@ -377,6 +379,7 @@ protected:
 
 private:
   String *f_declarations, *f_current_class;
+  File *f_typescript;
   JSEmitter *parent;
   size_t enum_id;
 };
@@ -388,6 +391,27 @@ TYPESCRIPT::TYPESCRIPT(JSEmitter *_parent) :
 void TYPESCRIPT::main(int, char *[]) {
   // Add a symbol to the parser for conditional compilation
   Preprocessor_define("SWIGTYPESCRIPT 1", 0);
+}
+
+int TYPESCRIPT::initialize(Node *n) {
+  String *infile = Getattr(n, "infile");
+  String *infile_filename = Swig_file_filename(infile);
+  String *basename = Swig_file_basename(infile_filename);
+  String *typescript_filename = NewString("");
+  if (Len(SWIG_output_directory()) > 0) {
+    Printf(typescript_filename, "%s/", SWIG_output_directory());
+  }
+  Printf(typescript_filename, "%s.d.ts", basename);
+
+  f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
+  if (!f_typescript) {
+    FileErrorDisplay(f_typescript);
+    Exit(EXIT_FAILURE);
+  }
+  Swig_register_filebyname("typescript", f_typescript);
+  Swig_banner(f_typescript);
+
+  return SWIG_OK;
 }
 
 /**
@@ -488,22 +512,6 @@ String *TYPESCRIPT::promisify(String *type) {
  * Wrapper code generation essentially starts from here
  * --------------------------------------------------------------------- */
 int TYPESCRIPT::top(Node *n) {
-  String *infile = Getattr(n, "infile");
-  String *infile_filename = Swig_file_filename(infile);
-  String *basename = Swig_file_basename(infile_filename);
-  String *typescript_filename = NewString("");
-  if (Len(SWIG_output_directory()) > 0) {
-    Printf(typescript_filename, "%s/", SWIG_output_directory());
-  }
-  Printf(typescript_filename, "%s.d.ts", basename);
-
-  File *f_typescript = NewFile(typescript_filename, "w", SWIG_output_files());
-  if (!f_typescript) {
-    FileErrorDisplay(f_typescript);
-    Exit(EXIT_FAILURE);
-  }
-  Swig_register_filebyname("typescript", f_typescript);
-  Swig_banner(f_typescript);
   bool empty = true;
 
   String *module = Getattr(n, NAME);
@@ -1397,6 +1405,9 @@ String *JAVASCRIPT::makeParameterName(Node *n, Parm *p, int arg_num,
 
 int JAVASCRIPT::top(Node *n) {
   emitter->initialize(n);
+  if (ts_emitter) {
+    ts_emitter->initialize(n);
+  }
 
   Language::top(n);
 
