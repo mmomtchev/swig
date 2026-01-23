@@ -1047,6 +1047,7 @@ num_common: {
       if (strcmp(yytext, "%constant") == 0)
 	return (CONSTANT);
       if (strcmp(yytext, "%typedef") == 0) {
+	Swig_warning(WARN_DEPRECATED_TYPEDEF, cparse_file, cparse_line, "%%typedef directive is deprecated, use plain typedef instead\n");
 	return (TYPEDEF);
       }
       if (strcmp(yytext, "%native") == 0)

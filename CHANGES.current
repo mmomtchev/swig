@@ -7,15 +7,32 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-01-21: jschueller
+	    #3019 Issue deprecation warning if `%typedef` is used.  This is
+	    an undocumented directive which SWIG has treated as an alias for
+	    the standard C/C++ `typedef` since at least 1996.  Replace any
+	    remaining uses with `typedef`, which also works with older SWIG
+	    versions.
+
+2026-01-15: olly
+	    [Octave] Octave 6 is now the oldest version we aim to support.  We
+	    haven't had any automated testing of older Octave versions since
+	    GHA dropped support for Ubuntu 20.04 on 2025-04-01.
+
+2026-01-15: jschueller
+	    [Octave] Fix save_binary prototype to be correct for Octave >= 6.
+
+2025-17-12: ysmilda
+            [Go] #3291 
+               - Add `-unique-id` and `-no-unique-id` flags to enable/disable the addition of a unique id to the generated function names.
+               - Deprecate `-cgo` flag as this doesn't do anything.
+               - Cleanup docs and help output.
+               
+2025-12-12: christophe-calmejane
+            [Lua] #3295 Add director support for Lua.
+
 2025-12-05: jaw
             [Python] #3287 Fixes for gcc warnings: -Wconversion -Wsign-conversion.
-
-2025-12-03: jschueller
-            [Python] #3285 Fix builds with python>=3.13 and Py_LIMITED_API<3.13.
-
-2025-11-14: jschueller
-            [Python] #3280 Add override specifier to SwigPyIterator methods for c++11
-            and later.
 
 2025-11-08: wsfulton
             Fix handling of typedef to void in class methods/constructor's parameter
