@@ -19,30 +19,35 @@ const napi_buffer = require('napi_buffer');
 
 // Test producing a null Buffer
 {
-  const ab = /* await */(napi_buffer.return_null_buffer());
-  if (ab !== null) throw new Error(`Expected null, got ${ab}`);
+  let b = /* await */(napi_buffer.return_null_buffer());
+  if (b !== null) throw new Error(`Expected null, got ${b}`);
+  // This ensures that the b variable has Buffer type in TypeScript
+  b = Buffer.from('');
 }
 
 // Test producing an ArrayBuffer
 {
-  const ab = /* await */(napi_buffer.return_arraybuffer());
+  let ab = /* await */(napi_buffer.return_arraybuffer());
   if (!(ab instanceof ArrayBuffer)) throw new Error(`Expected an ArrayBuffer, got ${ab}`);
   const uint32 = new Uint32Array(ab);
   if (uint32[0] !== 17) throw new Error(`Expected 17, got ${uint32[0]}`);
+  ab = new ArrayBuffer;
 }
 
 // Test producing a zero-length ArrayBuffer
 {
-  const ab = /* await */(napi_buffer.return_zerolen_arraybuffer());
+  let ab = /* await */(napi_buffer.return_zerolen_arraybuffer());
   if (!(ab instanceof ArrayBuffer)) throw new Error(`Expected an ArrayBuffer, got ${ab}`);
   const uint32 = new Uint32Array(ab);
   if (uint32.length) throw new Error(`Expected length 0, got ${uint32.length} 0`);
+  ab = new ArrayBuffer;
 }
 
 // Test producing a null ArrayBuffer
 {
-  const ab = /* await */(napi_buffer.return_null_arraybuffer());
+  let ab = /* await */(napi_buffer.return_null_arraybuffer());
   if (ab !== null) throw new Error(`Expected null, got ${ab}`);
+  ab = new ArrayBuffer;
 }
 
 // Test consuming a Buffer
