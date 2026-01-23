@@ -19,10 +19,10 @@ const napi_buffer = require('napi_buffer');
 
 // Test producing a null Buffer
 {
-  // This ensures that the ab variable has ArrayBuffer type in TypeScript
-  let ab = new ArrayBuffer;
-  ab = /* await */(napi_buffer.return_null_buffer());
-  if (ab !== null) throw new Error(`Expected null, got ${ab}`);
+  // This ensures that the b variable has Buffer type in TypeScript
+  let b = Buffer.from('');
+  b = /* await */(napi_buffer.return_null_buffer());
+  if (b !== null) throw new Error(`Expected null, got ${b}`);
 }
 
 // Test producing an ArrayBuffer
