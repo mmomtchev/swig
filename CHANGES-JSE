@@ -7,12 +7,15 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.13
 ===========================
 
-2026-01-23  mmomtchev
+2026-01-23: mmomtchev
+            Merge SWIG from upstream up to 2026-01-23
+
+2026-01-23: mmomtchev
             [TypeScript] Set the correct `tsout` merging strategy for
             the `ArrayBuffer` `argout` typemaps
             [mmomtchev/swig#181](https://github.com/mmomtchev/swig/issues/181)
 
-2025-12-27  mmomtchev
+2025-12-27: mmomtchev
             [TypeScript] Support adding custom TypeScript code fragments to
             the generated definitions using `%insert("typescript")`
             [mmomtchev/swig#177](https://github.com/mmomtchev/swig/pull/177)
@@ -21,17 +24,17 @@ Version 5.0.13
 Version 5.0.12 (30 Dec 2025)
 ===========================
 
-2025-12-29  mmomtchev
-            [JavaScript] Fix building on Linux with the `SWIG_NAPI_Callback``
+2025-12-29: mmomtchev
+            [JavaScript] Fix building on Linux with the `SWIG_NAPI_Callback`
             fragment and no native threads
             [mmomtchev/swig#172](https://github.com/mmomtchev/swig/issues/172)
 
-2025-12-29  mmomtchev
+2025-12-29: mmomtchev
             [JavaScript] Support permanent `SWIG_NAPI_Callback` that are never
             deleted and do not prevent the event loop from exiting
             [mmomtchev/swig#171](https://github.com/mmomtchev/swig/issues/171)
 
-2025-12-27  mmomtchev
+2025-12-27: mmomtchev
             [TypeScript] Significant overhaul of the `tsout` typemaps in order
             to support automatic type generation together with
             `%append_output_field`
@@ -39,17 +42,17 @@ Version 5.0.12 (30 Dec 2025)
             Old `tsout` typemaps still work, but emit a warning that they
             must be updated with the new `merge` argument
 
-2025-12-27  mmomtchev
+2025-12-27: mmomtchev
             [JavaScript] Provide `%apppend_output_field` macro for adding
             additional values to a structured object with named fields
             [mmomtchev/swig#166](https://github.com/mmomtchev/swig/issues/166)
 
-2025-12-20  mmomtchev
+2025-12-20: mmomtchev
             [JavaScript] Optional support for basic finalizers to be enabled
             at module compile time
             [mmomtchev/swig#162](https://github.com/mmomtchev/swig/pull/162)
 
-2025-12-19  mmomtchev
+2025-12-19: mmomtchev
             [JavaScript] Fix some leaks and primitive types support in
             container typemaps (`vector`, `map` and `pair`). Nested containers
             are not supported now, limited support may come back in a
@@ -58,11 +61,11 @@ Version 5.0.12 (30 Dec 2025)
             [mmomtchev/swig#159](https://github.com/mmomtchev/swig/issues/159)
             [mmomtchev/swig#160](https://github.com/mmomtchev/swig/issues/160)
 
-2025-12-16  mmomtchev
+2025-12-16: mmomtchev
             [JavaScript] Node-API specific support for wrapping
             `std::function` and function pointers
 
-2025-12-15  mmomtchev
+2025-12-15: mmomtchev
             Support for expanding parameter packs in templates in general
             and `std::function` in particular
             [swig/swig#3297](https://github.com/swig/swig/issues/3297)
@@ -70,12 +73,12 @@ Version 5.0.12 (30 Dec 2025)
             [swig/swig#3172](https://github.com/swig/swig/issues/3172)
             [swig/swig#341](https://github.com/swig/swig/issues/341)
 
-2025-12-09  mmomtchev
+2025-12-09: mmomtchev
             [TypeScript] Fix the TypeScript definitions for C functions
             declared as `fn(void)``
             [mmomtchev/swig#152](https://github.com/mmomtchev/swig/issues/152)
 
-2025-12-08  mmomtchev
+2025-12-08: mmomtchev
             [TypeScript] Extend the type tagging to all classes exported
             to TypeScript in order to prevent illegal substitutions
             with classes having identical duck-typing
@@ -84,13 +87,13 @@ Version 5.0.12 (30 Dec 2025)
 2025-12-06: mmomtchev
             Merge SWIG 4.4.1 from upstream
 
-2025-12-06  mmomtchev
+2025-12-06: mmomtchev
             [TypeScript] Significant overhaul of the types system, eliminating
             many cases where `any` was emitted because the type match was
             failing
             [mmomtchev/swig#147](https://github.com/mmomtchev/swig/pull/147)
 
-2025-12-06  mmomtchev
+2025-12-06: mmomtchev
             [TypeScript] Generate types for opaque C `typedef struct` without
             definition restricting the accepted values
             [mmomtchev/swig#138](https://github.com/mmomtchev/swig/issues/138)
