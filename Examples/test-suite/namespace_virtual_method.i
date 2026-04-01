@@ -17,8 +17,8 @@ namespace A {
    namespace C {
        class Foo {
 	public:
-           Foo() { };
-           virtual ~Foo() { };
+           Foo() { }
+           virtual ~Foo() { }
            virtual int bar(const A::B::Foo &x) = 0;
        };
    }

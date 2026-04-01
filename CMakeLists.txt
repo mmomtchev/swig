@@ -87,9 +87,8 @@ endif ()
 
 option (WITH_PCRE "Enable PCRE" ON)
 if (WITH_PCRE)
-  find_package (PCRE2 REQUIRED)
+  find_package (PCRE2 10.39 REQUIRED COMPONENTS 8BIT)
   set (HAVE_PCRE 1)
-  include_directories (${PCRE2_INCLUDE_DIRS})
 endif()
 
 configure_file (${SWIG_ROOT}/Tools/cmake/swigconfig.h.in
@@ -155,7 +154,7 @@ add_executable (swig
   ${PROJECT_BINARY_DIR}/Source/CParse/parser.h
 )
 if (PCRE2_FOUND)
-  target_link_libraries (swig ${PCRE2_LIBRARIES})
+  target_link_libraries (swig PRIVATE PCRE2::8BIT)
 endif ()
 
 set_target_properties (swig PROPERTIES OUTPUT_NAME "swig${SWIG_SUFFIX}") 

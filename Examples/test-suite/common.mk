@@ -213,7 +213,7 @@ CPP_TEST_CASES += \
 	director_finalizer \
 	director_frob \
 	director_ignore \
-	director_keywords \
+	director_minimal \
 	director_multiple_inheritance \
 	director_namespace_clash \
 	director_nested \
@@ -230,7 +230,7 @@ CPP_TEST_CASES += \
 	director_redefined \
 	director_ref \
 	director_simple \
-	director_smartptr \
+	director_shared_ptr \
 	director_template \
 	director_thread \
 	director_unroll \
@@ -368,6 +368,7 @@ CPP_TEST_CASES += \
 	nspace_class_forward2 \
 	nspace_class_forward3 \
 	nspace_extend \
+	nspace_interface \
 	nspacemove \
 	nspacemove_nested \
 	nspacemove_stl \
@@ -664,6 +665,12 @@ CPP11_TEST_CASES += \
 	cpp11_rvalue_reference2 \
 	cpp11_rvalue_reference3 \
 	cpp11_rvalue_reference_move \
+	cpp11_shared_ptr_const \
+	cpp11_shared_ptr_crtp_upcast \
+	cpp11_shared_ptr_nullptr_in_containers \
+	cpp11_shared_ptr_overload \
+	cpp11_shared_ptr_template_upcast \
+	cpp11_shared_ptr_upcast \
 	cpp11_sizeof_object \
 	cpp11_static_assert \
 	cpp11_std_array \
@@ -745,6 +752,7 @@ DOXYGEN_TEST_CASES += \
 	doxygen_basic_translate_style3 \
 	doxygen_code_blocks \
 	doxygen_ignore \
+	doxygen_interface \
 	doxygen_misc_constructs \
 	doxygen_nested_class \
 	doxygen_overloads \
@@ -878,6 +886,7 @@ C_TEST_CASES += \
 # Multi-module C++ test cases . (Can be run individually using make testcase.multicpptest)
 MULTI_CPP_TEST_CASES += \
 	clientdata_prop \
+	import_share \
 	import_stl \
 	imports \
 	mod \

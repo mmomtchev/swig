@@ -199,7 +199,7 @@ class SWIG_NAPI_ObjectWrap_templ : public Napi::ObjectWrap<SWIG_OBJ_WRAP> {
         self(NULL),
         owned(true),
         size(0),
-        info(NULL),
+        info(nullptr),
         finalizer(nullptr),
         _lock() {}
     virtual ~SWIG_NAPI_ObjectWrap_templ() = default;
