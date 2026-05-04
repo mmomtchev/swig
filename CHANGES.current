@@ -7,6 +7,16 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-05: wsfulton
+            Document existing coverage for C++14 variable templates which requires a
+            %template instantiation of the variable template, resulting in a
+	    read only variable wrapper.
+
+              template<typename T>
+              constexpr int bits_in = sizeof(T) * 8;
+
+              %template(bits_in_char) bits_in<char>;
+
 2026-05-04: wsfulton
             #3413 Basic parser support for C++20 concept declarations and requires-clauses
             on function templates, in both the trailing position and the prefix position
