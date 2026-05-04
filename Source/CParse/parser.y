@@ -4462,7 +4462,7 @@ cpp_forward_class_decl : storage_class cpptype idcolon SEMI {
    template<...> decl
    ------------------------------------------------------------ */
 
-cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN {
+cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause_opt {
 		    if (currentOuterClass)
 		      Setattr(currentOuterClass, "template_parameters", template_parameters);
 		    template_parameters = $template_parms;
@@ -7480,6 +7480,19 @@ virt_specifier_seq_opt : virt_specifier_seq
                | %empty {
                    $$ = 0;
                }
+               ;
+
+/* ------------------------------------------------------------
+   Optional C++20 prefix requires-clause that may appear between the closing
+   '>' of a template parameter list and the constrained declaration.  The
+   constraint expression is consumed by skip_prefix_requires_clause() at the
+   scanner level; this rule is purely a grammatical anchor so the consumption
+   happens at the right point.
+   ------------------------------------------------------------ */
+requires_clause_opt : REQUIRES {
+                   skip_prefix_requires_clause();
+               }
+               | %empty
                ;
 
 class_virt_specifier_opt : FINAL {

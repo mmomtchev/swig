@@ -8,17 +8,21 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-04: wsfulton
-            Basic parser support for C++20 concept declarations and trailing
-            requires-clauses on function templates.  Both constructs are silently
+            #3413 Basic parser support for C++20 concept declarations and requires-clauses
+            on function templates, in both the trailing position and the prefix position
+            (between the template head and the declarator).  Both constructs are silently
             consumed: a concept declaration produces no parse tree node, and a constrained
-            template wraps as if it were unconstrained. Prefix requires-clauses (between
-            the template head and the declarator) are not yet supported.
+            template wraps as if it were unconstrained.
 
               template<typename T>
               concept Numeric = std::integral<T> || std::floating_point<T>;
 
               template<typename T>
               T cube(T x) requires Numeric<T> { return x * x * x; }
+
+              template<typename T>
+              requires Numeric<T>
+              T quad(T x) { return x * x * x * x; }
 
 2026-05-03: wsfulton
             [R] Fix function pointer wrappers involving move-only types.

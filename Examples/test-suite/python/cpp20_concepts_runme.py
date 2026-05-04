@@ -1,10 +1,24 @@
-from cpp20_concepts import cube_int, cube_double
+from cpp20_concepts import cube_int, cube_double, quad_int, quad_double, half_int, identity_int
 
 def check_equal(a, b):
     if a != b:
         raise RuntimeError("{} is not equal to {}".format(a, b))
 
+# Trailing requires-clause.
 check_equal(cube_int(3), 27)
 check_equal(cube_int(-4), -64)
 check_equal(cube_double(2.0), 8.0)
 check_equal(cube_double(0.5), 0.125)
+
+# Prefix requires-clause - bare concept.
+check_equal(quad_int(2), 16)
+check_equal(quad_int(-3), 81)
+check_equal(quad_double(1.5), 5.0625)
+
+# Prefix requires-clause - compound constraint joined by '&&'.
+check_equal(half_int(8), 4)
+check_equal(half_int(-9), -4)
+
+# Prefix requires-clause - parenthesised constraint subexpression.
+check_equal(identity_int(42), 42)
+check_equal(identity_int(-1), -1)

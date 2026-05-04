@@ -94,17 +94,19 @@ public:
 
 <p>
 SWIG provides basic parser support for C++20 <tt>concept</tt> declarations
-and trailing <tt>requires</tt>-clauses on function templates.  Both
-constructs are silently consumed: a concept declaration produces no node in
-the SWIG parse tree and is not exposed to the target language, and a
-constrained function template wraps as if it were unconstrained.  This is
-sufficient for SWIG to accept headers that use concepts to express template
-constraints, without the user having to strip them by hand.
+and <tt>requires</tt>-clauses on function templates, in both the trailing
+position (after the parameter list) and the prefix position (between the
+template head and the declarator).  Both constructs are silently consumed:
+a concept declaration produces no node in the SWIG parse tree and is not
+exposed to the target language, and a constrained function template wraps
+as if it were unconstrained.  This is sufficient for SWIG to accept headers
+that use concepts to express template constraints, without the user having
+to strip them by hand.
 </p>
 
 <p>
-The following interface parses cleanly and wraps <tt>cube&lt;int&gt;</tt> and
-<tt>cube&lt;double&gt;</tt> as ordinary function template instantiations:
+The following interface parses cleanly and wraps each instantiation as an
+ordinary function template instantiation:
 </p>
 
 <div class="code">
@@ -115,16 +117,31 @@ The following interface parses cleanly and wraps <tt>cube&lt;int&gt;</tt> and
 template&lt;typename T&gt;
 concept Numeric = std::integral&lt;T&gt; || std::floating_point&lt;T&gt;;
 
+// Trailing requires-clause.
 template&lt;typename T&gt;
 T cube(T x) requires Numeric&lt;T&gt; {
   return x * x * x;
 }
+
+// Prefix requires-clause.
+template&lt;typename T&gt;
+requires Numeric&lt;T&gt;
+T quad(T x) {
+  return x * x * x * x;
+}
 %}
 
-%template(cube_int)    cube&lt;int&gt;;
-%template(cube_double) cube&lt;double&gt;;
+%template(cube_int) cube&lt;int&gt;;
+%template(quad_int) quad&lt;int&gt;;
 </pre>
 </div>
+
+<p>
+Compound prefix constraints joined by <tt>&amp;&amp;</tt> or <tt>||</tt>
+and parenthesised constraint subexpressions are also accepted - for
+example <tt>requires Numeric&lt;T&gt; &amp;&amp; SmallNumeric&lt;T&gt;</tt> or
+<tt>requires (Numeric&lt;T&gt; || std::same_as&lt;T, bool&gt;)</tt>.
+</p>
 
 <p>
 Limitations:
@@ -132,20 +149,14 @@ Limitations:
 
 <ul>
 <li>
-A <tt>requires</tt>-clause that appears between the template head and the
-declarator (<tt>template&lt;typename T&gt; requires Numeric&lt;T&gt; T foo(T x);</tt>) is not
-yet supported.  Move the clause to the trailing position after the
-parameter list.
-</li>
-<li>
 <tt>requires</tt>-expressions of the form
-<tt>requires (T t) { t.foo(); }</tt> are not supported.
+<tt>requires (T t) { t.foo(); }</tt> are accepted only as a primary inside
+a constraint, not as a standalone declaration.
 </li>
 <li>
 A type-constraint used in place of <tt>typename</tt> in a template
 parameter list (<tt>template&lt;Numeric T&gt;</tt>) is not supported - declare the
-parameter as <tt>typename</tt> and use a trailing <tt>requires</tt>-clause
-instead.
+parameter as <tt>typename</tt> and use a <tt>requires</tt>-clause instead.
 </li>
 </ul>
 

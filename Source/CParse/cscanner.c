@@ -269,6 +269,133 @@ void skip_constraint(void) {
 }
 
 /* ----------------------------------------------------------------------------
+ * static int skip_constraint_primary(void)
+ *
+ * Skip exactly one primary-expression of a C++20 constraint:
+ *   - any number of leading '!' negations,
+ *   - then either:
+ *       * a parenthesised group  '(' ... ')'
+ *       * a requires-expression  'requires' [ '(' ... ')' ] '{' ... '}'
+ *       * a leaf token (identifier or literal), optionally followed by a chain
+ *         of '::' identifiers and/or one '<' ... '>' template arg list.
+ *
+ * For example, in each of the following the function consumes the marked
+ * range and pushes the trailing token back onto the scanner:
+ *
+ *   std::same_as<T, int> &&        <- consumes 'std::same_as<T, int>'
+ *   !Numeric<T> ||                 <- consumes '!Numeric<T>'
+ *   (sizeof(T) <= 8) {             <- consumes '(sizeof(T) <= 8)'
+ *   requires (T t) { t + t; } &&   <- consumes the whole requires-expression
+ *
+ * Returns 0 on success, -1 on EOF or malformed input.
+ * ------------------------------------------------------------------------- */
+
+static int skip_constraint_primary(void) {
+  int tok;
+
+  /* Eat leading '!' negations. */
+  do {
+    tok = Scanner_token(scan);
+    if (tok == 0)
+      return -1;
+  } while (tok == SWIG_TOKEN_LNOT);
+
+  if (tok == SWIG_TOKEN_LPAREN)
+    return Scanner_skip_balanced(scan, '(', ')');
+
+  /* requires-expression: consumed here so we can step over its parameter
+   * list and body, since 'requires' inside a constraint introduces a fresh
+   * primary - not the start of another requires-clause. */
+  if (tok == SWIG_TOKEN_ID && Strcmp(Scanner_text(scan), "requires") == 0) {
+    int next = Scanner_token(scan);
+    if (next == SWIG_TOKEN_LPAREN) {
+      if (Scanner_skip_balanced(scan, '(', ')') < 0)
+        return -1;
+      next = Scanner_token(scan);
+    }
+    if (next != SWIG_TOKEN_LBRACE)
+      return -1;
+    return Scanner_skip_balanced(scan, '{', '}');
+  }
+
+  /* Leaf primary: an id or literal, possibly extended by '::id' chains and
+   * a single '<' ... '>' template arg list. */
+  for (;;) {
+    tok = Scanner_token(scan);
+    if (tok == 0)
+      return -1;
+    if (tok == SWIG_TOKEN_DCOLON) {
+      /* Eat the next id token. */
+      int idtok = Scanner_token(scan);
+      if (idtok == 0)
+        return -1;
+      continue;
+    }
+    if (tok == SWIG_TOKEN_LESSTHAN) {
+      if (Scanner_skip_balanced(scan, '<', '>') < 0)
+        return -1;
+      continue;
+    }
+    /* End of this primary - push back for the caller. */
+    Scanner_pushtoken(scan, tok, Scanner_text(scan));
+    return 0;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * void skip_prefix_requires_clause(void)
+ *
+ * Skip a C++20 prefix requires-clause that appears between the closing '>'
+ * of a template parameter list and the start of the constrained declaration.
+ *
+ * Unlike a trailing requires-clause, this position has no fixed token that
+ * marks the end of the constraint - what follows is the declarator itself
+ * (e.g. the return type of a function template), and tokens in declarator
+ * position can also legally appear inside a constraint.
+ *
+ * The C++20 grammar resolves this by defining a constraint as a
+ * 'constraint-logical-or-expression' - a sequence of primary-expressions
+ * joined by '||' or '&&'.  After consuming one primary the parser checks
+ * the next token: if it is '||' or '&&' another primary follows; otherwise
+ * the constraint is over and that token belongs to the declarator.  This
+ * function implements that loop directly at the scanner level so that the
+ * grammar does not have to model the constraint expression at all.
+ *
+ * For example, given the prefix requires-clause in
+ *
+ *   template<typename T>
+ *   requires Numeric<T> && (sizeof(T) <= 8)
+ *   T quad(T x) { return x * x * x * x; }
+ *
+ * skip_prefix_requires_clause is called after the parser has consumed
+ * REQUIRES.  It skips 'Numeric<T>' as a primary, sees '&&' and continues,
+ * skips '(sizeof(T) <= 8)' as a parenthesised primary, then sees 'T' which
+ * is not '&&' / '||', pushes 'T' back, and returns - leaving the declarator
+ * 'T quad(T x) { ... }' for the surrounding rule.
+ * ------------------------------------------------------------------------- */
+
+void skip_prefix_requires_clause(void) {
+  int start_line = Scanner_line(scan);
+  for (;;) {
+    if (skip_constraint_primary() < 0) {
+      Swig_error(cparse_file, start_line, "Malformed 'requires' clause. Reached end of input.\n");
+      return;
+    }
+    int tok = Scanner_token(scan);
+    if (tok == 0) {
+      Swig_error(cparse_file, start_line, "Unterminated 'requires' clause. Reached end of input.\n");
+      return;
+    }
+    if (tok == SWIG_TOKEN_LAND || tok == SWIG_TOKEN_LOR)
+      continue;
+    Scanner_pushtoken(scan, tok, Scanner_text(scan));
+    break;
+  }
+  cparse_file = Scanner_file(scan);
+  cparse_line = Scanner_line(scan);
+}
+
+/* ----------------------------------------------------------------------------
  * int yylook()
  *
  * Lexical scanner.
