@@ -139,9 +139,15 @@ Any contribution produced with significant AI assistance to the SWIG source unde
 Assisted-by: Claude Code (Opus 4.7)
 ```
 
-Place the trailer in the standard Git trailer block at the bottom of the commit message, alongside any `Co-Authored-By:` / `Signed-off-by:` lines. "Significant" means AI was used to generate, design, or substantially edit the code in the commit; trivial completions (single-line autocompletes, name suggestions, formatting) do not need disclosure.
+Place the trailer in the standard Git trailer block at the bottom of the commit message, alongside any `Signed-off-by:` lines. "Significant" means AI was used to generate, design, or substantially edit the code in the commit; trivial completions (single-line autocompletes, name suggestions, formatting) do not need disclosure.
 
-Disclosure is optional for other areas of the codebase such as the test-suite (`Examples/test-suite/`) and the documentation (`Doc/`).
+Do **not** add a `Co-Authored-By:` trailer for an AI tool or model. AI agents are not authors and hold no copyright in their output, so coauthorship attribution is inappropriate. Use only the `Assisted-by:` trailer described above.
+
+## Comment style
+
+In source code comments under `Source/` and `Lib/`, prefer single quotes (`'`) or double quotes (`"`) when quoting a token, identifier, keyword, or short snippet. Do not use backticks (`` ` ``) - they are a Markdown convention and have no meaning in C/C++ comments. For example, write `'requires' keyword` or `"concept Name = expr;"`, not the backtick wrapped form.
+
+Disclosure is optional for other areas of the codebase such as the test suite (`Examples/test-suite/`) and the documentation (`Doc/`).
 
 AI-assisted commit messages should be clear, concise and to the point - describe the change accurately without padding or marketing language.
 
