@@ -17,6 +17,7 @@
 <li><a href="#CPlusPlus20_spaceship_operator">Spaceship operator</a>
 <li><a href="#CPlusPlus20_lambda_templates">Lambda templates</a>
 <li><a href="#CPlusPlus20_constexpr_destructors">Constexpr destructors</a>
+<li><a href="#CPlusPlus20_concepts">Concepts and requires-clauses</a>
 </ul>
 <li><a href="#CPlusPlus20_preprocessor_changes">Preprocessor changes</a>
 <ul>
@@ -87,6 +88,78 @@ public:
 };
 </pre>
 </div>
+
+<H3><a name="CPlusPlus20_concepts">10.2.4 Concepts and requires-clauses</a></H3>
+
+
+<p>
+SWIG provides basic parser support for C++20 <tt>concept</tt> declarations
+and trailing <tt>requires</tt>-clauses on function templates.  Both
+constructs are silently consumed: a concept declaration produces no node in
+the SWIG parse tree and is not exposed to the target language, and a
+constrained function template wraps as if it were unconstrained.  This is
+sufficient for SWIG to accept headers that use concepts to express template
+constraints, without the user having to strip them by hand.
+</p>
+
+<p>
+The following interface parses cleanly and wraps <tt>cube&lt;int&gt;</tt> and
+<tt>cube&lt;double&gt;</tt> as ordinary function template instantiations:
+</p>
+
+<div class="code">
+<pre>
+%inline %{
+#include &lt;concepts&gt;
+
+template&lt;typename T&gt;
+concept Numeric = std::integral&lt;T&gt; || std::floating_point&lt;T&gt;;
+
+template&lt;typename T&gt;
+T cube(T x) requires Numeric&lt;T&gt; {
+  return x * x * x;
+}
+%}
+
+%template(cube_int)    cube&lt;int&gt;;
+%template(cube_double) cube&lt;double&gt;;
+</pre>
+</div>
+
+<p>
+Limitations:
+</p>
+
+<ul>
+<li>
+A <tt>requires</tt>-clause that appears between the template head and the
+declarator (<tt>template&lt;typename T&gt; requires Numeric&lt;T&gt; T foo(T x);</tt>) is not
+yet supported.  Move the clause to the trailing position after the
+parameter list.
+</li>
+<li>
+<tt>requires</tt>-expressions of the form
+<tt>requires (T t) { t.foo(); }</tt> are not supported.
+</li>
+<li>
+A type-constraint used in place of <tt>typename</tt> in a template
+parameter list (<tt>template&lt;Numeric T&gt;</tt>) is not supported - declare the
+parameter as <tt>typename</tt> and use a trailing <tt>requires</tt>-clause
+instead.
+</li>
+</ul>
+
+<p>
+Because constraints carry no information that affects wrapper code
+generation (overload resolution still happens at C++ compile time, by which
+point SWIG has already produced the wrapper), the lack of constraint
+modelling in the parse tree does not change the generated bindings for any
+constraint that the underlying C++ compiler accepts.
+</p>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to support C++20 concepts.
+</p>
 
 <H2><a name="CPlusPlus20_preprocessor_changes">10.3 Preprocessor changes</a></H2>
 

@@ -7,6 +7,19 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-04: wsfulton
+            Basic parser support for C++20 concept declarations and trailing
+            requires-clauses on function templates.  Both constructs are silently
+            consumed: a concept declaration produces no parse tree node, and a constrained
+            template wraps as if it were unconstrained. Prefix requires-clauses (between
+            the template head and the declarator) are not yet supported.
+
+              template<typename T>
+              concept Numeric = std::integral<T> || std::floating_point<T>;
+
+              template<typename T>
+              T cube(T x) requires Numeric<T> { return x * x * x; }
+
 2026-05-03: wsfulton
             [R] Fix function pointer wrappers involving move-only types.
 

@@ -221,6 +221,54 @@ void skip_decl(void) {
 }
 
 /* ----------------------------------------------------------------------------
+ * void skip_constraint(void)
+ *
+ * Skip the constraint-expression that follows a C++20 'requires' keyword in a
+ * requires-clause.  Stops at the next top level '{', ';' or '=' and pushes the
+ * terminator back onto the scanner so the surrounding rule can consume it.
+ *
+ * Only paren and bracket depth is tracked - angle-bracket contents in a
+ * constraint contain neither braces nor semicolons in any well-formed C++.
+ *
+ * For example, given the trailing requires-clause in
+ *
+ *   template<typename T>
+ *   T cube(T x) requires Numeric<T> && (sizeof(T) <= 8) {
+ *     return x * x * x;
+ *   }
+ *
+ * skip_constraint is called after the parser has consumed REQUIRES and
+ * walks past 'Numeric<T> && (sizeof(T) <= 8)', leaving the function-body
+ * '{' on the scanner for the surrounding rule.
+ * ------------------------------------------------------------------------- */
+
+void skip_constraint(void) {
+  int paren = 0, bracket = 0;
+  int start_line = Scanner_line(scan);
+  for (;;) {
+    int tok = Scanner_token(scan);
+    if (tok == 0) {
+      Swig_error(cparse_file, start_line, "Unterminated 'requires' clause. Reached end of input.\n");
+      return;
+    }
+    if (tok == SWIG_TOKEN_LPAREN)
+      paren++;
+    else if (tok == SWIG_TOKEN_RPAREN)
+      paren--;
+    else if (tok == SWIG_TOKEN_LBRACKET)
+      bracket++;
+    else if (tok == SWIG_TOKEN_RBRACKET)
+      bracket--;
+    else if (paren == 0 && bracket == 0 && (tok == SWIG_TOKEN_LBRACE || tok == SWIG_TOKEN_SEMI || tok == SWIG_TOKEN_EQUAL)) {
+      Scanner_pushtoken(scan, tok, Scanner_text(scan));
+      break;
+    }
+  }
+  cparse_file = Scanner_file(scan);
+  cparse_line = Scanner_line(scan);
+}
+
+/* ----------------------------------------------------------------------------
  * int yylook()
  *
  * Lexical scanner.
@@ -935,6 +983,14 @@ num_common:
         if (strcmp(yytext, "final") == 0) {
           last_id = 1;
           return (FINAL);
+        }
+        if (strcmp(yytext, "concept") == 0) {
+          last_id = 1;
+          return (CONCEPT);
+        }
+        if (strcmp(yytext, "requires") == 0) {
+          last_id = 1;
+          return (REQUIRES);
         }
       } else {
         if (strcmp(yytext, "class") == 0) {

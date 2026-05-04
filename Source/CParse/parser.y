@@ -1771,6 +1771,7 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
 %token CLASS TYPENAME PRIVATE PUBLIC PROTECTED COLON STATIC VIRTUAL FRIEND THROW CATCH EXPLICIT
 %token STATIC_ASSERT CONSTEXPR THREAD_LOCAL DECLTYPE AUTO NOEXCEPT /* C++11 keywords */
 %token OVERRIDE FINAL /* C++11 identifiers with special meaning */
+%token CONCEPT REQUIRES /* C++20 keywords */
 %token USING
 %token NAMESPACE
 %token NATIVE INLINE
@@ -1827,7 +1828,7 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
 %type <node>     cpp_declaration cpp_class_decl cpp_forward_class_decl cpp_template_decl;
 %type <node>     cpp_members cpp_member cpp_member_no_dox;
 %type <nodebuilder> cpp_members_builder;
-%type <node>     cpp_constructor_decl cpp_destructor_decl cpp_protection_decl cpp_conversion_operator cpp_static_assert;
+%type <node>     cpp_constructor_decl cpp_destructor_decl cpp_protection_decl cpp_conversion_operator cpp_static_assert cpp_concept_decl;
 %type <node>     cpp_swig_directive cpp_template_possible cpp_opt_declarators ;
 %type <node>     cpp_using_decl cpp_namespace_decl cpp_catch_decl cpp_lambda_decl;
 %type <node>     kwargs options;
@@ -4461,10 +4462,10 @@ cpp_forward_class_decl : storage_class cpptype idcolon SEMI {
    template<...> decl
    ------------------------------------------------------------ */
 
-cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN { 
+cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN {
 		    if (currentOuterClass)
 		      Setattr(currentOuterClass, "template_parameters", template_parameters);
-		    template_parameters = $template_parms; 
+		    template_parameters = $template_parms;
 		    parsing_template_declaration = 1;
 		  } cpp_template_possible {
 			String *tname = 0;
@@ -4697,7 +4698,20 @@ cpp_template_possible:  c_decl
                 }
                 | cpp_forward_class_decl
                 | cpp_conversion_operator
+                | cpp_concept_decl
                 ;
+
+/* ------------------------------------------------------------
+   C++20 concept declaration: "concept Name = constraint-expression;".
+   Always appears after a template head, so attached via cpp_template_possible.
+   The whole declaration is skipped - constraints are invisible to wrapper
+   code generation.
+   ------------------------------------------------------------ */
+cpp_concept_decl : CONCEPT {
+		  skip_decl();
+		  $$ = 0;
+		}
+		;
 
 template_parms : template_parms_builder {
 		 $$ = $template_parms_builder.parms;
@@ -7522,6 +7536,14 @@ qualifiers_exception_specification : cv_ref_qualifier {
                ;
 
 cpp_const      : qualifiers_exception_specification
+               | qualifiers_exception_specification REQUIRES {
+                 skip_constraint();
+                 $$ = $qualifiers_exception_specification;
+               }
+               | REQUIRES {
+                 skip_constraint();
+                 $$ = default_dtype;
+               }
                | %empty {
                  $$ = default_dtype;
                }
