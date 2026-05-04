@@ -42,5 +42,12 @@ public class cpp20_concepts_runme {
       throw new RuntimeException("identity_int(42)");
     if (cpp20_concepts.identity_int(-1) != -1)
       throw new RuntimeException("identity_int(-1)");
+
+    // Trailing requires-clause whose constraint contains a requires-expression
+    // as a primary.
+    if (cpp20_concepts.add_int(2, 3) != 5)
+      throw new RuntimeException("add_int(2, 3)");
+    if (cpp20_concepts.add_int(-7, 4) != -3)
+      throw new RuntimeException("add_int(-7, 4)");
   }
 }

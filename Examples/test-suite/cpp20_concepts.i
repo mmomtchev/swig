@@ -42,6 +42,14 @@ requires (Numeric<T> || std::same_as<T, bool>)
 T identity(T x) {
   return x;
 }
+
+// Trailing requires-clause whose constraint contains a requires-expression
+// as a primary - the inner '{ t + t; }' is part of the constraint, not the
+// function body.
+template<typename T>
+T add(T a, T b) requires requires (T t) { t + t; } {
+  return a + b;
+}
 %}
 
 %template(cube_int)     cube<int>;
@@ -50,3 +58,4 @@ T identity(T x) {
 %template(quad_double)  quad<double>;
 %template(half_int)     half<int>;
 %template(identity_int) identity<int>;
+%template(add_int)      add<int>;

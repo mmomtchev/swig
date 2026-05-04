@@ -144,24 +144,35 @@ example <tt>requires Numeric&lt;T&gt; &amp;&amp; SmallNumeric&lt;T&gt;</tt> or
 </p>
 
 <p>
+A <tt>requires</tt>-expression itself - the new C++20 primary that lists
+a sequence of requirements in braces - can serve as the primary of a
+constraint, giving the "double <tt>requires</tt>" form
+<tt>requires requires (...) { ... }</tt>:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+T add(T a, T b) requires requires (T t) { t + t; } {
+  return a + b;
+}
+
+%template(add_int) add&lt;int&gt;;
+</pre>
+</div>
+
+<p>
 Limitations:
 </p>
 
 <ul>
 <li>
 <p>
-<tt>requires</tt>-expressions are not supported, in any position.  Both
-of the following forms fail to parse:
+A <tt>requires</tt>-expression bound to a namespace scope <tt>constexpr</tt>
+variable is not supported:
 </p>
 <div class="code">
 <pre>
-// As a primary inside a constraint:
-template&lt;typename T&gt;
-T add(T a, T b) requires requires (T t) { t + t; } {  // not supported
-  return a + b;
-}
-
-// Bound to a constexpr variable at namespace scope:
 template&lt;typename T&gt;
 constexpr bool Addable = requires (T t) { t + t; };  // not supported
 </pre>

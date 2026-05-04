@@ -227,8 +227,11 @@ void skip_decl(void) {
  * requires-clause.  Stops at the next top level '{', ';' or '=' and pushes the
  * terminator back onto the scanner so the surrounding rule can consume it.
  *
- * Only paren and bracket depth is tracked - angle-bracket contents in a
- * constraint contain neither braces nor semicolons in any well-formed C++.
+ * Paren and bracket depth is tracked.  Angle-bracket contents need not be
+ * balanced because in a well-formed constraint they contain neither braces
+ * nor semicolons.  A nested requires-expression
+ * ('requires [(parms)] { body }') is treated as an opaque primary so that
+ * the inner '{' does not terminate the skip.
  *
  * For example, given the trailing requires-clause in
  *
@@ -250,6 +253,21 @@ void skip_constraint(void) {
     if (tok == 0) {
       Swig_error(cparse_file, start_line, "Unterminated 'requires' clause. Reached end of input.\n");
       return;
+    }
+    if (paren == 0 && bracket == 0 && tok == SWIG_TOKEN_ID && Strcmp(Scanner_text(scan), "requires") == 0) {
+      int next = Scanner_token(scan);
+      if (next == SWIG_TOKEN_LPAREN) {
+        if (Scanner_skip_balanced(scan, '(', ')') < 0)
+          return;
+        next = Scanner_token(scan);
+      }
+      if (next == SWIG_TOKEN_LBRACE) {
+        if (Scanner_skip_balanced(scan, '{', '}') < 0)
+          return;
+      } else {
+        Scanner_pushtoken(scan, next, Scanner_text(scan));
+      }
+      continue;
     }
     if (tok == SWIG_TOKEN_LPAREN)
       paren++;
