@@ -149,14 +149,45 @@ Limitations:
 
 <ul>
 <li>
-<tt>requires</tt>-expressions of the form
-<tt>requires (T t) { t.foo(); }</tt> are accepted only as a primary inside
-a constraint, not as a standalone declaration.
+<p>
+<tt>requires</tt>-expressions are not supported, in any position.  Both
+of the following forms fail to parse:
+</p>
+<div class="code">
+<pre>
+// As a primary inside a constraint:
+template&lt;typename T&gt;
+T add(T a, T b) requires requires (T t) { t + t; } {  // not supported
+  return a + b;
+}
+
+// Bound to a constexpr variable at namespace scope:
+template&lt;typename T&gt;
+constexpr bool Addable = requires (T t) { t + t; };  // not supported
+</pre>
+</div>
 </li>
 <li>
-A type-constraint used in place of <tt>typename</tt> in a template
-parameter list (<tt>template&lt;Numeric T&gt;</tt>) is not supported - declare the
-parameter as <tt>typename</tt> and use a <tt>requires</tt>-clause instead.
+<p>
+A type-constraint used in place of <tt>typename</tt> in a template parameter
+list is not supported.  This is rejected:
+</p>
+<div class="code">
+<pre>
+template&lt;Numeric T&gt;          // not supported
+T cube(T x) { return x * x * x; }
+</pre>
+</div>
+<p>
+Declare the parameter as <tt>typename</tt> and move the constraint to a
+<tt>requires</tt>-clause instead:
+</p>
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+T cube(T x) requires Numeric&lt;T&gt; { return x * x * x; }
+</pre>
+</div>
 </li>
 </ul>
 
