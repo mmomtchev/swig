@@ -8,6 +8,16 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-05: wsfulton
+            #3413 C++20: parse a requires-expression as a primary in expression position,
+            not just inside a requires-clause.  This allows a namespace scope variable
+            template to be initialised from a requires-expression.
+
+              template<typename T>
+              constexpr bool Addable = requires (T t) { t + t; };
+
+              %template(addable_int) Addable<int>;
+
+2026-05-05: wsfulton
             Document existing coverage for C++14 variable templates which requires a
             %template instantiation of the variable template, resulting in a
 	    read only variable wrapper.

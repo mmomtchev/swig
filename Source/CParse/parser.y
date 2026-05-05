@@ -6819,6 +6819,21 @@ exprmem        : idcolon ARROW ID {
 	       }
 	       ;
 
+/* ------------------------------------------------------------
+   Body of a C++20 requires-expression: an optional parameter list and a
+   required brace-enclosed sequence of requirements.  Skipped at the scanner
+   level, since SWIG does not need to evaluate the requirements.
+   ------------------------------------------------------------ */
+requires_body  : LPAREN {
+		    if (skip_balanced('(', ')') < 0) Exit(EXIT_FAILURE);
+	       } LBRACE {
+		    if (skip_balanced('{', '}') < 0) Exit(EXIT_FAILURE);
+	       }
+	       | LBRACE {
+		    if (skip_balanced('{', '}') < 0) Exit(EXIT_FAILURE);
+	       }
+	       ;
+
 /* Non-compound expression */
 exprsimple     : exprnum
                | exprmem
@@ -6894,6 +6909,19 @@ exprsimple     : exprnum
 
 valexpr        : exprsimple
 	       | exprcompound
+
+/* ------------------------------------------------------------
+   C++20 requires-expression as a primary.  The (optional) parameter list and
+   the requirement body are skipped at the scanner level - their contents do
+   not affect wrapper code generation, since the C++ compiler decides at
+   instantiation time whether the expression is true or false.  The parsed
+   value is opaque but typed as bool.
+   ------------------------------------------------------------ */
+               | REQUIRES requires_body {
+		    $$ = default_dtype;
+		    $$.val = NewString("");
+		    $$.type = T_BOOL;
+	       }
 
 /* grouping */
                |  LPAREN expr RPAREN %prec CAST {
