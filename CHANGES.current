@@ -19,8 +19,8 @@ Version 4.5.0 (in progress)
 
 2026-05-05: wsfulton
             Document existing coverage for C++14 variable templates which requires a
-            %template instantiation of the variable template, resulting in a
-	    read only variable wrapper.
+            %template instantiation of the variable template, resulting in a read only
+            variable wrapper.
 
               template<typename T>
               constexpr int bits_in = sizeof(T) * 8;
@@ -28,8 +28,8 @@ Version 4.5.0 (in progress)
               %template(bits_in_char) bits_in<char>;
 
 2026-05-04: wsfulton
-            #3413 Basic parser support for C++20 concept declarations and requires-clauses
-            on function templates, in both the trailing position and the prefix position
+            #3413 Basic support for C++20 concept declarations and requires-clauses on
+            function templates, in both the trailing position and the prefix position
             (between the template head and the declarator).  Both constructs are silently
             consumed: a concept declaration produces no parse tree node, and a constrained
             template wraps as if it were unconstrained.
@@ -43,6 +43,11 @@ Version 4.5.0 (in progress)
               template<typename T>
               requires Numeric<T>
               T quad(T x) { return x * x * x * x; }
+
+              template<typename T>
+              concept Summable = requires (T t) { t + t; };
+              template<typename T>
+              T sum_pair(T a, T b) requires Summable<T> { return a + b; }
 
 2026-05-03: wsfulton
             [R] Fix function pointer wrappers involving move-only types.

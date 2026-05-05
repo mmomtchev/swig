@@ -1,4 +1,4 @@
-from cpp20_concepts import cube_int, cube_double, quad_int, quad_double, half_int, identity_int, add_int
+from cpp20_concepts import cube_int, cube_double, quad_int, quad_double, half_int, identity_int, add_int, sum_pair_int
 
 def check_equal(a, b):
     if a != b:
@@ -27,3 +27,7 @@ check_equal(identity_int(-1), -1)
 # as a primary.
 check_equal(add_int(2, 3), 5)
 check_equal(add_int(-7, 4), -3)
+
+# Function template constrained by a named concept whose body is a requires-expression.
+check_equal(sum_pair_int(2, 3), 5)
+check_equal(sum_pair_int(-7, 4), -3)

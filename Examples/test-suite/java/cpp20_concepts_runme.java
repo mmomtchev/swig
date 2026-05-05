@@ -49,5 +49,11 @@ public class cpp20_concepts_runme {
       throw new RuntimeException("add_int(2, 3)");
     if (cpp20_concepts.add_int(-7, 4) != -3)
       throw new RuntimeException("add_int(-7, 4)");
+
+    // Function template constrained by a named concept whose body is a requires-expression.
+    if (cpp20_concepts.sum_pair_int(2, 3) != 5)
+      throw new RuntimeException("sum_pair_int(2, 3)");
+    if (cpp20_concepts.sum_pair_int(-7, 4) != -3)
+      throw new RuntimeException("sum_pair_int(-7, 4)");
   }
 }

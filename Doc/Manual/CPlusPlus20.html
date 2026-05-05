@@ -163,6 +163,25 @@ T add(T a, T b) requires requires (T t) { t + t; } {
 </div>
 
 <p>
+Equivalently, the requires-expression can be lifted into a named
+<tt>concept</tt> and reused as a constraint:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+concept Summable = requires (T t) { t + t; };
+
+template&lt;typename T&gt;
+T sum_pair(T a, T b) requires Summable&lt;T&gt; {
+  return a + b;
+}
+
+%template(sum_pair_int) sum_pair&lt;int&gt;;
+</pre>
+</div>
+
+<p>
 Limitations:
 </p>
 

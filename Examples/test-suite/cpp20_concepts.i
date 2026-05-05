@@ -50,6 +50,17 @@ template<typename T>
 T add(T a, T b) requires requires (T t) { t + t; } {
   return a + b;
 }
+
+// A concept whose body is itself a requires-expression.  Functionally
+// equivalent to the Addable variable template in cpp20_variable_templates.i,
+// but spelt as a named concept usable as a constraint.
+template<typename T>
+concept Summable = requires (T t) { t + t; };
+
+template<typename T>
+T sum_pair(T a, T b) requires Summable<T> {
+  return a + b;
+}
 %}
 
 %template(cube_int)     cube<int>;
@@ -59,3 +70,4 @@ T add(T a, T b) requires requires (T t) { t + t; } {
 %template(half_int)     half<int>;
 %template(identity_int) identity<int>;
 %template(add_int)      add<int>;
+%template(sum_pair_int) sum_pair<int>;
