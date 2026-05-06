@@ -49,6 +49,13 @@ Version 4.5.0 (in progress)
               template<typename T>
               T sum_pair(T a, T b) requires Summable<T> { return a + b; }
 
+            Compound constraints containing trailing return type constraints also work:
+
+              template<typename T>
+              concept AddableSame = requires(T a, T b) {
+                { a + b } -> std::same_as<T>;
+              };
+
 2026-05-03: wsfulton
             [R] Fix function pointer wrappers involving move-only types.
 

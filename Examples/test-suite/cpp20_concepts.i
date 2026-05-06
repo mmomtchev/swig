@@ -61,6 +61,24 @@ template<typename T>
 T sum_pair(T a, T b) requires Summable<T> {
   return a + b;
 }
+
+// A concept whose body is a requires-expression containing a compound
+// requirement with a trailing return type constraint - '{ a + b } -> std::same_as<T>;'
+template<typename T>
+concept AddableSame = requires(T a, T b) {
+  { a + b } -> std::same_as<T>;
+};
+
+template<typename T>
+T add_same(T a, T b) requires AddableSame<T> {
+  return a + b;
+}
+
+// Inline 'requires requires' form with a compound requirement
+template<typename T>
+T add_inline_same(T a, T b) requires requires(T x, T y) { { x + y } -> std::same_as<T>; } {
+  return a + b;
+}
 %}
 
 %template(cube_int)     cube<int>;
@@ -71,3 +89,5 @@ T sum_pair(T a, T b) requires Summable<T> {
 %template(identity_int) identity<int>;
 %template(add_int)      add<int>;
 %template(sum_pair_int) sum_pair<int>;
+%template(add_same_int) add_same<int>;
+%template(add_inline_same_int) add_inline_same<int>;

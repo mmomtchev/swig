@@ -182,6 +182,29 @@ T sum_pair(T a, T b) requires Summable&lt;T&gt; {
 </div>
 
 <p>
+The body of a <tt>requires</tt>-expression can mix simple-requirements
+(<tt>expr;</tt>) with compound-requirements that carry a trailing
+return-type-requirement
+(<tt>{ expr } -&gt; <i>type-constraint</i>;</tt>), for example:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+concept AddableSame = requires(T a, T b) {
+  { a + b } -&gt; std::same_as&lt;T&gt;;
+};
+
+template&lt;typename T&gt;
+T add_same(T a, T b) requires AddableSame&lt;T&gt; {
+  return a + b;
+}
+
+%template(add_same_int) add_same&lt;int&gt;;
+</pre>
+</div>
+
+<p>
 Limitations:
 </p>
 

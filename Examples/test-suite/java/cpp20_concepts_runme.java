@@ -55,5 +55,19 @@ public class cpp20_concepts_runme {
       throw new RuntimeException("sum_pair_int(2, 3)");
     if (cpp20_concepts.sum_pair_int(-7, 4) != -3)
       throw new RuntimeException("sum_pair_int(-7, 4)");
+
+    // Function template constrained by a concept whose requires-expression
+    // contains a compound requirement '{ a + b } -> std::same_as<T>;'.
+    if (cpp20_concepts.add_same_int(2, 3) != 5)
+      throw new RuntimeException("add_same_int(2, 3)");
+    if (cpp20_concepts.add_same_int(-7, 4) != -3)
+      throw new RuntimeException("add_same_int(-7, 4)");
+
+    // Inline 'requires requires' form with a compound requirement
+    if (cpp20_concepts.add_inline_same_int(2, 3) != 5)
+      throw new RuntimeException("add_same_int(2, 3)");
+    if (cpp20_concepts.add_inline_same_int(-7, 4) != -3)
+      throw new RuntimeException("add_same_int(-7, 4)");
+
   }
 }
