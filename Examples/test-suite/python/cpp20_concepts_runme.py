@@ -37,6 +37,14 @@ check_equal(sum_pair_int(-7, 4), -3)
 check_equal(add_same_int(2, 3), 5)
 check_equal(add_same_int(-7, 4), -3)
 
-# Inline 'requires requires' form with a compound requirement
+# Inline 'requires requires' with a compound requirement.
 check_equal(add_inline_same_int(2, 3), 5)
 check_equal(add_inline_same_int(-7, 4), -3)
+
+# Multiple simple-requirements.
+e = Engine()
+check_equal(cycle_engine(e), True)
+check_equal(e.running, False)
+
+# Type-, noexcept compound- and nested-requirements.
+check_equal(check_container_c(Container()), True)

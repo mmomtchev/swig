@@ -63,11 +63,21 @@ public class cpp20_concepts_runme {
     if (cpp20_concepts.add_same_int(-7, 4) != -3)
       throw new RuntimeException("add_same_int(-7, 4)");
 
-    // Inline 'requires requires' form with a compound requirement
+    // Inline 'requires requires' with a compound requirement.
     if (cpp20_concepts.add_inline_same_int(2, 3) != 5)
-      throw new RuntimeException("add_same_int(2, 3)");
+      throw new RuntimeException("add_inline_same_int(2, 3)");
     if (cpp20_concepts.add_inline_same_int(-7, 4) != -3)
-      throw new RuntimeException("add_same_int(-7, 4)");
+      throw new RuntimeException("add_inline_same_int(-7, 4)");
 
+    // Multiple simple-requirements.
+    Engine e = new Engine();
+    if (!cpp20_concepts.cycle_engine(e))
+      throw new RuntimeException("cycle_engine");
+    if (e.getRunning())
+      throw new RuntimeException("Engine should be stopped after cycle");
+
+    // Type-, noexcept compound- and nested-requirements.
+    if (!cpp20_concepts.check_container_c(new Container()))
+      throw new RuntimeException("check_container_c");
   }
 }

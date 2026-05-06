@@ -74,10 +74,49 @@ T add_same(T a, T b) requires AddableSame<T> {
   return a + b;
 }
 
-// Inline 'requires requires' form with a compound requirement
+// Inline 'requires requires' with a compound requirement.
 template<typename T>
 T add_inline_same(T a, T b) requires requires(T x, T y) { { x + y } -> std::same_as<T>; } {
   return a + b;
+}
+
+// Concept body with multiple simple-requirements.
+struct Engine {
+  bool running = false;
+  void start() { running = true; }
+  void stop()  { running = false; }
+};
+
+template<typename T>
+concept Machine = requires(T m) {
+  m.start();
+  m.stop();
+};
+
+template<typename T>
+bool cycle(T& m) requires Machine<T> {
+  m.start();
+  m.stop();
+  return true;
+}
+
+// Concept body with a type-requirement, a noexcept compound-requirement and
+// a nested-requirement alongside a simple-requirement.
+struct Container {
+  using value_type = int;
+  void push_back(int) noexcept {}
+};
+
+template<typename T>
+concept BasicContainer = requires(T c, typename T::value_type v) {
+  typename T::value_type;
+  { c.push_back(v) } noexcept;
+  requires sizeof(T) > 0;
+};
+
+template<typename T>
+bool check_container(T c) requires BasicContainer<T> {
+  return true;
 }
 %}
 
@@ -91,3 +130,5 @@ T add_inline_same(T a, T b) requires requires(T x, T y) { { x + y } -> std::same
 %template(sum_pair_int) sum_pair<int>;
 %template(add_same_int) add_same<int>;
 %template(add_inline_same_int) add_inline_same<int>;
+%template(cycle_engine)        cycle<Engine>;
+%template(check_container_c)   check_container<Container>;
