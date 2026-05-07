@@ -27,3 +27,7 @@ check_equal(trait_primary_int(-3), -6)
 # Deeper nesting of '&&' and '||' inside parens.
 check_equal(deeper_int(42), 42)
 check_equal(deeper_int(-7), -7)
+
+# Both prefix AND trailing requires-clauses on the same function template.
+check_equal(both_clauses_int(5), 10)
+check_equal(both_clauses_int(-3), -6)

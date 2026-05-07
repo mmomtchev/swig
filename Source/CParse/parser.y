@@ -4667,20 +4667,35 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			  }
 			}
                         /* Attach prefix requires-clause subtree (e.g. 'template<T> requires C<T>')
-                           to the inner template node.  If a trailing requires-clause was also
-                           captured (set on the cdecl by c_decl), the rendered "requires" string
-                           is the ' && ' conjunction of the two; the structural combine into a
-                           single op="and" subtree is deferred to a later commit. */
+                           to the inner template node.  If a trailing requires-clause is already
+                           present on the cdecl (attached by c_decl), conjoin the two structurally
+                           into a single op="and" constraint subtree per [temp.constr.decl].  The
+                           rendered "requires" string is regenerated from the combined tree, so it
+                           reads identically to the previous ' && '-string-concatenation. */
                         if (ni && $requires_clause_opt) {
-                          String *prefix_str = Constraint_str($requires_clause_opt);
-                          String *existing = Getattr(ni, "requires");
-                          if (existing && Len(existing) > 0) {
-                            Setattr(ni, "requires", NewStringf("%s && %s", prefix_str, existing));
-                          } else {
-                            Setattr(ni, "requires", prefix_str);
+                          Node *trailing = 0;
+                          Node *combined;
+                          String *combined_str;
+                          {
+                            Node *cn = firstChild(ni);
+                            while (cn) {
+                              if (Equal(nodeType(cn), "constraint")) {
+                                trailing = cn;
+                                break;
+                              }
+                              cn = nextSibling(cn);
+                            }
                           }
-                          appendChild(ni, $requires_clause_opt);
-                          Delete(prefix_str);
+                          if (trailing) {
+                            removeNode(trailing);
+                            combined = Constraint_combine("and", $requires_clause_opt, trailing);
+                          } else {
+                            combined = $requires_clause_opt;
+                          }
+                          combined_str = Constraint_str(combined);
+                          Setattr(ni, "requires", combined_str);
+                          appendChild(ni, combined);
+                          Delete(combined_str);
                         }
 			$$ = ntop;
 			Swig_symbol_setscope(cscope);

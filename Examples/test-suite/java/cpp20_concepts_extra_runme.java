@@ -43,5 +43,11 @@ public class cpp20_concepts_extra_runme {
       throw new RuntimeException("deeper_int(42)");
     if (cpp20_concepts_extra.deeper_int(-7) != -7)
       throw new RuntimeException("deeper_int(-7)");
+
+    // Both prefix AND trailing requires-clauses on the same function template.
+    if (cpp20_concepts_extra.both_clauses_int(5) != 10)
+      throw new RuntimeException("both_clauses_int(5)");
+    if (cpp20_concepts_extra.both_clauses_int(-3) != -6)
+      throw new RuntimeException("both_clauses_int(-3)");
   }
 }

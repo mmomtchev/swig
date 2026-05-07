@@ -59,6 +59,15 @@ template<typename T>
 T deeper(T x) requires (Numeric<T> && (Sized<T> || std::is_pointer_v<T>)) {
   return x;
 }
+
+// Both prefix AND trailing requires-clauses on the same function template.
+// Per [temp.constr.decl]/3 the C++20 standard conjoins the two; the parser
+// builds a single op="and" constraint subtree from the two clauses.
+template<typename T>
+requires Numeric<T>
+T both_clauses(T x) requires Sized<T> {
+  return x + x;
+}
 %}
 
 %template(identity_non_numeric_tag) identity_non_numeric<Tag>;
@@ -67,3 +76,4 @@ T deeper(T x) requires (Numeric<T> && (Sized<T> || std::is_pointer_v<T>)) {
 %template(sum_all_ddd)              sum_all<double, double, double>;
 %template(trait_primary_int)        trait_primary<int>;
 %template(deeper_int)               deeper<int>;
+%template(both_clauses_int)         both_clauses<int>;
