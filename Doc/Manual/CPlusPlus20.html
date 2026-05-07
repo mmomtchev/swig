@@ -97,12 +97,12 @@ public:
 SWIG provides basic parser support for C++20 <tt>concept</tt> declarations
 and <tt>requires</tt>-clauses on function templates, in both the trailing
 position (after the parameter list) and the prefix position (between the
-template head and the declarator).  Both constructs are silently consumed:
-a concept declaration produces no node in the SWIG parse tree and is not
-exposed to the target language, and a constrained function template wraps
-as if it were unconstrained.  This is sufficient for SWIG to accept headers
-that use concepts to express template constraints, without the user having
-to strip them by hand.
+template head and the declarator).  Both constructs are silently consumed
+and a constrained function template wraps as if it were unconstrained.
+This is sufficient for SWIG to accept headers that use concepts to
+express template constraints, without the user having to strip them by
+hand.  Applying <tt>%template</tt> to a concept is rejected with an
+error, since concepts are not types and cannot be instantiated.
 </p>
 
 <p>

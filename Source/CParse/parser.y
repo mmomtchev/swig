@@ -1706,6 +1706,11 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
     String *throwf;
     String *nexcept;
     String *final;
+    /* Raw text of a C++20 trailing requires-clause attached to this
+     * declaration's qualifiers, captured via scanner_capture_constraint().  NULL when
+     * no requires-clause is present.  Stored as a flat string for now; a
+     * future redesign would replace this with a structured constraint node. */
+    String *requires_clause;
   } dtype;
   struct {
     String *filename;
@@ -1858,6 +1863,7 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
 %type <str>      less_valparms_greater;
 %type <str>      type_qualifier;
 %type <str>      ref_qualifier;
+%type <str>      requires_clause_opt;
 %type <id>       type_qualifier_raw;
 %type <id>       idstring idstringopt;
 %type <id>       pragma_lang;
@@ -3349,6 +3355,8 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 	      Setattr($$,"throw",$cpp_const.throwf);
 	      Setattr($$,"noexcept",$cpp_const.nexcept);
 	      Setattr($$,"final",$cpp_const.final);
+              if ($cpp_const.requires_clause)
+                Setattr($$,"requires",$cpp_const.requires_clause);
 	      if ($initializer.val && $initializer.type) {
 		/* store initializer type as it might be different to the declared type */
 		SwigType *valuetype = NewSwigType($initializer.type);
@@ -4651,6 +4659,18 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			    Swig_symbol_cadd(fname,$$);
 			  }
 			}
+                        /* Attach prefix requires-clause text (e.g. 'template<T> requires C<T>')
+                           to the inner template node.  If a trailing requires-clause was also
+                           captured (set on the cdecl by c_decl), conjoin with '&&' to model
+                           the C++20 spec's normalization of associated constraints. */
+                        if (ni && $requires_clause_opt) {
+                          String *existing = Getattr(ni, "requires");
+                          if (existing && Len(existing) > 0) {
+                            Setattr(ni, "requires", NewStringf("%s && %s", $requires_clause_opt, existing));
+                          } else {
+                            Setattr(ni, "requires", $requires_clause_opt);
+                          }
+                        }
 			$$ = ntop;
 			Swig_symbol_setscope(cscope);
 			Delete(Namespaceprefix);
@@ -4704,14 +4724,19 @@ cpp_template_possible:  c_decl
 /* ------------------------------------------------------------
    C++20 concept declaration: "concept Name = constraint-expression;".
    Always appears after a template head, so attached via cpp_template_possible.
-   The whole declaration is skipped - constraints are invisible to wrapper
-   code generation.
+   The wrapping cpp_template_decl rule converts the resulting node to nodeType
+   "template" with templatetype "concept", and registers it in the symbol
+   table.  The constraint expression is captured as a flat string for now;
+   structured representation is deferred (see Source/CParse/cscanner.c).
    ------------------------------------------------------------ */
-cpp_concept_decl : CONCEPT {
-		  skip_decl();
-		  $$ = 0;
-		}
-		;
+cpp_concept_decl : CONCEPT idcolon EQUAL {
+                  String *constraint = scanner_capture_decl();
+                  $$ = new_node("concept");
+                  Setattr($$, "name", $idcolon);
+                  Setattr($$, "requires", constraint);
+                  Setattr($$, "type", NewString("bool"));
+                }
+                ;
 
 template_parms : template_parms_builder {
 		 $$ = $template_parms_builder.parms;
@@ -7513,14 +7538,17 @@ virt_specifier_seq_opt : virt_specifier_seq
 /* ------------------------------------------------------------
    Optional C++20 prefix requires-clause that may appear between the closing
    '>' of a template parameter list and the constrained declaration.  The
-   constraint expression is consumed by skip_prefix_requires_clause() at the
-   scanner level; this rule is purely a grammatical anchor so the consumption
-   happens at the right point.
+   constraint expression is consumed by scanner_capture_prefix_requires_clause() at
+   the scanner level, which records the raw constraint text so the wrapping
+   cpp_template_decl rule can attach it to the resulting node as a "requires"
+   attribute.  Returns NULL when no clause is present.
    ------------------------------------------------------------ */
 requires_clause_opt : REQUIRES {
-                   skip_prefix_requires_clause();
+                   $$ = scanner_capture_prefix_requires_clause();
                }
-               | %empty
+               | %empty {
+                   $$ = 0;
+               }
                ;
 
 class_virt_specifier_opt : FINAL {
@@ -7578,12 +7606,12 @@ qualifiers_exception_specification : cv_ref_qualifier {
 
 cpp_const      : qualifiers_exception_specification
                | qualifiers_exception_specification REQUIRES {
-                 skip_constraint();
                  $$ = $qualifiers_exception_specification;
+                 $$.requires_clause = scanner_capture_constraint();
                }
                | REQUIRES {
-                 skip_constraint();
                  $$ = default_dtype;
+                 $$.requires_clause = scanner_capture_constraint();
                }
                | %empty {
                  $$ = default_dtype;

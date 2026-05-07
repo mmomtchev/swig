@@ -48,7 +48,8 @@ T identity(T x) {
 // function body.
 template<typename T>
 T add(T a, T b) requires requires (T t) { t + t; } {
-  return a + b;
+  T result = a + b;
+  return result;
 }
 
 // A concept whose body is itself a requires-expression.  Functionally

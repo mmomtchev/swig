@@ -159,6 +159,9 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     Append(typelist, d);
     Append(patchlist, v);
     Append(cpatchlist, code);
+    /* Patch C++20 requires-clause text the same way as code: it's a flat
+       string in template-parameter scope and needs T => int substitution. */
+    Append(cpatchlist, Getattr(n, "requires"));
 
     if (Getattr(n, "conversion_operator")) {
       /* conversion operator "name" and "sym:name" attributes are unusual as they contain c++ types, so treat as code for patching */
@@ -312,6 +315,7 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     /* Look for obvious parameters */
     Node *cn;
     Append(cpatchlist, Getattr(n, "code"));
+    Append(cpatchlist, Getattr(n, "requires"));
     Append(typelist, Getattr(n, "type"));
     Append(typelist, Getattr(n, "decl"));
     expand_parms(n, "parms", unexpanded_variadic_parm, expanded_variadic_parms, patchlist, typelist, 0);
@@ -1533,7 +1537,11 @@ Node *Swig_cparse_template_locate(String *name, Parm *instantiated_parms, String
     assert(Equal(nodeType, "template"));
     String *templatetype = Getattr(n, "templatetype");
 
-    if (Equal(templatetype, "class") || Equal(templatetype, "classforward")) {
+    if (Equal(templatetype, "concept")) {
+      Swig_error(
+        cparse_file, cparse_line, "%%template not allowed on concept '%s' - concepts cannot be instantiated like class or function templates.\n", name);
+      return 0;
+    } else if (Equal(templatetype, "class") || Equal(templatetype, "classforward")) {
       Node *primary = Getattr(n, "primarytemplate");
       Parm *tparmsfound = Getattr(primary ? primary : n, "templateparms");
       int specialized = !tparmsfound; /* fully specialized (an explicit specialization) */

@@ -182,6 +182,57 @@ String *get_raw_text_balanced(int startchar, int endchar) {
 }
 
 /* ----------------------------------------------------------------------------
+ * static void capture_append_token(String *capture)
+ *
+ * Helper for the scanner_capture_* variants of the scanner skip helpers.
+ * Appends the raw text of the token just returned by Scanner_token (or the
+ * full balanced span returned by Scanner_skip_balanced) to 'capture'.
+ *
+ * A separating space is inserted only when one is needed for readability:
+ * between two word character runs - so 'std' '::' 'integral' '<' 'T' '>'
+ * joins as 'std::integral<T>' rather than 'std :: integral < T >', while
+ * 'T' 't' (two ids) keeps the 'T t' spacing - and around the logical
+ * operators '&&' and '||' so a compound constraint reads as
+ * 'Numeric<T> && SmallNumeric<T>' rather than 'Numeric<T>&&SmallNumeric<T>'.
+ * Subspans returned by Scanner_skip_balanced preserve the source's original
+ * whitespace inside the delimiters.
+ *
+ * The capture-NULL fast path lets every skip_*_inner caller share a single
+ * loop body whether or not capture is requested.
+ * ------------------------------------------------------------------------- */
+
+static int is_word_char(char c) {
+  return isalnum((unsigned char)c) || c == '_';
+}
+
+static int has_logical_op_at(const char *s, int n, int offset) {
+  if (offset < 0 || offset + 1 >= n)
+    return 0;
+  return (s[offset] == '&' && s[offset + 1] == '&') || (s[offset] == '|' && s[offset + 1] == '|');
+}
+
+static void capture_append_token(String *capture) {
+  String *text;
+  if (capture) {
+    text = Scanner_text(scan);
+    if (Len(capture) > 0 && Len(text) > 0) {
+      const char *cap = Char(capture);
+      const char *txt = Char(text);
+      int caplen = Len(capture);
+      int txtlen = Len(text);
+      int need_space = 0;
+      if (is_word_char(cap[caplen - 1]) && is_word_char(txt[0]))
+        need_space = 1;
+      else if (has_logical_op_at(cap, caplen, caplen - 2) || has_logical_op_at(txt, txtlen, 0))
+        need_space = 1;
+      if (need_space)
+        Append(capture, " ");
+    }
+    Append(capture, text);
+  }
+}
+
+/* ----------------------------------------------------------------------------
  * void skip_decl(void)
  *
  * This tries to skip over an entire declaration.   For example
@@ -191,9 +242,12 @@ String *get_raw_text_balanced(int startchar, int endchar) {
  * or
  *  friend ostream& operator<<(ostream&, const char *s) { }
  *
+ * The capture_decl variant records the raw text of the skipped declaration
+ * (excluding the terminating ';' but including any trailing '{...}' body)
+ * into a freshly allocated String, so the parser can attach it to a node.
  * ------------------------------------------------------------------------- */
 
-void skip_decl(void) {
+static void skip_decl_inner(String *capture) {
   int tok;
   int done = 0;
   int start_line = Scanner_line(scan);
@@ -209,23 +263,38 @@ void skip_decl(void) {
     if (tok == SWIG_TOKEN_LBRACE) {
       if (Scanner_skip_balanced(scan, '{', '}') < 0) {
         Swig_error(cparse_file, start_line, "Missing closing brace ('}'). Reached end of input.\n");
+      } else {
+        capture_append_token(capture);
       }
       break;
     }
     if (tok == SWIG_TOKEN_SEMI) {
       done = 1;
+    } else {
+      capture_append_token(capture);
     }
   }
   cparse_file = Scanner_file(scan);
   cparse_line = Scanner_line(scan);
 }
 
+void skip_decl(void) {
+  skip_decl_inner(NULL);
+}
+
+String *scanner_capture_decl(void) {
+  String *capture = NewStringEmpty();
+  skip_decl_inner(capture);
+  return capture;
+}
+
 /* ----------------------------------------------------------------------------
- * void skip_constraint(void)
+ * String *scanner_capture_constraint(void)
  *
- * Skip the constraint-expression that follows a C++20 'requires' keyword in a
- * requires-clause.  Stops at the next top level '{', ';' or '=' and pushes the
- * terminator back onto the scanner so the surrounding rule can consume it.
+ * Skip and capture the constraint-expression that follows a C++20 'requires'
+ * keyword in a trailing requires-clause.  Stops at the next top level '{',
+ * ';' or '=' and pushes the terminator back onto the scanner so the
+ * surrounding rule can consume it.
  *
  * Paren and bracket depth is tracked.  Angle-bracket contents need not be
  * balanced because in a well-formed constraint they contain neither braces
@@ -240,12 +309,13 @@ void skip_decl(void) {
  *     return x * x * x;
  *   }
  *
- * skip_constraint is called after the parser has consumed REQUIRES and
- * walks past 'Numeric<T> && (sizeof(T) <= 8)', leaving the function-body
- * '{' on the scanner for the surrounding rule.
+ * scanner_capture_constraint is called after the parser has consumed
+ * REQUIRES and walks past 'Numeric<T> && (sizeof(T) <= 8)', leaving the
+ * function-body '{' on the scanner for the surrounding rule.  Returns the
+ * raw text of the constraint expression as a freshly allocated String.
  * ------------------------------------------------------------------------- */
 
-void skip_constraint(void) {
+static void skip_constraint_inner(String *capture) {
   int paren = 0, bracket = 0;
   int start_line = Scanner_line(scan);
   for (;;) {
@@ -255,15 +325,19 @@ void skip_constraint(void) {
       return;
     }
     if (paren == 0 && bracket == 0 && tok == SWIG_TOKEN_ID && Strcmp(Scanner_text(scan), "requires") == 0) {
-      int next = Scanner_token(scan);
+      int next;
+      capture_append_token(capture);
+      next = Scanner_token(scan);
       if (next == SWIG_TOKEN_LPAREN) {
         if (Scanner_skip_balanced(scan, '(', ')') < 0)
           return;
+        capture_append_token(capture);
         next = Scanner_token(scan);
       }
       if (next == SWIG_TOKEN_LBRACE) {
         if (Scanner_skip_balanced(scan, '{', '}') < 0)
           return;
+        capture_append_token(capture);
       } else {
         Scanner_pushtoken(scan, next, Scanner_text(scan));
       }
@@ -281,9 +355,16 @@ void skip_constraint(void) {
       Scanner_pushtoken(scan, tok, Scanner_text(scan));
       break;
     }
+    capture_append_token(capture);
   }
   cparse_file = Scanner_file(scan);
   cparse_line = Scanner_line(scan);
+}
+
+String *scanner_capture_constraint(void) {
+  String *capture = NewStringEmpty();
+  skip_constraint_inner(capture);
+  return capture;
 }
 
 /* ----------------------------------------------------------------------------
@@ -308,7 +389,7 @@ void skip_constraint(void) {
  * Returns 0 on success, -1 on EOF or malformed input.
  * ------------------------------------------------------------------------- */
 
-static int skip_constraint_primary(void) {
+static int skip_constraint_primary(String *capture) {
   int tok;
 
   /* Eat leading '!' negations. */
@@ -316,42 +397,59 @@ static int skip_constraint_primary(void) {
     tok = Scanner_token(scan);
     if (tok == 0)
       return -1;
+    if (tok == SWIG_TOKEN_LNOT)
+      capture_append_token(capture);
   } while (tok == SWIG_TOKEN_LNOT);
 
-  if (tok == SWIG_TOKEN_LPAREN)
-    return Scanner_skip_balanced(scan, '(', ')');
+  if (tok == SWIG_TOKEN_LPAREN) {
+    int rc = Scanner_skip_balanced(scan, '(', ')');
+    if (rc == 0)
+      capture_append_token(capture);
+    return rc;
+  }
 
   /* requires-expression: consumed here so we can step over its parameter
    * list and body, since 'requires' inside a constraint introduces a fresh
    * primary - not the start of another requires-clause. */
   if (tok == SWIG_TOKEN_ID && Strcmp(Scanner_text(scan), "requires") == 0) {
-    int next = Scanner_token(scan);
+    int next;
+    int rc;
+    capture_append_token(capture);
+    next = Scanner_token(scan);
     if (next == SWIG_TOKEN_LPAREN) {
       if (Scanner_skip_balanced(scan, '(', ')') < 0)
         return -1;
+      capture_append_token(capture);
       next = Scanner_token(scan);
     }
     if (next != SWIG_TOKEN_LBRACE)
       return -1;
-    return Scanner_skip_balanced(scan, '{', '}');
+    rc = Scanner_skip_balanced(scan, '{', '}');
+    if (rc == 0)
+      capture_append_token(capture);
+    return rc;
   }
 
   /* Leaf primary: an id or literal, possibly extended by '::id' chains and
    * a single '<' ... '>' template arg list. */
+  capture_append_token(capture);
   for (;;) {
     tok = Scanner_token(scan);
     if (tok == 0)
       return -1;
     if (tok == SWIG_TOKEN_DCOLON) {
-      /* Eat the next id token. */
-      int idtok = Scanner_token(scan);
+      int idtok;
+      capture_append_token(capture);
+      idtok = Scanner_token(scan);
       if (idtok == 0)
         return -1;
+      capture_append_token(capture);
       continue;
     }
     if (tok == SWIG_TOKEN_LESSTHAN) {
       if (Scanner_skip_balanced(scan, '<', '>') < 0)
         return -1;
+      capture_append_token(capture);
       continue;
     }
     /* End of this primary - push back for the caller. */
@@ -361,10 +459,11 @@ static int skip_constraint_primary(void) {
 }
 
 /* ----------------------------------------------------------------------------
- * void skip_prefix_requires_clause(void)
+ * String *scanner_capture_prefix_requires_clause(void)
  *
- * Skip a C++20 prefix requires-clause that appears between the closing '>'
- * of a template parameter list and the start of the constrained declaration.
+ * Skip and capture a C++20 prefix requires-clause that appears between the
+ * closing '>' of a template parameter list and the start of the constrained
+ * declaration.
  *
  * Unlike a trailing requires-clause, this position has no fixed token that
  * marks the end of the constraint - what follows is the declarator itself
@@ -385,32 +484,42 @@ static int skip_constraint_primary(void) {
  *   requires Numeric<T> && (sizeof(T) <= 8)
  *   T quad(T x) { return x * x * x * x; }
  *
- * skip_prefix_requires_clause is called after the parser has consumed
- * REQUIRES.  It skips 'Numeric<T>' as a primary, sees '&&' and continues,
- * skips '(sizeof(T) <= 8)' as a parenthesised primary, then sees 'T' which
- * is not '&&' / '||', pushes 'T' back, and returns - leaving the declarator
- * 'T quad(T x) { ... }' for the surrounding rule.
+ * scanner_capture_prefix_requires_clause is called after the parser has
+ * consumed REQUIRES.  It skips 'Numeric<T>' as a primary, sees '&&' and
+ * continues, skips '(sizeof(T) <= 8)' as a parenthesised primary, then sees
+ * 'T' which is not '&&' / '||', pushes 'T' back, and returns - leaving the
+ * declarator 'T quad(T x) { ... }' for the surrounding rule.  Returns the
+ * raw text of the constraint expression as a freshly allocated String.
  * ------------------------------------------------------------------------- */
 
-void skip_prefix_requires_clause(void) {
+static void skip_prefix_requires_clause_inner(String *capture) {
   int start_line = Scanner_line(scan);
   for (;;) {
-    if (skip_constraint_primary() < 0) {
+    int tok;
+    if (skip_constraint_primary(capture) < 0) {
       Swig_error(cparse_file, start_line, "Malformed 'requires' clause. Reached end of input.\n");
       return;
     }
-    int tok = Scanner_token(scan);
+    tok = Scanner_token(scan);
     if (tok == 0) {
       Swig_error(cparse_file, start_line, "Unterminated 'requires' clause. Reached end of input.\n");
       return;
     }
-    if (tok == SWIG_TOKEN_LAND || tok == SWIG_TOKEN_LOR)
+    if (tok == SWIG_TOKEN_LAND || tok == SWIG_TOKEN_LOR) {
+      capture_append_token(capture);
       continue;
+    }
     Scanner_pushtoken(scan, tok, Scanner_text(scan));
     break;
   }
   cparse_file = Scanner_file(scan);
   cparse_line = Scanner_line(scan);
+}
+
+String *scanner_capture_prefix_requires_clause(void) {
+  String *capture = NewStringEmpty();
+  skip_prefix_requires_clause_inner(capture);
+  return capture;
 }
 
 /* ----------------------------------------------------------------------------
