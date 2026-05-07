@@ -159,12 +159,9 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     Append(typelist, d);
     Append(patchlist, v);
     Append(cpatchlist, code);
-    /* Patch C++20 requires-clause text the same way as code: it's a flat
-       string in template-parameter scope and needs T => int substitution.
-       The same substitution is applied structurally via the constraint
-       subtree walk below (added via appendChild from c_decl), so the flat
-       string and the rendered tree stay in sync after Replace runs. */
-    Append(cpatchlist, Getattr(n, "requires"));
+    /* Walk any C++20 constraint subtree attached as a child by c_decl so
+       its inner atom strings get the same T => int substitution as the
+       cdecl's other patched fields. */
     {
       Node *cn = firstChild(n);
       while (cn) {
@@ -377,7 +374,6 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     /* Look for obvious parameters */
     Node *cn;
     Append(cpatchlist, Getattr(n, "code"));
-    Append(cpatchlist, Getattr(n, "requires"));
     Append(typelist, Getattr(n, "type"));
     Append(typelist, Getattr(n, "decl"));
     expand_parms(n, "parms", unexpanded_variadic_parm, expanded_variadic_parms, patchlist, typelist, 0);

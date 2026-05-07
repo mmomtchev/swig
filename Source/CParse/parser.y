@@ -3359,10 +3359,7 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 	      Setattr($$,"noexcept",$cpp_const.nexcept);
 	      Setattr($$,"final",$cpp_const.final);
               if ($cpp_const.constraint_node) {
-                String *requires_str = Constraint_str($cpp_const.constraint_node);
-                Setattr($$,"requires",requires_str);
                 appendChild($$, $cpp_const.constraint_node);
-                Delete(requires_str);
               }
 	      if ($initializer.val && $initializer.type) {
 		/* store initializer type as it might be different to the declared type */
@@ -4669,13 +4666,10 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
                         /* Attach prefix requires-clause subtree (e.g. 'template<T> requires C<T>')
                            to the inner template node.  If a trailing requires-clause is already
                            present on the cdecl (attached by c_decl), conjoin the two structurally
-                           into a single op="and" constraint subtree per [temp.constr.decl].  The
-                           rendered "requires" string is regenerated from the combined tree, so it
-                           reads identically to the previous ' && '-string-concatenation. */
+                           into a single op="and" constraint subtree per [temp.constr.decl]. */
                         if (ni && $requires_clause_opt) {
                           Node *trailing = 0;
                           Node *combined;
-                          String *combined_str;
                           {
                             Node *cn = firstChild(ni);
                             while (cn) {
@@ -4692,10 +4686,7 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
                           } else {
                             combined = $requires_clause_opt;
                           }
-                          combined_str = Constraint_str(combined);
-                          Setattr(ni, "requires", combined_str);
                           appendChild(ni, combined);
-                          Delete(combined_str);
                         }
 			$$ = ntop;
 			Swig_symbol_setscope(cscope);
@@ -4757,13 +4748,10 @@ cpp_template_possible:  c_decl
    downstream consumers that have not yet migrated to walking the subtree.
    ------------------------------------------------------------ */
 cpp_concept_decl : CONCEPT idcolon EQUAL constraint SEMI {
-                  String *str = Constraint_str($constraint);
                   $$ = new_node("concept");
                   Setattr($$, "name", $idcolon);
-                  Setattr($$, "requires", str);
                   Setattr($$, "type", NewString("bool"));
                   appendChild($$, $constraint);
-                  Delete(str);
                 }
                 ;
 
