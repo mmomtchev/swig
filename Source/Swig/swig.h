@@ -439,6 +439,15 @@ extern void Swig_extend_merge(Node *cls, Node *am);
 extern void Swig_extend_append_previous(Node *cls, Node *am);
 extern void Swig_extend_unused_check(void);
 
+/* --- C++20 constraint expression support --- */
+
+extern Node *Constraint_new_atom(const_String_or_char_ptr kind);
+extern Node *Constraint_new_op(const_String_or_char_ptr op);
+extern Node *Constraint_new_requires_expression(void);
+extern Node *Constraint_new_requirement(const_String_or_char_ptr kind);
+extern Node *Constraint_combine(const_String_or_char_ptr op, Node *lhs, Node *rhs);
+extern String *Constraint_str(Node *n);
+
 /* hacks defined in C++ ! */
 extern int Swig_director_mode(void);
 extern int Swig_director_protected_mode(void);
