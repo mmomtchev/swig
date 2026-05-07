@@ -290,8 +290,13 @@ static void render_requirement(String *out, Node *n) {
     Append(out, ";");
   } else if (Equal(kind, "nested")) {
     Append(out, "requires ");
-    if (firstChild(n))
+    if (firstChild(n)) {
       render_node(out, firstChild(n));
+    } else {
+      String *value = Getattr(n, "value");
+      if (value)
+        Append(out, value);
+    }
     Append(out, ";");
   }
 }

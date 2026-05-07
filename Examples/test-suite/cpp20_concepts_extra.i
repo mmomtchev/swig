@@ -13,7 +13,7 @@ template<typename T>
 concept Numeric = std::integral<T> || std::floating_point<T>;
 
 template<typename T>
-concept Sized = sizeof(T) <= 8;
+concept Sized = (sizeof(T) <= 8);
 
 // Negation of a concept-id is not a primary-expression in C++20; the user
 // must wrap it in parens.  A struct that is not Numeric satisfies the

@@ -1706,11 +1706,11 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
     String *throwf;
     String *nexcept;
     String *final;
-    /* Raw text of a C++20 trailing requires-clause attached to this
-     * declaration's qualifiers, captured via scanner_capture_constraint().  NULL when
-     * no requires-clause is present.  Stored as a flat string for now; a
-     * future redesign would replace this with a structured constraint node. */
-    String *requires_clause;
+    /* C++20 trailing requires-clause attached to this declaration's
+     * qualifiers, as a structured constraint subtree.  NULL when no
+     * requires-clause is present.  The subtree's rendered text is
+     * obtained via Constraint_str(). */
+    Node *constraint_node;
   } dtype;
   struct {
     String *filename;
@@ -1863,7 +1863,10 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
 %type <str>      less_valparms_greater;
 %type <str>      type_qualifier;
 %type <str>      ref_qualifier;
-%type <str>      requires_clause_opt;
+%type <node>     requires_clause_opt;
+%type <node>     constraint constraint_or constraint_and constraint_primary;
+%type <node>     requires_expression requirement_body;
+%type <pl>       requirement_parameter_list_opt;
 %type <id>       type_qualifier_raw;
 %type <id>       idstring idstringopt;
 %type <id>       pragma_lang;
@@ -3355,8 +3358,12 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 	      Setattr($$,"throw",$cpp_const.throwf);
 	      Setattr($$,"noexcept",$cpp_const.nexcept);
 	      Setattr($$,"final",$cpp_const.final);
-              if ($cpp_const.requires_clause)
-                Setattr($$,"requires",$cpp_const.requires_clause);
+              if ($cpp_const.constraint_node) {
+                String *requires_str = Constraint_str($cpp_const.constraint_node);
+                Setattr($$,"requires",requires_str);
+                appendChild($$, $cpp_const.constraint_node);
+                Delete(requires_str);
+              }
 	      if ($initializer.val && $initializer.type) {
 		/* store initializer type as it might be different to the declared type */
 		SwigType *valuetype = NewSwigType($initializer.type);
@@ -4659,17 +4666,21 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			    Swig_symbol_cadd(fname,$$);
 			  }
 			}
-                        /* Attach prefix requires-clause text (e.g. 'template<T> requires C<T>')
+                        /* Attach prefix requires-clause subtree (e.g. 'template<T> requires C<T>')
                            to the inner template node.  If a trailing requires-clause was also
-                           captured (set on the cdecl by c_decl), conjoin with '&&' to model
-                           the C++20 spec's normalization of associated constraints. */
+                           captured (set on the cdecl by c_decl), the rendered "requires" string
+                           is the ' && ' conjunction of the two; the structural combine into a
+                           single op="and" subtree is deferred to a later commit. */
                         if (ni && $requires_clause_opt) {
+                          String *prefix_str = Constraint_str($requires_clause_opt);
                           String *existing = Getattr(ni, "requires");
                           if (existing && Len(existing) > 0) {
-                            Setattr(ni, "requires", NewStringf("%s && %s", $requires_clause_opt, existing));
+                            Setattr(ni, "requires", NewStringf("%s && %s", prefix_str, existing));
                           } else {
-                            Setattr(ni, "requires", $requires_clause_opt);
+                            Setattr(ni, "requires", prefix_str);
                           }
+                          appendChild(ni, $requires_clause_opt);
+                          Delete(prefix_str);
                         }
 			$$ = ntop;
 			Swig_symbol_setscope(cscope);
@@ -4726,15 +4737,18 @@ cpp_template_possible:  c_decl
    Always appears after a template head, so attached via cpp_template_possible.
    The wrapping cpp_template_decl rule converts the resulting node to nodeType
    "template" with templatetype "concept", and registers it in the symbol
-   table.  The constraint expression is captured as a flat string for now;
-   structured representation is deferred (see Source/CParse/cscanner.c).
+   table.  The constraint subtree is attached as the concept node's first
+   child; the rendered text is also stored on the "requires" attribute for
+   downstream consumers that have not yet migrated to walking the subtree.
    ------------------------------------------------------------ */
-cpp_concept_decl : CONCEPT idcolon EQUAL {
-                  String *constraint = scanner_capture_decl();
+cpp_concept_decl : CONCEPT idcolon EQUAL constraint SEMI {
+                  String *str = Constraint_str($constraint);
                   $$ = new_node("concept");
                   Setattr($$, "name", $idcolon);
-                  Setattr($$, "requires", constraint);
+                  Setattr($$, "requires", str);
                   Setattr($$, "type", NewString("bool"));
+                  appendChild($$, $constraint);
+                  Delete(str);
                 }
                 ;
 
@@ -6845,19 +6859,98 @@ exprmem        : idcolon ARROW ID {
 	       ;
 
 /* ------------------------------------------------------------
-   Body of a C++20 requires-expression: an optional parameter list and a
-   required brace-enclosed sequence of requirements.  Skipped at the scanner
-   level, since SWIG does not need to evaluate the requirements.
+   C++20 constraint-expression and requires-expression productions.
+
+   The constraint grammar has its own logical-or / logical-and / primary
+   layering, distinct from the regular C++ expression grammar (which uses
+   '||' and '&&' too but reaches them through valexpr).  Keeping the two
+   subgrammars disjoint avoids shift/reduce conflicts: nothing in the
+   constraint subgrammar reduces from valexpr or vice versa.
+
+   constraint_primary uses idcolon directly for concept-ids; idcolon's
+   existing 'identifier less_valparms_greater' alternative covers
+   concept-id template-argument-lists like 'Numeric<T>' without needing
+   a separate LESSTHAN production here.
+
+   The requirement-body of a requires-expression is captured opaquely at
+   the scanner level: SWIG does not need to evaluate the individual
+   requirements, and reusing valexpr inside the requirement grammar
+   would reintroduce expression vs constraint conflicts.  parse_requirement_seq()
+   in cscanner.c walks the captured text and returns a chain of structured
+   "requirement" nodes (kind="simple"/"type"/"compound"/"nested").
    ------------------------------------------------------------ */
-requires_body  : LPAREN {
-		    if (skip_balanced('(', ')') < 0) Exit(EXIT_FAILURE);
-	       } LBRACE {
-		    if (skip_balanced('{', '}') < 0) Exit(EXIT_FAILURE);
-	       }
-	       | LBRACE {
-		    if (skip_balanced('{', '}') < 0) Exit(EXIT_FAILURE);
-	       }
-	       ;
+constraint     : constraint_or
+               ;
+
+constraint_or  : constraint_and
+               | constraint_or LOR constraint_and {
+                    $$ = Constraint_combine("or", $1, $3);
+                 }
+               ;
+
+constraint_and : constraint_primary
+               | constraint_and LAND constraint_primary {
+                    $$ = Constraint_combine("and", $1, $3);
+                 }
+               ;
+
+constraint_primary : idcolon {
+                    $$ = Constraint_new_atom("concept-id");
+                    Setattr($$, "name", $idcolon);
+                 }
+               | LPAREN <node>{
+                    /* Parenthesised primary - opaque captured at the scanner
+                     * level so the body can be any C++ expression, not only a
+                     * constraint.  This handles forms like '(sizeof(T) <= 4)'
+                     * that are valid constraint primaries but not constraint
+                     * expressions, and avoids the LALR(1) conflict between
+                     * 'LPAREN constraint RPAREN' and an expression alternative.
+                     * The captured text retains its surrounding parens. */
+                    String *captured;
+                    if (skip_balanced('(', ')') < 0) Exit(EXIT_FAILURE);
+                    captured = Copy(scanner_ccode);
+                    $$ = Constraint_new_atom("expression");
+                    Setattr($$, "value", captured);
+                    Delete(captured);
+                 }[atom] {
+                    $$ = $atom;
+                 }
+               | requires_expression {
+                    $$ = Constraint_new_atom("requires-expression");
+                    appendChild($$, $requires_expression);
+                 }
+               ;
+
+requires_expression : REQUIRES requirement_parameter_list_opt requirement_body {
+                    $$ = Constraint_new_requires_expression();
+                    if ($requirement_parameter_list_opt)
+                      Setattr($$, "parms", $requirement_parameter_list_opt);
+                    {
+                      Node *r = $requirement_body;
+                      while (r) {
+                        Node *next = nextSibling(r);
+                        set_nextSibling(r, 0);
+                        set_previousSibling(r, 0);
+                        appendChild($$, r);
+                        r = next;
+                      }
+                    }
+                 }
+               ;
+
+requirement_parameter_list_opt : LPAREN parms RPAREN {
+                    $$ = $parms;
+                 }
+               | %empty {
+                    $$ = 0;
+                 }
+               ;
+
+requirement_body : LBRACE {
+                    if (skip_balanced('{', '}') < 0) Exit(EXIT_FAILURE);
+                    $$ = parse_requirement_seq(scanner_ccode);
+                 }
+               ;
 
 /* Non-compound expression */
 exprsimple     : exprnum
@@ -6936,16 +7029,18 @@ valexpr        : exprsimple
 	       | exprcompound
 
 /* ------------------------------------------------------------
-   C++20 requires-expression as a primary.  The (optional) parameter list and
-   the requirement body are skipped at the scanner level - their contents do
-   not affect wrapper code generation, since the C++ compiler decides at
-   instantiation time whether the expression is true or false.  The parsed
-   value is opaque but typed as bool.
+   C++20 requires-expression as a primary.  The structured node is built by
+   the requires_expression production but its children do not affect the
+   value position semantics: SWIG cannot evaluate the requirement body, so
+   the val rendered for downstream is an empty string typed as bool, and
+   the C++ compiler decides at instantiation time whether the expression
+   is true or false.
    ------------------------------------------------------------ */
-               | REQUIRES requires_body {
+               | requires_expression {
 		    $$ = default_dtype;
 		    $$.val = NewString("");
 		    $$.type = T_BOOL;
+		    Delete($requires_expression);
 	       }
 
 /* grouping */
@@ -7538,13 +7633,12 @@ virt_specifier_seq_opt : virt_specifier_seq
 /* ------------------------------------------------------------
    Optional C++20 prefix requires-clause that may appear between the closing
    '>' of a template parameter list and the constrained declaration.  The
-   constraint expression is consumed by scanner_capture_prefix_requires_clause() at
-   the scanner level, which records the raw constraint text so the wrapping
-   cpp_template_decl rule can attach it to the resulting node as a "requires"
-   attribute.  Returns NULL when no clause is present.
+   constraint expression is parsed structurally as a constraint subtree, so
+   the wrapping cpp_template_decl rule can attach it to the resulting node.
+   Returns NULL when no clause is present.
    ------------------------------------------------------------ */
-requires_clause_opt : REQUIRES {
-                   $$ = scanner_capture_prefix_requires_clause();
+requires_clause_opt : REQUIRES constraint {
+                   $$ = $constraint;
                }
                | %empty {
                    $$ = 0;
@@ -7605,13 +7699,13 @@ qualifiers_exception_specification : cv_ref_qualifier {
                ;
 
 cpp_const      : qualifiers_exception_specification
-               | qualifiers_exception_specification REQUIRES {
+               | qualifiers_exception_specification REQUIRES constraint {
                  $$ = $qualifiers_exception_specification;
-                 $$.requires_clause = scanner_capture_constraint();
+                 $$.constraint_node = $constraint;
                }
-               | REQUIRES {
+               | REQUIRES constraint {
                  $$ = default_dtype;
-                 $$.requires_clause = scanner_capture_constraint();
+                 $$.constraint_node = $constraint;
                }
                | %empty {
                  $$ = default_dtype;

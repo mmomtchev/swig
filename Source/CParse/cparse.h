@@ -40,6 +40,7 @@ extern void skip_decl(void);
 extern String *scanner_capture_decl(void);
 extern String *scanner_capture_constraint(void);
 extern String *scanner_capture_prefix_requires_clause(void);
+extern Node *parse_requirement_seq(String *body_text);
 extern void scanner_last_id(int);
 extern void scanner_clear_rename(void);
 extern void scanner_set_location(String *file, int line);

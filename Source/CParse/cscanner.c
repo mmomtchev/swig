@@ -523,6 +523,234 @@ String *scanner_capture_prefix_requires_clause(void) {
 }
 
 /* ----------------------------------------------------------------------------
+ * static Node *parse_one_requirement(const char *start, int len)
+ *
+ * Build a single "requirement" Node from a substring of the requires-expression
+ * body, with leading and trailing whitespace already trimmed and the trailing
+ * ';' already stripped by the caller.  Returns NULL if the substring is empty.
+ *
+ * The leading non whitespace word selects the requirement kind:
+ *
+ *   typename ...  -> kind="type",     type    = the rest of the text
+ *   requires ...  -> kind="nested",   value   = the rest of the text
+ *   { ...         -> kind="compound", value   = expression inside the braces,
+ *                                     noexcept flag if 'noexcept' follows,
+ *                                     firstChild = atomic concept-id constraint
+ *                                                  for the optional
+ *                                                  return-type-requirement (-> Concept)
+ *   anything else -> kind="simple",   value   = the rest of the text
+ *
+ * The body of compound and nested requirements is captured opaquely as text,
+ * mirroring how the scanner level requires_body skipper has always treated
+ * them.  A future enhancement could parse nested requirements into a real
+ * constraint subtree, but this would require retokenising the captured text
+ * since the parser is non-reentrant.
+ * ------------------------------------------------------------------------- */
+
+static int starts_with_word(const char *s, int len, const char *word) {
+  int wlen = (int)strlen(word);
+  if (wlen > len)
+    return 0;
+  if (strncmp(s, word, wlen) != 0)
+    return 0;
+  /* Word boundary: next character must not extend the identifier. */
+  if (wlen < len && (isalnum((unsigned char)s[wlen]) || s[wlen] == '_'))
+    return 0;
+  return 1;
+}
+
+static int skip_whitespace(const char *s, int len, int i) {
+  while (i < len && isspace((unsigned char)s[i]))
+    i++;
+  return i;
+}
+
+static int trim_trailing_whitespace(const char *s, int len) {
+  while (len > 0 && isspace((unsigned char)s[len - 1]))
+    len--;
+  return len;
+}
+
+static Node *parse_one_requirement(const char *start, int len) {
+  Node *n;
+  int i = 0;
+
+  i = skip_whitespace(start, len, i);
+  if (i >= len)
+    return 0;
+  start += i;
+  len -= i;
+  len = trim_trailing_whitespace(start, len);
+  if (len == 0)
+    return 0;
+
+  if (starts_with_word(start, len, "typename")) {
+    int after = skip_whitespace(start, len, 8);
+    int rest_len = trim_trailing_whitespace(start + after, len - after);
+    n = Constraint_new_requirement("type");
+    if (rest_len > 0) {
+      String *type = NewStringWithSize(start + after, rest_len);
+      Setattr(n, "type", type);
+      Delete(type);
+    }
+    return n;
+  }
+
+  if (starts_with_word(start, len, "requires")) {
+    int after = skip_whitespace(start, len, 8);
+    int rest_len = trim_trailing_whitespace(start + after, len - after);
+    n = Constraint_new_requirement("nested");
+    if (rest_len > 0) {
+      String *value = NewStringWithSize(start + after, rest_len);
+      Setattr(n, "value", value);
+      Delete(value);
+    }
+    return n;
+  }
+
+  if (start[0] == '{') {
+    /* Compound requirement: '{ expr } [noexcept] [-> Concept]'. */
+    int depth = 1;
+    int body_start = 1;
+    int j = 1;
+    int body_end = -1;
+    while (j < len && depth > 0) {
+      char c = start[j];
+      if (c == '{')
+        depth++;
+      else if (c == '}') {
+        depth--;
+        if (depth == 0) {
+          body_end = j;
+          break;
+        }
+      }
+      j++;
+    }
+    if (body_end < 0)
+      return 0;
+    n = Constraint_new_requirement("compound");
+    {
+      int b_len = trim_trailing_whitespace(start + body_start, body_end - body_start);
+      int b_off = skip_whitespace(start, body_end, body_start) - body_start;
+      if (b_len - b_off > 0) {
+        String *value = NewStringWithSize(start + body_start + b_off, b_len - b_off);
+        Setattr(n, "value", value);
+        Delete(value);
+      }
+    }
+    /* After '}', look for 'noexcept' then optional '-> Concept'. */
+    j++;
+    j = skip_whitespace(start, len, j);
+    if (j < len && starts_with_word(start + j, len - j, "noexcept")) {
+      Setattr(n, "noexcept", "1");
+      j += 8;
+      j = skip_whitespace(start, len, j);
+    }
+    if (j + 1 < len && start[j] == '-' && start[j + 1] == '>') {
+      int rest_len;
+      Node *ret_atom;
+      j += 2;
+      j = skip_whitespace(start, len, j);
+      rest_len = trim_trailing_whitespace(start + j, len - j);
+      if (rest_len > 0) {
+        String *concept_name = NewStringWithSize(start + j, rest_len);
+        ret_atom = Constraint_new_atom("concept-id");
+        Setattr(ret_atom, "name", concept_name);
+        appendChild(n, ret_atom);
+        Delete(concept_name);
+      }
+    }
+    return n;
+  }
+
+  /* Simple requirement: arbitrary expression text. */
+  n = Constraint_new_requirement("simple");
+  {
+    String *value = NewStringWithSize(start, len);
+    Setattr(n, "value", value);
+    Delete(value);
+  }
+  return n;
+}
+
+/* ----------------------------------------------------------------------------
+ * Node *parse_requirement_seq(String *body_text)
+ *
+ * Walk the captured text of a requires-expression body (as recorded into
+ * scanner_ccode by skip_balanced('{', '}'), so including the outer braces)
+ * and return a chain of "requirement" Nodes joined via nextSibling.
+ *
+ * Requirements are separated by ';' at top level - while walking, the depth
+ * of '(', '[' and '{' is tracked so that a ';' inside a balanced subspan
+ * does not split the requirement.  An empty body produces a NULL chain.
+ * ------------------------------------------------------------------------- */
+
+Node *parse_requirement_seq(String *body_text) {
+  Node *head = 0;
+  Node *tail = 0;
+  const char *s;
+  int len;
+  int start;
+  int paren = 0;
+  int bracket = 0;
+  int brace = 0;
+  int i;
+
+  if (!body_text)
+    return 0;
+  s = Char(body_text);
+  len = Len(body_text);
+
+  /* Strip outer braces: scanner_ccode for skip_balanced('{', '}') always
+   * has '{' at index 0 and '}' at len-1. */
+  if (len >= 2 && s[0] == '{' && s[len - 1] == '}') {
+    s++;
+    len -= 2;
+  }
+
+  start = 0;
+  for (i = 0; i < len; i++) {
+    char c = s[i];
+    if (c == '(')
+      paren++;
+    else if (c == ')')
+      paren--;
+    else if (c == '[')
+      bracket++;
+    else if (c == ']')
+      bracket--;
+    else if (c == '{')
+      brace++;
+    else if (c == '}')
+      brace--;
+    else if (c == ';' && paren == 0 && bracket == 0 && brace == 0) {
+      Node *r = parse_one_requirement(s + start, i - start);
+      if (r) {
+        if (!head)
+          head = r;
+        else
+          set_nextSibling(tail, r);
+        tail = r;
+      }
+      start = i + 1;
+    }
+  }
+  /* No trailing ';' is permitted in well-formed C++20, but tolerate text
+   * after the last ';' just in case. */
+  if (start < len) {
+    Node *r = parse_one_requirement(s + start, len - start);
+    if (r) {
+      if (!head)
+        head = r;
+      else
+        set_nextSibling(tail, r);
+    }
+  }
+  return head;
+}
+
+/* ----------------------------------------------------------------------------
  * int yylook()
  *
  * Lexical scanner.
