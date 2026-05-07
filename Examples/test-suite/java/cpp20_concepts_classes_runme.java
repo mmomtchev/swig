@@ -51,5 +51,10 @@ public class cpp20_concepts_classes_runme {
     CheckedBoxInt cb = new CheckedBoxInt(11);
     if (cb.get() != 11)
       throw new RuntimeException("CheckedBoxInt.get");
+
+    // Class template whose member function template is defined out of line with a prefix requires-clause.
+    OutOfLineBoxInt ob = new OutOfLineBoxInt(3);
+    if (ob.get() != 3)
+      throw new RuntimeException("OutOfLineBoxInt.get");
   }
 }

@@ -34,3 +34,7 @@ check_equal(sb.get(), 42)
 # Class template with a constrained constructor.
 cb = CheckedBoxInt(11)
 check_equal(cb.get(), 11)
+
+# Class template whose member function template is defined out of line with a prefix requires-clause.
+ob = OutOfLineBoxInt(3)
+check_equal(ob.get(), 3)

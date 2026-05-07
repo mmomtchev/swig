@@ -58,6 +58,23 @@ public:
   CheckedBox(T v) requires Numeric<T> : value(v) {}
   T get() const { return value; }
 };
+
+// Out of line definition of a member function template of a class template,
+// with a prefix requires-clause on its own template head.  Exercises the
+// requires_clause_opt path on a doubly templated declaration.
+template<typename T>
+class OutOfLineBox {
+  T value;
+public:
+  OutOfLineBox(T v) : value(v) {}
+  T get() const { return value; }
+  template<typename U> requires Numeric<U>
+  T scaled(U factor) const;
+};
+
+template<typename T>
+template<typename U> requires Numeric<U>
+T OutOfLineBox<T>::scaled(U factor) const { return value * (T)factor; }
 %}
 
 %template(NumericBoxInt)    NumericBox<int>;
@@ -69,3 +86,5 @@ public:
 %template(SmallBoxInt)      SmallBox<int>;
 
 %template(CheckedBoxInt)    CheckedBox<int>;
+
+%template(OutOfLineBoxInt)  OutOfLineBox<int>;
