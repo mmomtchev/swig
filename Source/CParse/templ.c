@@ -160,8 +160,21 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     Append(patchlist, v);
     Append(cpatchlist, code);
     /* Patch C++20 requires-clause text the same way as code: it's a flat
-       string in template-parameter scope and needs T => int substitution. */
+       string in template-parameter scope and needs T => int substitution.
+       The same substitution is applied structurally via the constraint
+       subtree walk below (added via appendChild from c_decl), so the flat
+       string and the rendered tree stay in sync after Replace runs. */
     Append(cpatchlist, Getattr(n, "requires"));
+    {
+      Node *cn = firstChild(n);
+      while (cn) {
+        String *cn_type = nodeType(cn);
+        if (cn_type && (Equal(cn_type, "constraint") || Equal(cn_type, "requires-expression") || Equal(cn_type, "requirement"))) {
+          cparse_template_expand(templnode, cn, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+        }
+        cn = nextSibling(cn);
+      }
+    }
 
     if (Getattr(n, "conversion_operator")) {
       /* conversion operator "name" and "sym:name" attributes are unusual as they contain c++ types, so treat as code for patching */
@@ -310,6 +323,55 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
 
     if (Getattr(n, "namespace")) {
       /* Namespace link.   This is nasty.  Is other namespace defined? */
+    }
+  } else if (Equal(nodeType, "constraint")) {
+    /* C++20 constraint subtree.  For atom nodes, queue the kind specific
+     * inner strings for substitution; for and/or nodes, just recurse into
+     * the operand chain. */
+    Node *cn;
+    String *op = Getattr(n, "op");
+    if (op && Equal(op, "atom")) {
+      String *kind = Getattr(n, "kind");
+      if (kind) {
+        if (Equal(kind, "concept-id")) {
+          /* The name string holds the idcolon rendered form including any
+           * '<args>' suffix, so a single text-replace covers both the
+           * concept-id's qualified name and its template-argument list. */
+          Append(cpatchlist, Getattr(n, "name"));
+        } else if (Equal(kind, "expression")) {
+          Append(cpatchlist, Getattr(n, "value"));
+        }
+        /* parens / requires-expression / fold: structure lives in firstChild,
+         * picked up by the recursion below. */
+      }
+    }
+    cn = firstChild(n);
+    while (cn) {
+      cparse_template_expand(templnode, cn, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+      cn = nextSibling(cn);
+    }
+  } else if (Equal(nodeType, "requires-expression")) {
+    Node *cn;
+    expand_parms(n, "parms", unexpanded_variadic_parm, expanded_variadic_parms, patchlist, typelist, 0);
+    cn = firstChild(n);
+    while (cn) {
+      cparse_template_expand(templnode, cn, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+      cn = nextSibling(cn);
+    }
+  } else if (Equal(nodeType, "requirement")) {
+    Node *cn;
+    String *kind = Getattr(n, "kind");
+    if (kind && Equal(kind, "type")) {
+      Append(typelist, Getattr(n, "type"));
+    } else {
+      /* simple, compound, nested: opaque expression text needs T => int
+       * via plain text replacement. */
+      Append(cpatchlist, Getattr(n, "value"));
+    }
+    cn = firstChild(n);
+    while (cn) {
+      cparse_template_expand(templnode, cn, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+      cn = nextSibling(cn);
     }
   } else {
     /* Look for obvious parameters */
