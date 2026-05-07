@@ -112,6 +112,10 @@ Typemaps (defined in `Lib/*.swg` and user `.i` files) control how C/C++ types ar
 
 C++ template instantiation is handled in `Source/CParse/templ.c`. Template specialization matching is a complex area — see `Source/Swig/typesys.c` for the type equivalence machinery.
 
+### Parser is not reentrant
+
+`Swig_cparse_parms()`, `Swig_cparse_type()` and the other entry points that wrap `yyparse()` clobber parser globals (`top`, `cparse_file`, `cparse_line`, `yylval`, `yychar`) and cannot be called from inside a parser action. Grammar that needs to build a `ParmList` for a fresh subsyntax must reuse the existing `parms` / `valparms` / `template_parms` productions natively (see how the C++20 `requires_expression` rule reuses `parms` for the requirement-parameter-list), not recurse through `Swig_cparse_parms()`.
+
 ### DOH
 
 Almost every SWIG internal data structure is a DOH object. Common operations:
