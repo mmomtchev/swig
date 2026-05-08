@@ -220,11 +220,13 @@ void skip_decl(void) {
 }
 
 /* ----------------------------------------------------------------------------
- * static Node *parse_one_requirement(const char *start, int len)
+ * static Node *parse_one_requirement(String *text)
  *
- * Build a single "requirement" Node from a substring of the requires-expression
- * body, with leading and trailing whitespace already trimmed and the trailing
- * ';' already stripped by the caller.  Returns NULL if the substring is empty.
+ * Build a single "requirement" Node from one body substring (already split at
+ * the top level ';' by the caller).  text is mutated in place: leading and
+ * trailing whitespace are stripped, and the leading kind keyword (if any) is
+ * removed before the remainder is stored on the node.  Returns NULL if the
+ * substring is empty.
  *
  * The leading non whitespace word selects the requirement kind:
  *
@@ -244,78 +246,86 @@ void skip_decl(void) {
  * since the parser is non-reentrant.
  * ------------------------------------------------------------------------- */
 
-static int starts_with_word(const char *s, int len, const char *word) {
+/* Like Strncmp(s, word, strlen(word)) == 0, but only accepts a match at a word
+ * boundary - the next character must not extend the identifier.  No DOH or
+ * codebase equivalent exists; the closest is match_identifier_end in DOH/string.c
+ * but that helper is internal to the Replace machinery. */
+static int starts_with_word(String *s, const char *word) {
   int wlen = (int)strlen(word);
-  if (wlen > len)
+  int slen = Len(s);
+  const char *c;
+  if (wlen > slen)
     return 0;
-  if (strncmp(s, word, wlen) != 0)
+  if (Strncmp(s, word, wlen) != 0)
     return 0;
-  /* Word boundary: next character must not extend the identifier. */
-  if (wlen < len && (isalnum((unsigned char)s[wlen]) || s[wlen] == '_'))
-    return 0;
-  return 1;
+  if (wlen == slen)
+    return 1;
+  c = Char(s);
+  return !(isalnum((unsigned char)c[wlen]) || c[wlen] == '_');
 }
 
-static int skip_whitespace(const char *s, int len, int i) {
-  while (i < len && isspace((unsigned char)s[i]))
-    i++;
-  return i;
-}
-
-static int trim_trailing_whitespace(const char *s, int len) {
-  while (len > 0 && isspace((unsigned char)s[len - 1]))
-    len--;
-  return len;
-}
-
-static Node *parse_one_requirement(const char *start, int len) {
-  Node *n;
+static void strip_leading_whitespace(String *s) {
+  const char *c = Char(s);
+  int n = Len(s);
   int i = 0;
+  while (i < n && isspace((unsigned char)c[i]))
+    i++;
+  if (i > 0)
+    Delslice(s, 0, i);
+}
 
-  i = skip_whitespace(start, len, i);
-  if (i >= len)
+/* Consume a leading 'word' from s plus any whitespace that follows it.  Caller
+ * has already verified starts_with_word(s, word). */
+static void consume_keyword(String *s, const char *word) {
+  Delslice(s, 0, (int)strlen(word));
+  strip_leading_whitespace(s);
+}
+
+static Node *parse_one_requirement(String *text) {
+  Node *n;
+  const char *c;
+  int len;
+
+  if (!text)
     return 0;
-  start += i;
-  len -= i;
-  len = trim_trailing_whitespace(start, len);
-  if (len == 0)
+  Chop(text);
+  strip_leading_whitespace(text);
+  if (Len(text) == 0)
     return 0;
 
-  if (starts_with_word(start, len, "typename")) {
-    int after = skip_whitespace(start, len, 8);
-    int rest_len = trim_trailing_whitespace(start + after, len - after);
+  if (starts_with_word(text, "typename")) {
+    consume_keyword(text, "typename");
+    Chop(text);
     n = Constraint_new_requirement("type");
-    if (rest_len > 0) {
-      String *type = NewStringWithSize(start + after, rest_len);
-      Setattr(n, "type", type);
-      Delete(type);
-    }
+    if (Len(text) > 0)
+      Setattr(n, "type", text);
     return n;
   }
 
-  if (starts_with_word(start, len, "requires")) {
-    int after = skip_whitespace(start, len, 8);
-    int rest_len = trim_trailing_whitespace(start + after, len - after);
+  if (starts_with_word(text, "requires")) {
+    consume_keyword(text, "requires");
+    Chop(text);
     n = Constraint_new_requirement("nested");
-    if (rest_len > 0) {
-      String *value = NewStringWithSize(start + after, rest_len);
-      Setattr(n, "value", value);
-      Delete(value);
-    }
+    if (Len(text) > 0)
+      Setattr(n, "value", text);
     return n;
   }
 
-  if (start[0] == '{') {
-    /* Compound requirement: '{ expr } [noexcept] [-> Concept]'. */
+  c = Char(text);
+  len = Len(text);
+
+  if (c[0] == '{') {
+    /* Compound requirement: '{ expr } [noexcept] [-> Concept]'.  Walk the bytes
+     * to find the matching '}' (no DOH brace balancer is exposed); slice the
+     * body and the post brace tail into separate Strings for keyword/concept
+     * extraction. */
     int depth = 1;
-    int body_start = 1;
     int j = 1;
     int body_end = -1;
     while (j < len && depth > 0) {
-      char c = start[j];
-      if (c == '{')
+      if (c[j] == '{')
         depth++;
-      else if (c == '}') {
+      else if (c[j] == '}') {
         depth--;
         if (depth == 0) {
           body_end = j;
@@ -328,46 +338,42 @@ static Node *parse_one_requirement(const char *start, int len) {
       return 0;
     n = Constraint_new_requirement("compound");
     {
-      int b_len = trim_trailing_whitespace(start + body_start, body_end - body_start);
-      int b_off = skip_whitespace(start, body_end, body_start) - body_start;
-      if (b_len - b_off > 0) {
-        String *value = NewStringWithSize(start + body_start + b_off, b_len - b_off);
-        Setattr(n, "value", value);
-        Delete(value);
-      }
+      String *body = NewStringWithSize(c + 1, body_end - 1);
+      Chop(body);
+      strip_leading_whitespace(body);
+      if (Len(body) > 0)
+        Setattr(n, "value", body);
+      Delete(body);
     }
-    /* After '}', look for 'noexcept' then optional '-> Concept'. */
-    j++;
-    j = skip_whitespace(start, len, j);
-    if (j < len && starts_with_word(start + j, len - j, "noexcept")) {
-      Setattr(n, "noexcept", "1");
-      j += 8;
-      j = skip_whitespace(start, len, j);
-    }
-    if (j + 1 < len && start[j] == '-' && start[j + 1] == '>') {
-      int rest_len;
-      Node *ret_atom;
-      j += 2;
-      j = skip_whitespace(start, len, j);
-      rest_len = trim_trailing_whitespace(start + j, len - j);
-      if (rest_len > 0) {
-        String *concept_name = NewStringWithSize(start + j, rest_len);
-        ret_atom = Constraint_new_atom("concept-id");
-        Setattr(ret_atom, "name", concept_name);
-        appendChild(n, ret_atom);
-        Delete(concept_name);
+    if (j + 1 < len) {
+      String *tail = NewStringWithSize(c + j + 1, len - j - 1);
+      strip_leading_whitespace(tail);
+      if (starts_with_word(tail, "noexcept")) {
+        Setattr(n, "noexcept", "1");
+        consume_keyword(tail, "noexcept");
       }
+      if (Len(tail) >= 2) {
+        const char *t = Char(tail);
+        if (t[0] == '-' && t[1] == '>') {
+          Delslice(tail, 0, 2);
+          strip_leading_whitespace(tail);
+          Chop(tail);
+          if (Len(tail) > 0) {
+            /* The return-type-requirement is a SwigType encoded concept-id - hold it on a "type" attribute. */
+            Node *ret_atom = Constraint_new_atom("concept-id");
+            Setattr(ret_atom, "type", tail);
+            appendChild(n, ret_atom);
+          }
+        }
+      }
+      Delete(tail);
     }
     return n;
   }
 
   /* Simple requirement: arbitrary expression text. */
   n = Constraint_new_requirement("simple");
-  {
-    String *value = NewStringWithSize(start, len);
-    Setattr(n, "value", value);
-    Delete(value);
-  }
+  Setattr(n, "value", text);
   return n;
 }
 
@@ -422,7 +428,9 @@ Node *parse_requirement_seq(String *body_text) {
     else if (c == '}')
       brace--;
     else if (c == ';' && paren == 0 && bracket == 0 && brace == 0) {
-      Node *r = parse_one_requirement(s + start, i - start);
+      String *fragment = NewStringWithSize(s + start, i - start);
+      Node *r = parse_one_requirement(fragment);
+      Delete(fragment);
       if (r) {
         if (!head)
           head = r;
@@ -436,7 +444,9 @@ Node *parse_requirement_seq(String *body_text) {
   /* No trailing ';' is permitted in well-formed C++20, but tolerate text
    * after the last ';' just in case. */
   if (start < len) {
-    Node *r = parse_one_requirement(s + start, len - start);
+    String *fragment = NewStringWithSize(s + start, len - start);
+    Node *r = parse_one_requirement(fragment);
+    Delete(fragment);
     if (r) {
       if (!head)
         head = r;

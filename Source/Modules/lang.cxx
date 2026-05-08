@@ -147,10 +147,6 @@ int Dispatcher::emit_one(Node *n) {
     ret = templateDeclaration(n);
   } else if (strcmp(tag, "lambda") == 0) {
     ret = lambdaDeclaration(n);
-  } else if (strcmp(tag, "constraint") == 0 || strcmp(tag, "requires-expression") == 0 || strcmp(tag, "requirement") == 0) {
-    /* C++20 constraint subtrees are metadata children of templates, cdecls,
-     * and concepts.  They carry no wrappable declaration; skip them. */
-    ret = SWIG_OK;
   }
 
   /* ===============================================================

@@ -31,9 +31,13 @@ check_equal(hd.doubled(), 3.0)
 sb = SmallBoxInt(42)
 check_equal(sb.get(), 42)
 
-# Class template with a constrained constructor.
+# Class template with a constrained constructor.  The constructor's
+# 'requires Numeric<T>' clause means only Numeric T values reach this
+# instantiation; 'int' and 'double' both satisfy Numeric.
 cb = CheckedBoxInt(11)
 check_equal(cb.get(), 11)
+cbd = CheckedBoxDouble(2.5)
+check_equal(cbd.get(), 2.5)
 
 # Class template whose member function template is defined out of line with a prefix requires-clause.
 ob = OutOfLineBoxInt(3)

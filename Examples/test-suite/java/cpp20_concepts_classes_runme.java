@@ -47,10 +47,13 @@ public class cpp20_concepts_classes_runme {
     if (sb.get() != 42)
       throw new RuntimeException("SmallBoxInt.get");
 
-    // Class template with a constrained constructor.
+    // Class template with a constrained constructor.  'int' and 'double' both satisfy Numeric.
     CheckedBoxInt cb = new CheckedBoxInt(11);
     if (cb.get() != 11)
       throw new RuntimeException("CheckedBoxInt.get");
+    CheckedBoxDouble cbd = new CheckedBoxDouble(2.5);
+    if (cbd.get() != 2.5)
+      throw new RuntimeException("CheckedBoxDouble.get");
 
     // Class template whose member function template is defined out of line with a prefix requires-clause.
     OutOfLineBoxInt ob = new OutOfLineBoxInt(3);

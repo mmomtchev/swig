@@ -49,7 +49,10 @@ public:
   T get() const { return value; }
 };
 
-// Class template with a constrained constructor (the class is otherwise unconstrained, but only Numeric T values can construct from a value).
+// Class template with a constrained constructor (the class is otherwise unconstrained, but only
+// Numeric T values can construct from a value).  The constructor's trailing requires-clause is held
+// on the constructor node's "constraint" attribute and is substituted when the class template is
+// instantiated; both 'int' and 'double' satisfy 'Numeric<T>' so both instantiations succeed.
 template<typename T>
 class CheckedBox {
   T value;
@@ -86,5 +89,6 @@ T OutOfLineBox<T>::scaled(U factor) const { return value * (T)factor; }
 %template(SmallBoxInt)      SmallBox<int>;
 
 %template(CheckedBoxInt)    CheckedBox<int>;
+%template(CheckedBoxDouble) CheckedBox<double>;
 
 %template(OutOfLineBoxInt)  OutOfLineBox<int>;

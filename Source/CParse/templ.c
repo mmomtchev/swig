@@ -159,18 +159,13 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     Append(typelist, d);
     Append(patchlist, v);
     Append(cpatchlist, code);
-    /* Walk any C++20 constraint subtree attached as a child by c_decl so
-       its inner atom strings get the same T => int substitution as the
-       cdecl's other patched fields. */
+    /* C++20 trailing requires-clause subtree (attribute "constraint" on the cdecl).  Recurse so the inner
+       concept-id types and opaque expression text get the same T => int substitution as the cdecl's
+       other patched fields. */
     {
-      Node *cn = firstChild(n);
-      while (cn) {
-        String *cn_type = nodeType(cn);
-        if (cn_type && (Equal(cn_type, "constraint") || Equal(cn_type, "requires-expression") || Equal(cn_type, "requirement"))) {
-          cparse_template_expand(templnode, cn, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
-        }
-        cn = nextSibling(cn);
-      }
+      Node *cs = Getattr(n, "constraint");
+      if (cs)
+        cparse_template_expand(templnode, cs, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
     }
 
     if (Getattr(n, "conversion_operator")) {
@@ -229,6 +224,13 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
         }
       }
     }
+    /* C++20 prefix requires-clause subtree (attribute "constraint" on the class node, set by
+       cpp_template_decl when the prefix requires-clause is on a class template head). */
+    {
+      Node *cs = Getattr(n, "constraint");
+      if (cs)
+        cparse_template_expand(templnode, cs, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+    }
     /* Patch children */
     {
       Node *cn = firstChild(n);
@@ -268,6 +270,12 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
     Append(typelist, Getattr(n, "decl"));
     expand_parms(n, "parms", unexpanded_variadic_parm, expanded_variadic_parms, patchlist, typelist, 0);
     expand_parms(n, "throws", unexpanded_variadic_parm, expanded_variadic_parms, patchlist, typelist, 0);
+    /* C++20 trailing requires-clause on the constructor. */
+    {
+      Node *cs = Getattr(n, "constraint");
+      if (cs)
+        cparse_template_expand(templnode, cs, tname, rname, templateargs, patchlist, typelist, cpatchlist, unexpanded_variadic_parm, expanded_variadic_parms);
+    }
   } else if (Equal(nodeType, "destructor")) {
     /* We only need to patch the dtor of the template itself, not the destructors of any nested classes, so check that the parent of this node is the root
      * template node, with the special exception for %extend which adds its methods under an intermediate node. */
@@ -322,24 +330,21 @@ static void cparse_template_expand(Node *templnode, Node *n, String *tname, Stri
       /* Namespace link.   This is nasty.  Is other namespace defined? */
     }
   } else if (Equal(nodeType, "constraint")) {
-    /* C++20 constraint subtree.  For atom nodes, queue the kind specific
-     * inner strings for substitution; for and/or nodes, just recurse into
-     * the operand chain. */
+    /* C++20 constraint subtree.  For atom nodes, queue the kind specific inner strings for substitution;
+     * for and/or nodes, just recurse into the operand chain. */
     Node *cn;
     String *op = Getattr(n, "op");
     if (op && Equal(op, "atom")) {
       String *kind = Getattr(n, "kind");
       if (kind) {
         if (Equal(kind, "concept-id")) {
-          /* The name string holds the idcolon rendered form including any
-           * '<args>' suffix, so a single text-replace covers both the
-           * concept-id's qualified name and its template-argument list. */
-          Append(cpatchlist, Getattr(n, "name"));
+          /* The "type" attribute is a SwigType encoded concept-id that includes any '<args>' suffix, so
+           * a single typelist entry covers both the concept's qualified name and its argument list. */
+          Append(typelist, Getattr(n, "type"));
         } else if (Equal(kind, "expression")) {
           Append(cpatchlist, Getattr(n, "value"));
         }
-        /* parens / requires-expression / fold: structure lives in firstChild,
-         * picked up by the recursion below. */
+        /* parens / requires-expression / fold: structure lives in firstChild, picked up by the recursion below. */
       }
     }
     cn = firstChild(n);

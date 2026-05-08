@@ -176,6 +176,16 @@ static Node *copy_node(Node *n) {
       Setattr(nn, "needs_defaultargs", "1");
       continue;
     }
+    /* C++20 constraint subtree must be deep copied: cparse_template_expand patches the subtree
+       in place, so a shallow Copy() (which only duplicates the root hash) would alias the inner
+       atom and requires-expression / requirement nodes between the primary and every instantiation,
+       leaking the first instantiation's substitutions into all subsequent ones. */
+    if (strcmp(ckey,"constraint") == 0) {
+      Node *cs = copy_node((Node *)k.item);
+      Setattr(nn, key, cs);
+      Delete(cs);
+      continue;
+    }
     /* same for abstracts, which contains pointers to the source node children, and so will need to be patch too */
     if (strcmp(ckey,"abstracts") == 0) {
       SetFlag(nn, "needs_abstracts");
@@ -1706,10 +1716,7 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
     String *throwf;
     String *nexcept;
     String *final;
-    /* C++20 trailing requires-clause attached to this declaration's
-     * qualifiers, as a structured constraint subtree.  NULL when no
-     * requires-clause is present.  The subtree's rendered text is
-     * obtained via Constraint_str(). */
+    /* C++20 trailing requires-clause attached to this declaration's qualifiers, as a structured constraint subtree. */
     Node *constraint_node;
   } dtype;
   struct {
@@ -1728,6 +1735,8 @@ static String *add_qualifier_to_declarator(SwigType *type, SwigType *qualifier) 
     String    *throwf;
     String    *nexcept;
     String    *final;
+    /* C++20 trailing requires-clause on a constructor. */
+    Node      *constraint_node;
   } decl;
   Parm         *tparms;
   struct {
@@ -3358,9 +3367,8 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 	      Setattr($$,"throw",$cpp_const.throwf);
 	      Setattr($$,"noexcept",$cpp_const.nexcept);
 	      Setattr($$,"final",$cpp_const.final);
-              if ($cpp_const.constraint_node) {
-                appendChild($$, $cpp_const.constraint_node);
-              }
+              if ($cpp_const.constraint_node)
+                Setattr($$, "constraint", $cpp_const.constraint_node);
 	      if ($initializer.val && $initializer.type) {
 		/* store initializer type as it might be different to the declared type */
 		SwigType *valuetype = NewSwigType($initializer.type);
@@ -4663,30 +4671,20 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			    Swig_symbol_cadd(fname,$$);
 			  }
 			}
-                        /* Attach prefix requires-clause subtree (e.g. 'template<T> requires C<T>')
-                           to the inner template node.  If a trailing requires-clause is already
-                           present on the cdecl (attached by c_decl), conjoin the two structurally
-                           into a single op="and" constraint subtree per [temp.constr.decl]. */
+                        /* Attach prefix requires-clause subtree (e.g. 'template<T> requires C<T>') to the
+                           inner template node's "constraint" attribute.  If a trailing requires-clause is
+                           already present on the cdecl (set by c_decl), conjoin the two structurally into
+                           a single op="and" constraint subtree per [temp.constr.decl]. */
                         if (ni && $requires_clause_opt) {
-                          Node *trailing = 0;
+                          Node *trailing = Getattr(ni, "constraint");
                           Node *combined;
-                          {
-                            Node *cn = firstChild(ni);
-                            while (cn) {
-                              if (Equal(nodeType(cn), "constraint")) {
-                                trailing = cn;
-                                break;
-                              }
-                              cn = nextSibling(cn);
-                            }
-                          }
                           if (trailing) {
-                            removeNode(trailing);
+                            Delattr(ni, "constraint");
                             combined = Constraint_combine("and", $requires_clause_opt, trailing);
                           } else {
                             combined = $requires_clause_opt;
                           }
-                          appendChild(ni, combined);
+                          Setattr(ni, "constraint", combined);
                         }
 			$$ = ntop;
 			Swig_symbol_setscope(cscope);
@@ -4741,17 +4739,15 @@ cpp_template_possible:  c_decl
 /* ------------------------------------------------------------
    C++20 concept declaration: "concept Name = constraint-expression;".
    Always appears after a template head, so attached via cpp_template_possible.
-   The wrapping cpp_template_decl rule converts the resulting node to nodeType
-   "template" with templatetype "concept", and registers it in the symbol
-   table.  The constraint subtree is attached as the concept node's first
-   child; the rendered text is also stored on the "requires" attribute for
-   downstream consumers that have not yet migrated to walking the subtree.
+   The wrapping cpp_template_decl rule converts the resulting node to a
+   "template" node with templatetype "concept", and registers it in the symbol
+   table.  The constraint subtree is stored in the "constraint" attribute.
    ------------------------------------------------------------ */
 cpp_concept_decl : CONCEPT idcolon EQUAL constraint SEMI {
                   $$ = new_node("concept");
                   Setattr($$, "name", $idcolon);
                   Setattr($$, "type", NewString("bool"));
-                  appendChild($$, $constraint);
+                  Setattr($$, "constraint", $constraint);
                 }
                 ;
 
@@ -5121,6 +5117,8 @@ cpp_constructor_decl : storage_class type LPAREN parms RPAREN ctor_end {
 		Setattr($$,"throw",$ctor_end.throwf);
 		Setattr($$,"noexcept",$ctor_end.nexcept);
 		Setattr($$,"final",$ctor_end.final);
+		if ($ctor_end.constraint_node)
+		  Setattr($$, "constraint", $ctor_end.constraint_node);
 		if (Len(scanner_ccode)) {
 		  String *code = Copy(scanner_ccode);
 		  Setattr($$,"code",code);
@@ -6898,8 +6896,10 @@ constraint_and : constraint_primary
                ;
 
 constraint_primary : idcolon {
+                    /* idcolon's value is a SwigType encoded concept-id (e.g. 'AllNumeric<(T,v.Rest)>'),
+                       so it lives on a "type" attribute, not "name". */
                     $$ = Constraint_new_atom("concept-id");
-                    Setattr($$, "name", $idcolon);
+                    Setattr($$, "type", $idcolon);
                  }
                | LPAREN <node>{
                     /* Parenthesised primary - opaque captured at the scanner
@@ -7715,17 +7715,18 @@ cpp_const      : qualifiers_exception_specification
                }
                ;
 
-ctor_end       : cpp_const ctor_initializer SEMI { 
-                    Clear(scanner_ccode); 
+ctor_end       : cpp_const ctor_initializer SEMI {
+                    Clear(scanner_ccode);
 		    $$ = default_decl;
 		    $$.throws = $cpp_const.throws;
 		    $$.throwf = $cpp_const.throwf;
 		    $$.nexcept = $cpp_const.nexcept;
 		    $$.final = $cpp_const.final;
+		    $$.constraint_node = $cpp_const.constraint_node;
                     if ($cpp_const.qualifier)
                       Swig_error(cparse_file, cparse_line, "Constructor cannot have a qualifier.\n");
                }
-               | cpp_const ctor_initializer LBRACE { 
+               | cpp_const ctor_initializer LBRACE {
                     if ($cpp_const.qualifier)
                       Swig_error(cparse_file, cparse_line, "Constructor cannot have a qualifier.\n");
                     if (skip_balanced('{','}') < 0) Exit(EXIT_FAILURE);
@@ -7734,6 +7735,7 @@ ctor_end       : cpp_const ctor_initializer SEMI {
                     $$.throwf = $cpp_const.throwf;
                     $$.nexcept = $cpp_const.nexcept;
                     $$.final = $cpp_const.final;
+		    $$.constraint_node = $cpp_const.constraint_node;
                }
                | LPAREN parms RPAREN SEMI { 
                     Clear(scanner_ccode); 
