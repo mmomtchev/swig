@@ -2,6 +2,16 @@
 
 This file provides guidance to AI agents such as Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project skill files - read these first
+
+Three short `SKILL.md` files under `.github/skills/` are the canonical references for the most common tasks an AI agent performs in this repo. Open the matching file **before** improvising; each is one or two pages and contains the specific commands, flags, and conventions that AGENTS.md only summarises:
+
+- **`.github/skills/swig-test/SKILL.md`** — the canonical way to run the test suite for a target language and individual test cases. Read before running any test.
+- **`.github/skills/swig-debug/SKILL.md`** — debugging the SWIG compiler: full `-debug-*` flag list, parse tree dumps (text and XML), `SWIG_FEATURES` env var, gdb with the `swigprint` / `locswigprint` helpers from `Tools/swig.gdb`, valgrind via `SWIGTOOL` / `RUNTOOL`, `DOH_DEBUG_MEMORY_POOLS` for memory corruption diagnosis, and a pointer to **`Doc/Manual/Extending.html` §40.12** as the per node attribute reference. Read before any non-trivial parse tree inspection or compiler debugging.
+- **`.github/skills/swig-doc/SKILL.md`** — editing chapters under `Doc/Manual/`: heading anchor conventions, the four content `<div>` classes (`code` / `targetlang` / `shell` / `diagram`), cross document anchored links, and the `make maketoc check` cycle. Read before any change to `Doc/Manual/*.html`.
+
+> **Note for Claude Code users:** these files live under `.github/skills/` (GitHub Copilot's convention) and are not auto surfaced as `Skill` tool entries. If you want them in the harness's skill list, symlink them under `.claude/skills/` in your local checkout.
+
 ## What is SWIG
 
 SWIG is a compiler that reads C/C++ header files and interface files (`.i`) and generates wrapper code that makes C/C++ libraries accessible from other languages: Python, Java, C#, Go, Ruby, Perl, PHP, Lua, Tcl, R, Guile, D, Octave, Scilab, OCaml, and XML output.
@@ -61,10 +71,7 @@ Test cases live in `Examples/test-suite/<language>/`. Each test consists of a `.
 
 The shared test makefile is `Examples/test-suite/common.mk` (included by each per-language Makefile). New tests are typically added to `common.mk` in the appropriate `*_TESTCASES` variable.
 
-Related skills under `.github/skills/`:
-- `swig-test/SKILL.md` — running the test-suite for a target language and individual testcases
-- `swig-debug/SKILL.md` — debugging the SWIG compiler itself: `-debug-*` flags, parse-tree dumps, gdb, valgrind, and memory-pool diagnostics
-- `swig-doc/SKILL.md` — authoring and editing the user manual under `Doc/Manual/`: chapter conventions, manual heading anchors, content `<div>` classes, and the `make maketoc check` cycle
+For test suite procedures (per language, single test, parallel runs, valgrind/gdb hooks via `SWIGTOOL` / `RUNTOOL`), use `.github/skills/swig-test/SKILL.md` as the canonical reference rather than improvising from this summary.
 
 ## Architecture
 
@@ -129,7 +136,7 @@ See `Source/DOH/doh.h` for the full API and `Doc/Devel/internals.html` for desig
 
 ### Debugging SWIG itself
 
-For debugging the SWIG compiler — gdb setup, the `swigprint`/`locswigprint` helpers in `Tools/swig.gdb`, the full `-debug-*` flag list, the four-stage processing model, `SWIGTOOL`/`RUNTOOL`/`SWIG_FEATURES` test-suite hooks, XML parse-tree dumps, and `DOH_DEBUG_MEMORY_POOLS` for memory-corruption diagnosis — see `.github/skills/swig-debug/SKILL.md`.
+For debugging the SWIG compiler — gdb setup, the `swigprint`/`locswigprint` helpers in `Tools/swig.gdb`, the full `-debug-*` flag list, the four stage processing model, `SWIGTOOL`/`RUNTOOL`/`SWIG_FEATURES` test suite hooks, XML parse tree dumps, and `DOH_DEBUG_MEMORY_POOLS` for memory corruption diagnosis — read `.github/skills/swig-debug/SKILL.md` rather than working from memory.
 
 ## Changelog
 
@@ -166,4 +173,4 @@ Useful background for contributors: C API design, the C++ type system, and SWIG'
 
 ### Authoring the user manual
 
-For editing chapters under `Doc/Manual/` — chapter conventions, manual heading anchors (always use `<filebase>_topic`-style anchors, never the auto-generated `_nnN`), the `code` / `targetlang` / `shell` / `diagram` `<div>` classes, link/anchor rules, and the `make maketoc check` cycle that renumbers headings and validates HTML — see `.github/skills/swig-doc/SKILL.md`.
+For editing chapters under `Doc/Manual/` — chapter conventions, manual heading anchors (always use `<filebase>_topic`-style anchors, never the auto generated `_nnN`), the `code` / `targetlang` / `shell` / `diagram` `<div>` classes, link/anchor rules, and the `make maketoc check` cycle that renumbers headings and validates HTML — read `.github/skills/swig-doc/SKILL.md` rather than working from memory.
