@@ -59,5 +59,10 @@ public class cpp20_concepts_extra_runme {
     // Concept refinement - requires-clause spelled with a concept defined in terms of another.
     if (cpp20_concepts_extra.succ_int(5) != 6)
       throw new RuntimeException("succ_int(5)");
+
+    // Trailing requires-clause on a non-template member of a class template.
+    ConstrainedHolderInt h = new ConstrainedHolderInt(4);
+    if (h.cube() != 64)
+      throw new RuntimeException("ConstrainedHolderInt.cube");
   }
 }

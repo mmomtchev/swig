@@ -19,6 +19,7 @@
 <li><a href="#CPlusPlus20_constexpr_destructors">Constexpr destructors</a>
 <li><a href="#CPlusPlus20_abbreviated_templates">Abbreviated function templates</a>
 <li><a href="#CPlusPlus20_concepts">Concepts and requires-clauses</a>
+<li><a href="#CPlusPlus20_type_constrained_template_parameters">Type constrained template parameters</a>
 <li><a href="#CPlusPlus20_variable_templates">Variable templates initialised from a requires-expression</a>
 </ul>
 <li><a href="#CPlusPlus20_preprocessor_changes">Preprocessor changes</a>
@@ -395,34 +396,6 @@ Limitations:
 <ul>
 <li>
 <p>
-A type-constraint used in place of <tt>typename</tt> in a template parameter
-list is not supported.  This is rejected:
-</p>
-<div class="code">
-<pre>
-template&lt;Numeric T&gt;          // not supported
-T cube(T x) { return x * x * x; }
-</pre>
-</div>
-<p>
-Declare the parameter as <tt>typename</tt> and move the constraint to a
-<tt>requires</tt>-clause instead:
-</p>
-<div class="code">
-<pre>
-template&lt;typename T&gt;
-T cube(T x) requires Numeric&lt;T&gt; { return x * x * x; }
-</pre>
-</div>
-<p>
-The closely related <i>abbreviated function template</i> form
-(<tt>Numeric auto fn(Numeric auto x)</tt>) <i>is</i> supported - see
-<a href="#CPlusPlus20_abbreviated_templates">Abbreviated function templates</a>.
-</p>
-</li>
-
-<li>
-<p>
 SWIG does not model C++20 constraint subsumption, so two declarations
 that share a name and signature and differ only by their
 <tt>requires</tt>-clause cannot be distinguished.  This affects two
@@ -477,7 +450,92 @@ underlying C++ compiler accepts.
 <b>Compatibility note:</b> SWIG-4.5.0 is the first version to support C++20 concepts.
 </p>
 
-<H3><a name="CPlusPlus20_variable_templates">10.2.6 Variable templates initialised from a requires-expression</a></H3>
+<H3><a name="CPlusPlus20_type_constrained_template_parameters">10.2.6 Type constrained template parameters</a></H3>
+
+
+<p>
+A <i>type-constraint</i> may also stand in place of <tt>typename</tt> /
+<tt>class</tt> in a template parameter list.
+The two forms below are equivalent and SWIG treats them interchangeably:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+concept Numeric = std::integral&lt;T&gt; || std::floating_point&lt;T&gt;;
+
+// shorthand
+template&lt;Numeric T&gt;
+T cube(T x);
+
+// fully spelt out
+template&lt;typename T&gt; requires Numeric&lt;T&gt;
+T cube(T x);
+</pre>
+</div>
+
+<p>
+The shorthand fits anywhere <tt>typename</tt> / <tt>class</tt> would
+appear: <tt>::</tt>-qualified concept-ids, variadic packs, mixed parameter
+lists, default arguments and class templates are all accepted.
+</p>
+
+<div class="code">
+<pre>
+template&lt;Numeric T&gt;                     T cube(T x);                  // single
+template&lt;nest::Integral T&gt;              T half(T x);                  // ::-qualified
+template&lt;Numeric T, typename U&gt;         T scale(T x, U factor);       // mixed
+template&lt;Numeric T = int&gt;               T identity(T x);              // default arg
+template&lt;Numeric... Ts&gt;                 int count_numeric(Ts...);     // variadic pack
+template&lt;Numeric T&gt; class Box { T v; };                               // class template
+</pre>
+</div>
+
+<p>
+The remap from <tt>Numeric T</tt> to <tt>typename T</tt> happens at parse
+time; the concept-id is then attached to the invented type template
+parameter as a constraint, as if an explicit <tt>requires Numeric&lt;T&gt;</tt> was used.
+</p>
+
+<p>
+The concept name must be visible at the point of the template head.  If
+SWIG cannot find a matching concept (or any other declaration) for the
+identifier, it rejects the template head with an error - the user
+typically just needs to make the concept visible, e.g. by re-declaring it
+in the interface file:
+</p>
+
+<div class="code">
+<pre>
+// SWIG has not parsed 'Numeric' anywhere
+template&lt;Numeric T&gt;
+T cube(T x) { return x * x * x; }
+</pre>
+</div>
+
+<p>
+Resulting error:
+</p>
+
+<div class="shell">
+<pre>
+example.i:3: Error: Template parameter type 'Numeric' is not declared in scope. Declare a concept of this name, or use 'typename' / 'class' for a non-type template parameter type.
+</pre>
+</div>
+
+<p>
+A type-constraint that itself takes template arguments before the
+parameter name (e.g. <tt>template&lt;std::convertible_to&lt;int&gt; T&gt;</tt>)
+is not yet parsed - move the constraint to a <tt>requires</tt>-clause
+instead:
+<tt>template&lt;typename T&gt; requires std::convertible_to&lt;T, int&gt;</tt>.
+</p>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse type constrained template parameters.
+</p>
+
+<H3><a name="CPlusPlus20_variable_templates">10.2.7 Variable templates initialised from a requires-expression</a></H3>
 
 
 <p>

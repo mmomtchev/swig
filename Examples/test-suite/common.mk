@@ -724,6 +724,7 @@ CPP20_TEST_CASES += \
 	cpp20_concepts \
 	cpp20_concepts_class_methods \
 	cpp20_concepts_classes \
+	cpp20_concepts_constrained_param \
 	cpp20_concepts_extra \
 	cpp20_concepts_lambda \
 	cpp20_concepts_overloads \

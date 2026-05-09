@@ -8,6 +8,18 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-09: wsfulton
+            C++20: parse and support type-constraints on template parameters.
+            'template<Numeric T>' is now accepted as the standard shorthand for
+            'template<typename T> requires Numeric<T>', including ::-qualified
+            concept-ids, variadic packs, default arguments and class templates.
+
+              template<typename T>
+              concept Numeric = std::integral<T> || std::floating_point<T>;
+
+              template<Numeric T> T cube(T x) { return x * x * x; }
+              %template(cube_int) cube<int>;
+
+2026-05-09: wsfulton
             C++20: parse abbreviated function templates with constrained auto parameters.
             Each auto parameter with a type-constraint (e.g. 'Numeric auto') introduces
             an invented type template parameter carrying the type-constraint as a

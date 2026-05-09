@@ -38,3 +38,7 @@ check_equal(identity_default_double(1.5), 1.5)
 
 # Concept refinement - requires-clause spelled with a concept defined in terms of another.
 check_equal(succ_int(5), 6)
+
+# Trailing requires-clause on a non-template member of a class template.
+h = ConstrainedHolderInt(4)
+check_equal(h.cube(), 64)

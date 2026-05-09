@@ -410,6 +410,77 @@ static int is_operator(String *name) {
   return Strncmp(name,"operator ", 9) == 0;
 }
 
+/* Classifier for the 'type' attribute of a parm reaching the templateparameter
+ * 'parm' fallback with a name set.  Distinguishes a C++20 type-constraint
+ * ('template<Numeric T>' / 'template<Printable... Ts>') from a real non-type
+ * template parameter and from an undeclared identifier.  The "candidate
+ * concept-id" test (below) accepts a possibly variadic prefixed scope qualified
+ * identifier that names neither a built in nor an enum nor a template-id and
+ * carries no SwigType decoration (where 'type' contains the template parameters
+ * in the examples below):
+ *
+ *   TPC_REMAP    candidate and the symbol resolves to a concept
+ *                -> rewrite the parm to 'typename T' (or 'v.typename Ts...')
+ *                   and attach a concept-id constraint atom
+ *                Examples:
+ *                  template<Numeric T>             T cube(T x);
+ *                  template<nest::Integral T>      T half(T x);
+ *                  template<Numeric... Ts>         int count(Ts...);
+ *   TPC_KEEP     not a candidate, or the symbol resolves to a type
+ *                (typedef, class, enum) -> leave as a non-type parameter
+ *                Examples:
+ *                  template<int N>                 int times_n(int x);  // primitive
+ *                  template<unsigned long N>       int times_n(int x);  // multi word primitive
+ *                  template<size_t N>              int times_n(int x);  // typedef'd alias
+ *                  template<Color C>               int as_int();        // enum
+ *                  template<MyClass *P>            void deref();        // decorated
+ *   TPC_UNKNOWN  candidate but the symbol is not declared in the current
+ *                scope -> the user almost certainly meant a concept that
+ *                hasn't been made visible to SWIG; the action issues an error
+ *                Examples:
+ *                  template<Numeric T>         T cube(T x);  // 'Numeric' concept not declared
+ *                  template<MisspeltConcept T> T f(T);       // typo - 'MisspeltConcept' unknown
+ */
+enum {
+  TPC_KEEP = 0,
+  TPC_REMAP = 1,
+  TPC_UNKNOWN = 2
+};
+static int classify_template_param_type(const SwigType *type) {
+  SwigType *probe;
+  Node *n;
+  String *templatetype;
+  int verdict;
+  if (!type || Len(type) == 0) return TPC_KEEP;
+  /* Strip the variadic prefix - 'v.' is the only decoration we look past.  Any other
+   * SwigType decoration (pointer, reference, array, qualifier, function, member pointer)
+   * makes SwigType_issimple() false and falls into TPC_KEEP below. */
+  probe = SwigType_isvariadic(type) ? SwigType_del_variadic(Copy(type)) : Copy(type);
+  /* SwigType_type() maps every recognised primitive (including multi word forms like
+   * 'unsigned int' / 'long long' and resolvable typedefs such as 'size_t') to a
+   * non-T_USER code; T_USER means SWIG has no record of this name, which is exactly
+   * the population we want to consider for a type-constraint remap.  Enums are
+   * T_INT in SwigType_type, so SwigType_isenum() rejects them separately. */
+  if (SwigType_type(probe) != T_USER ||
+      SwigType_isenum(probe) ||
+      !SwigType_issimple(probe) ||
+      SwigType_istemplate(probe)) {
+    Delete(probe);
+    return TPC_KEEP;
+  }
+  n = Swig_symbol_clookup(probe, 0);
+  templatetype = n ? Getattr(n, "templatetype") : 0;
+  if (templatetype && Equal(templatetype, "concept")) {
+    verdict = TPC_REMAP;
+  } else if (!n) {
+    verdict = TPC_UNKNOWN;
+  } else {
+    verdict = TPC_KEEP;
+  }
+  Delete(probe);
+  return verdict;
+}
+
 /* Returns the concept-id portion of a 'Concept auto' type string, or NULL if the type is not an abbreviated template parm. */
 static String *abbreviated_template_concept(SwigType *ty) {
   int n;
@@ -4890,7 +4961,39 @@ templateparameter : templcpptype def_args {
 			Setattr(p, "name", t + 1);
 			Setattr(p, "type", NewStringWithSize(type, (int)(t - Char(type))));
 		      }
-		    }
+                    } else {
+                      /* C++20 type-constraint in template parameter list, e.g. 'Numeric T',
+                       * 'std::floating_point T', 'Printable ...Ts'.  The 'parm' rule consumed
+                       * the concept-id as an idcolon style rawtype; the classifier decides
+                       * whether to remap to 'typename T' (or 'v.typename Ts...') plus a
+                       * concept-id constraint atom on the parm's "constraint" attribute
+                       * (the same parm representation promote_abbreviated_template() builds
+                       * for 'Concept auto x'), to leave the parm as a non-type template
+                       * parameter, or to flag the identifier as undeclared. */
+                      SwigType *t = Getattr(p, "type");
+                      int verdict = t ? classify_template_param_type(t) : TPC_KEEP;
+                      if (verdict == TPC_REMAP) {
+                        SwigType *new_type = NewString("typename");
+                        String *concept_name = Copy(t);
+                        Node *atom = Constraint_new_atom("concept-id");
+                        if (SwigType_isvariadic(t)) {
+                          SwigType_del_variadic(concept_name);
+                          SwigType_add_variadic(new_type);
+                        }
+                        Setattr(atom, "type", concept_name);
+                        Setattr(p, "constraint", atom);
+                        Setattr(p, "type", new_type);
+                        Delete(new_type);
+                        Delete(concept_name);
+                      } else if (verdict == TPC_UNKNOWN) {
+                        String *bare = SwigType_isvariadic(t) ? SwigType_del_variadic(Copy(t)) : Copy(t);
+                        Swig_error(cparse_file, cparse_line,
+                                   "Template parameter type '%s' is not declared in scope. "
+                                   "Declare a concept of this name, or use 'typename' / 'class' "
+                                   "for a non-type template parameter type.\n", bare);
+                        Delete(bare);
+                      }
+                    }
                   }
                   ;
 

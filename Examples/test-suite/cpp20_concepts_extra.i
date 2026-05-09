@@ -85,6 +85,16 @@ concept Integer = Numeric<T> && std::integral<T>;
 template<typename T> requires Integer<T>
 T succ(T x) { return x + 1; }
 
+// Trailing requires-clause on a non-template member of a class template - the
+// method itself has no template head of its own; the constraint refers only to
+// the enclosing class's template parameter.
+template<typename T>
+struct ConstrainedHolder {
+  T value;
+  ConstrainedHolder(T v) : value(v) {}
+  T cube() const requires Numeric<T> { return value * value * value; }
+};
+
 // Subsumption driven overload selection (negative case, kept here as documentation of what does not
 // work).  In C++20 the Integer constrained overload would win for integral types because Integer
 // subsumes Numeric.  SWIG sees the two same signature templates as a redefinition (warning 302) and
@@ -104,3 +114,4 @@ T succ(T x) { return x + 1; }
 %template(identity_default_int)     identity_default<int>;
 %template(identity_default_double)  identity_default<double>;
 %template(succ_int)                 succ<int>;
+%template(ConstrainedHolderInt)     ConstrainedHolder<int>;
