@@ -43,5 +43,9 @@ public class cpp20_concepts_lambda_runme {
     // Both prefix and trailing requires-clauses on the same lambda.
     if (cpp20_concepts_lambda.run_both_clauses(3) != 6)
       throw new RuntimeException("run_both_clauses(3)");
+
+    // Constrained auto parameter lambda - the 'Numeric auto' form.
+    if (cpp20_concepts_lambda.run_auto_param(8) != 16)
+      throw new RuntimeException("run_auto_param(8)");
   }
 }

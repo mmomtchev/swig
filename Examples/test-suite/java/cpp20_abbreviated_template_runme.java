@@ -29,5 +29,21 @@ public class cpp20_abbreviated_template_runme {
     // Unnamed auto parameter.
     if (cpp20_abbreviated_template.unnamed_auto_int(99) != 42)
       throw new RuntimeException("unnamed_auto_int(99)");
+
+    // Constrained auto.
+    if (cpp20_abbreviated_template.twice_numeric_int(7) != 14)
+      throw new RuntimeException("twice_numeric_int(7)");
+
+    // Mixed type-constraints.
+    if (cpp20_abbreviated_template.scale_mixed_id(3, 2.5) != 7.5)
+      throw new RuntimeException("scale_mixed_id(3, 2.5)");
+
+    // Same type-constraint on multiple parms.
+    if (cpp20_abbreviated_template.add_same_int(4, 5) != 9)
+      throw new RuntimeException("add_same_int(4, 5)");
+
+    // Unnamed constrained auto.
+    if (cpp20_abbreviated_template.unnamed_constrained_int(99) != 42)
+      throw new RuntimeException("unnamed_constrained_int(99)");
   }
 }

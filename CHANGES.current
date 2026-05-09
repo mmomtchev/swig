@@ -8,6 +8,15 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-09: wsfulton
+            C++20: parse abbreviated function templates with constrained auto parameters.
+            Each auto parameter with a type-constraint (e.g. 'Numeric auto') introduces
+            an invented type template parameter carrying the type-constraint as a
+            captured constraint.
+
+              int twice_numeric(Numeric auto x) { return x + x; }
+              %template(twice_numeric_int) twice_numeric<int>;
+
+2026-05-09: wsfulton
             C++14: parse generic lambdas - lambdas with one or more 'auto' parameters.
             Like non-templated lambdas, generic lambdas are not wrapped, but they no
             longer cause a syntax error when SWIG parses a header that contains them.

@@ -14,3 +14,15 @@ swig_check(sum3_iii(1, 2, 3), 6)
 
 # Unnamed auto parameter.
 swig_check(unnamed_auto_int(99), 42)
+
+# Constrained auto.
+swig_check(twice_numeric_int(7), 14)
+
+# Mixed type-constraints.
+swig_check(scale_mixed_id(3, 2.5), 7.5)
+
+# Same type-constraint on multiple parms.
+swig_check(add_same_int(4, 5), 9)
+
+# Unnamed constrained auto.
+swig_check(unnamed_constrained_int(99), 42)

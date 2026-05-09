@@ -48,6 +48,10 @@ auto with_ret = []<typename T>(T x) -> T requires Numeric<T> { return x + x; };
 // 8. Both prefix and trailing requires-clauses on the same lambda.
 auto both_clauses = []<typename T> requires Numeric<T> (T x) requires Sized<T> { return x + x; };
 
+// 9. Constrained auto parameter lambda - the 'Numeric auto' form (see cpp20_abbreviated_template
+// for the same idea applied to ordinary functions).
+auto auto_param = [](Numeric auto x) { return x + x; };
+
 // Lambdas are not directly wrapped, so call each through an ordinary wrapped function.
 int run_trailing(int x)            { return trailing(x); }
 int run_compound(int x)            { return compound(x); }
@@ -57,15 +61,5 @@ int run_prefix(int x)              { return prefix(x); }
 int run_prefix_no_parms()          { return prefix_no_parms.template operator()<int>(); }
 int run_with_ret(int x)            { return with_ret(x); }
 int run_both_clauses(int x)        { return both_clauses(x); }
+int run_auto_param(int x)          { return auto_param(x); }
 %}
-
-// Lambda forms that SWIG does not currently parse (kept here as documentation):
-//
-//   // Auto-parameter lambda with a trailing requires-clause - syntax error in SWIG.
-//   auto auto_param = [](auto x) requires Numeric<decltype(x)> { return x + x; };
-//
-// This is not a concept/requires limitation - the same syntax error reproduces with just '[](auto x)'
-// (no concepts at all).  The 'parms' grammar rule does not accept bare 'auto' as a parameter type in
-// either lambdas or plain functions, so the C++14 generic lambda form, the C++20 abbreviated function
-// template ('auto fn(auto x)') and the type-constraint-on-auto form ('[](Numeric auto x)') all fail.
-// See the C++20 chapter Limitations note about type-constraints used in place of typename.

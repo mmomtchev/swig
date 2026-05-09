@@ -25,3 +25,6 @@ swig_check(run_with_ret(6), 12)
 
 # Both prefix and trailing requires-clauses on the same lambda.
 swig_check(run_both_clauses(3), 6)
+
+# Constrained auto parameter lambda - the 'Numeric auto' form.
+swig_check(run_auto_param(8), 16)
