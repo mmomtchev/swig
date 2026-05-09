@@ -31,3 +31,10 @@ check_equal(deeper_int(-7), -7)
 # Both prefix AND trailing requires-clauses on the same function template.
 check_equal(both_clauses_int(5), 10)
 check_equal(both_clauses_int(-3), -6)
+
+# Default template argument paired with a requires-clause.
+check_equal(identity_default_int(7), 7)
+check_equal(identity_default_double(1.5), 1.5)
+
+# Concept refinement - requires-clause spelled with a concept defined in terms of another.
+check_equal(succ_int(5), 6)

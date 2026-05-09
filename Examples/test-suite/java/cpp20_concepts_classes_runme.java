@@ -59,5 +59,35 @@ public class cpp20_concepts_classes_runme {
     OutOfLineBoxInt ob = new OutOfLineBoxInt(3);
     if (ob.get() != 3)
       throw new RuntimeException("OutOfLineBoxInt.get");
+
+    // Primary class template plus a structural partial specialization (T -> T*)
+    // whose template head additionally carries a requires-clause.  Primary
+    // (kind 1) carries primary_method only; partial spec (kind 2) carries
+    // partial_method only.
+    StorageInt si = new StorageInt();
+    if (si.kind() != 1)
+      throw new RuntimeException("StorageInt.kind");
+    if (si.primary_method() != 100)
+      throw new RuntimeException("StorageInt.primary_method");
+
+    StorageIntPtr sp = new StorageIntPtr();
+    if (sp.kind() != 2)
+      throw new RuntimeException("StorageIntPtr.kind");
+    if (sp.partial_method() != 200)
+      throw new RuntimeException("StorageIntPtr.partial_method");
+
+    // Concept constrained CRTP - View<Drawable> inherits from Drawable, render()
+    // calls the inherited draw() twice through 'this->'.
+    ViewDrawable v = new ViewDrawable();
+    if (!(v instanceof Drawable))
+      throw new RuntimeException("ViewDrawable not Drawable");
+    if (v.getCounter() != 0)
+      throw new RuntimeException("ViewDrawable.counter initial");
+    v.render();
+    if (v.getCounter() != 2)
+      throw new RuntimeException("ViewDrawable.counter after render");
+    v.draw();
+    if (v.getCounter() != 3)
+      throw new RuntimeException("ViewDrawable.counter after draw");
   }
 }

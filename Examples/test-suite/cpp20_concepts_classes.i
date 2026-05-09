@@ -78,6 +78,49 @@ public:
 template<typename T>
 template<typename U> requires Numeric<U>
 T OutOfLineBox<T>::scaled(U factor) const { return value * (T)factor; }
+
+// Primary class template plus a structural partial specialization (T -> T*) whose template head additionally carries
+// a requires-clause.  SWIG's partial spec matcher selects on the structural pattern alone; the requires-clause is
+// captured but not evaluated.  The two specs wrap as distinct types with their own method sets - primary_method only
+// reaches Storage<int>, partial_method only reaches Storage<int*>.
+//
+// Limitation: SWIG does not select between candidates whose structural template-argument patterns are identical and
+// which differ only by a requires-clause, e.g.
+//
+//   template<typename T>                     struct S { ... };     // primary
+//   template<typename T> requires Numeric<T> struct S<T> { ... };  // concept only "partial spec"
+//
+// SWIG sees both as 'S<T>' and the last declared candidate wins for every instantiation; C++20 constraint
+// subsumption is not modelled.  Use a structural pattern to differentiate (T vs T*, T const&, etc.) when partial
+// specs need to be wrapped distinctly.
+template<typename T>
+struct Storage {
+  int kind() const { return 1; }
+  int primary_method() const { return 100; }
+};
+
+template<typename T> requires Numeric<T>
+struct Storage<T*> {
+  int kind() const { return 2; }
+  int partial_method() const { return 200; }
+};
+
+// Concept constrained CRTP - the base class is the constrained template parameter, so the prefix
+// requires-clause sits between the template head and a base list that names that parameter.  Verifies
+// the constraint does not interfere with the inheritance / base list path.
+template<typename T>
+concept HasDraw = requires(T t) { t.draw(); };
+
+struct Drawable {
+  int counter = 0;
+  void draw() { ++counter; }
+};
+
+template<typename Derived> requires HasDraw<Derived>
+class View : public Derived {
+public:
+  void render() { this->draw(); this->draw(); }
+};
 %}
 
 %template(NumericBoxInt)    NumericBox<int>;
@@ -92,3 +135,8 @@ T OutOfLineBox<T>::scaled(U factor) const { return value * (T)factor; }
 %template(CheckedBoxDouble) CheckedBox<double>;
 
 %template(OutOfLineBoxInt)  OutOfLineBox<int>;
+
+%template(StorageInt)       Storage<int>;
+%template(StorageIntPtr)    Storage<int*>;
+
+%template(ViewDrawable)     View<Drawable>;

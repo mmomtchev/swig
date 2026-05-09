@@ -68,6 +68,30 @@ requires Numeric<T>
 T both_clauses(T x) requires Sized<T> {
   return x + x;
 }
+
+// Default template argument paired with a requires-clause - exercises the default argument plumbing in
+// cpp_template_decl together with the prefix requires-clause.
+template<typename T = int> requires Numeric<T>
+T identity_default(T x) { return x; }
+
+// Concept refinement - 'Integer' is defined in terms of 'Numeric', so the captured requires text for
+// 'requires Integer<T>' contains a nested concept name.  C++20 subsumption (where the more refined
+// concept wins between two same signature overloads) is not modelled by SWIG - that broken path is
+// covered by errors/cpp_concept_redefinition.i.  Here only the positive parse and instantiate path is
+// exercised.
+template<typename T>
+concept Integer = Numeric<T> && std::integral<T>;
+
+template<typename T> requires Integer<T>
+T succ(T x) { return x + 1; }
+
+// Subsumption driven overload selection (negative case, kept here as documentation of what does not
+// work).  In C++20 the Integer constrained overload would win for integral types because Integer
+// subsumes Numeric.  SWIG sees the two same signature templates as a redefinition (warning 302) and
+// drops the second declaration, so subsumption based dispatch cannot be expressed:
+//
+// template<typename T> requires Numeric<T> T pick(T x) { return x; }
+// template<typename T> requires Integer<T> T pick(T x) { return x + 1; }   // dropped, warning 302
 %}
 
 %template(identity_non_numeric_tag) identity_non_numeric<Tag>;
@@ -77,3 +101,6 @@ T both_clauses(T x) requires Sized<T> {
 %template(trait_primary_int)        trait_primary<int>;
 %template(deeper_int)               deeper<int>;
 %template(both_clauses_int)         both_clauses<int>;
+%template(identity_default_int)     identity_default<int>;
+%template(identity_default_double)  identity_default<double>;
+%template(succ_int)                 succ<int>;

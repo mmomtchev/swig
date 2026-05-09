@@ -49,5 +49,15 @@ public class cpp20_concepts_extra_runme {
       throw new RuntimeException("both_clauses_int(5)");
     if (cpp20_concepts_extra.both_clauses_int(-3) != -6)
       throw new RuntimeException("both_clauses_int(-3)");
+
+    // Default template argument paired with a requires-clause.
+    if (cpp20_concepts_extra.identity_default_int(7) != 7)
+      throw new RuntimeException("identity_default_int(7)");
+    if (cpp20_concepts_extra.identity_default_double(1.5) != 1.5)
+      throw new RuntimeException("identity_default_double(1.5)");
+
+    // Concept refinement - requires-clause spelled with a concept defined in terms of another.
+    if (cpp20_concepts_extra.succ_int(5) != 6)
+      throw new RuntimeException("succ_int(5)");
   }
 }

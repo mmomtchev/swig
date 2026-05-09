@@ -95,10 +95,11 @@ public:
 
 <p>
 SWIG provides basic parser support for C++20 <tt>concept</tt> declarations
-and <tt>requires</tt>-clauses on function templates, in both the trailing
-position (after the parameter list) and the prefix position (between the
-template head and the declarator).  Both constructs are silently consumed
-and a constrained function template wraps as if it were unconstrained.
+and <tt>requires</tt>-clauses, in both the trailing position (after the
+parameter list) and the prefix position (between the template head and
+the declarator).  Constraints are accepted on function templates, class
+templates and member function templates; both constructs are consumed by
+the parser and a constrained template wraps as if it were unconstrained.
 This is sufficient for SWIG to accept headers that use concepts to
 express template constraints, without the user having to strip them by
 hand.  Applying <tt>%template</tt> to a concept is rejected with an
@@ -205,6 +206,113 @@ T add_same(T a, T b) requires AddableSame&lt;T&gt; {
 </div>
 
 <p>
+A class template can carry a prefix <tt>requires</tt>-clause on its
+template head; the constraint propagates to every instantiation:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+requires Numeric&lt;T&gt;
+class NumericBox {
+  T value;
+public:
+  NumericBox(T v) : value(v) {}
+  T cube() const { return value * value * value; }
+};
+
+%template(NumericBoxInt) NumericBox&lt;int&gt;;
+</pre>
+</div>
+
+<p>
+Ordinary methods and constructors of an unconstrained class template can
+carry their own trailing <tt>requires</tt>-clause.  Both <tt>int</tt>
+and <tt>double</tt> satisfy <tt>Numeric&lt;T&gt;</tt>, so both
+instantiations of <tt>CheckedBox</tt> below succeed:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+class CheckedBox {
+  T value;
+public:
+  CheckedBox() : value(T()) {}
+  CheckedBox(T v) requires Numeric&lt;T&gt; : value(v) {}
+  T get() const { return value; }
+};
+
+%template(CheckedBoxInt)    CheckedBox&lt;int&gt;;
+%template(CheckedBoxDouble) CheckedBox&lt;double&gt;;
+</pre>
+</div>
+
+<p>
+Member function templates of an ordinary (non-templated) class can carry
+constraints in either the trailing or prefix position, including on
+<tt>static</tt> member function templates:
+</p>
+
+<div class="code">
+<pre>
+class Calculator {
+public:
+  template&lt;typename T&gt;
+  T cube(T x) const requires Numeric&lt;T&gt; { return x * x * x; }
+
+  template&lt;typename T&gt; requires Numeric&lt;T&gt;
+  T quad(T x) const { return x * x * x * x; }
+
+  template&lt;typename T&gt;
+  static T sum(T a, T b) requires requires(T t) { t + t; } { return a + b; }
+};
+</pre>
+</div>
+
+<p>
+Function templates that share a name and differ in arity may each carry
+their own <tt>requires</tt>-clause; SWIG dispatches by argument count at
+runtime and the constraints do not affect that path:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt; requires Numeric&lt;T&gt;
+T accumulate(T a) { return a + 1; }
+
+template&lt;typename T&gt; requires Numeric&lt;T&gt;
+T accumulate(T a, T b) { return a + b; }
+</pre>
+</div>
+
+<p>
+A class template can have a structural partial specialization (such as
+<tt>T</tt> against <tt>T*</tt>) whose template head additionally carries
+a <tt>requires</tt>-clause.  SWIG selects between primary and partial
+spec on the structural pattern alone; the <tt>requires</tt>-clause is
+captured but does not participate in selection.  The two specs wrap as
+distinct types with their own method sets:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt;
+struct Storage {
+  int primary_method() const { return 100; }
+};
+
+template&lt;typename T&gt; requires Numeric&lt;T&gt;
+struct Storage&lt;T*&gt; {
+  int partial_method() const { return 200; }
+};
+
+%template(StorageInt)    Storage&lt;int&gt;;
+%template(StorageIntPtr) Storage&lt;int*&gt;;
+</pre>
+</div>
+
+<p>
 Limitations:
 </p>
 
@@ -231,14 +339,57 @@ T cube(T x) requires Numeric&lt;T&gt; { return x * x * x; }
 </pre>
 </div>
 </li>
+
+<li>
+<p>
+SWIG does not model C++20 constraint subsumption, so two declarations
+that share a name and signature and differ only by their
+<tt>requires</tt>-clause cannot be distinguished.  This affects two
+common patterns:
+</p>
+<p>
+Function templates that share a name and signature, differing only by
+constraint, trip warning 302 (<i>Redefinition of identifier 'X'
+ignored</i>) and the later declaration is dropped.  Differentiate
+constrained overloads by signature - typically a different arity:
+</p>
+<div class="code">
+<pre>
+// warning 302 - SWIG cannot pick by constraint, the second declaration is dropped
+template&lt;typename T&gt; requires std::integral&lt;T&gt;       T process(T x);
+template&lt;typename T&gt; requires std::floating_point&lt;T&gt; T process(T x);
+
+// accepted - SWIG dispatches by argument count
+template&lt;typename T&gt; requires Numeric&lt;T&gt; T process(T x);
+template&lt;typename T&gt; requires Numeric&lt;T&gt; T process(T x, T y);
+</pre>
+</div>
+<p>
+A class template "partial specialization" whose structural
+template-argument pattern is identical to the primary, intended to be
+selected by a <tt>requires</tt>-clause alone, is not distinguishable
+from the primary.  The last declared candidate wins for every
+instantiation:
+</p>
+<div class="code">
+<pre>
+template&lt;typename T&gt;                     struct S { /* primary */ };
+template&lt;typename T&gt; requires Numeric&lt;T&gt; struct S&lt;T&gt; { /* not selected by SWIG */ };
+</pre>
+</div>
+<p>
+Use a structural pattern (such as <tt>T*</tt>, <tt>T const&amp;</tt>,
+etc.) to differentiate partial specs that need to wrap distinctly.
+</p>
+</li>
 </ul>
 
 <p>
-Because constraints carry no information that affects wrapper code
-generation (overload resolution still happens at C++ compile time, by which
-point SWIG has already produced the wrapper), the lack of constraint
-modelling in the parse tree does not change the generated bindings for any
-constraint that the underlying C++ compiler accepts.
+The captured constraint does not drive wrapper code generation: overload
+resolution still happens at C++ compile time, by which point SWIG has
+already produced the wrapper.  The generated bindings are therefore the
+same as for an unconstrained template, for any constraint that the
+underlying C++ compiler accepts.
 </p>
 
 <p>

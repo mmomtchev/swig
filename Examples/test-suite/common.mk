@@ -723,6 +723,8 @@ CPP20_TEST_CASES += \
 	cpp20_concepts_class_methods \
 	cpp20_concepts_classes \
 	cpp20_concepts_extra \
+	cpp20_concepts_lambda \
+	cpp20_concepts_overloads \
 	cpp20_constexpr_destructor \
 	cpp20_lambda_template \
 	cpp20_spaceship_operator \
