@@ -65,6 +65,7 @@ If you must rename an anchor, grep the entire `Doc/` tree for the old name and u
 
 ## Cross-references and links
 
+- **When prose mentions another section, make it an explicit anchored link — never a vague reference.** Phrases like "see the manual section on lambda templates", "the C++14 chapter section 'Return type deduction'", or "as documented elsewhere" force the reader to grep for the target. Replace them with `<a href="...#anchor">visible text</a>` pointing at the actual heading. If the target doesn't have a stable anchor yet, add one (see "Heading anchors" above) and link to it in the same commit.
 - All inter-chapter links must be anchored: `href="CPlusPlus20.html#CPlusPlus20_spaceship_operator"`. A bare `href="CPlusPlus20.html"` works in the per-chapter HTML but breaks the merged PDF (`linkchecker3` flags this).
 - Same-chapter links use just the fragment: `href="#CPlusPlus20_introduction"`.
 - External links use full `https://…` URLs.

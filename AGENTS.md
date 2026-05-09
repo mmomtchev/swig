@@ -154,13 +154,24 @@ Place the trailer in the standard Git trailer block at the bottom of the commit 
 
 Do **not** add a `Co-Authored-By:` trailer for an AI tool or model. AI agents are not authors and hold no copyright in their output, so coauthorship attribution is inappropriate. Use only the `Assisted-by:` trailer described above.
 
+Disclosure is optional for other areas of the codebase such as the test suite (`Examples/test-suite/`) and the documentation (`Doc/`).
+
+AI-assisted commit messages should be clear, concise and to the point - describe the change accurately without padding or marketing language.
+
 ## Comment style
 
 In source code comments under `Source/` and `Lib/`, prefer single quotes (`'`) or double quotes (`"`) when quoting a token, identifier, keyword, or short snippet. Do not use backticks (`` ` ``) - they are a Markdown convention and have no meaning in C/C++ comments. For example, write `'requires' keyword` or `"concept Name = expr;"`, not the backtick wrapped form.
 
-Disclosure is optional for other areas of the codebase such as the test suite (`Examples/test-suite/`) and the documentation (`Doc/`).
+For all code everywhere, aim for comment lines around 120 characters wide. If wrapping at 120 leaves a stub second line, stretch the first line up to the 160 characters permitted by `clang-format` and keep the comment on one line, or rebalance so both lines carry meaningful content.
 
-AI-assisted commit messages should be clear, concise and to the point - describe the change accurately without padding or marketing language.
+## `parser.y` formatting (new code)
+
+`Source/CParse/parser.y` is a long lived Bison file with a mix of historical conventions. For **new code** added to it, follow the same conventions used in `.c` and `.cxx` files:
+
+- Indent with spaces only - do not introduce tabs in any new lines (existing tab indented context lines may be left alone).
+- Write comments the way they are written in C/C++ source.
+
+A future cleanup pass will run `clang-format` over `parser.y` to normalise the file as a whole; until then, contributors should keep new additions consistent with the wider Source/ style.
 
 ## Developer Documentation
 
