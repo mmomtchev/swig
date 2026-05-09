@@ -67,11 +67,19 @@ in any of the target languages.
 
 
 <p>
-SWIG should parse lambda templates, but like
+SWIG parses lambda templates, but like
 <a href="CPlusPlus11.html#CPlusPlus11_lambda_functions_and_expressions">
-non-templated lambdas</a> they aren't currently wrapped.
+non-templated lambdas</a>, they aren't currently wrapped. For example:
 </p>
 
+<div class="code">
+<pre>
+auto templated_lambda_sum = []&lt;typename T&gt;(std::vector&lt;T&gt; v) {
+  return std::reduce(v.begin(), v.end());
+};
+
+</pre>
+</div>
 
 <H3><a name="CPlusPlus20_constexpr_destructors">10.2.3 Constexpr destructors</a></H3>
 
@@ -94,7 +102,7 @@ public:
 
 
 <p>
-SWIG provides basic parser support for C++20 <tt>concept</tt> declarations
+SWIG provides support for parsing C++20 <tt>concept</tt> declarations
 and <tt>requires</tt>-clauses, in both the trailing position (after the
 parameter list) and the prefix position (between the template head and
 the declarator).  Constraints are accepted on function templates, class
@@ -309,6 +317,17 @@ struct Storage&lt;T*&gt; {
 
 %template(StorageInt)    Storage&lt;int&gt;;
 %template(StorageIntPtr) Storage&lt;int*&gt;;
+</pre>
+</div>
+
+<p>
+Templated lambdas accept <tt>requires</tt>-clause in all positions, such as:
+</p>
+
+<div class="code">
+<pre>
+auto prefix = []&lt;typename T&gt; requires Numeric&lt;T&gt; (T x) { return x + x; };
+auto with_ret = []&lt;typename T&gt;(T x) -&gt; T requires Numeric&lt;T&gt; { return x + x; };
 </pre>
 </div>
 

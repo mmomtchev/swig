@@ -27,5 +27,21 @@ public class cpp20_concepts_lambda_runme {
     // 'mutable' followed by trailing requires-clause.
     if (cpp20_concepts_lambda.run_with_mut(4) != 8)
       throw new RuntimeException("run_with_mut(4)");
+
+    // Prefix requires-clause on a templated lambda.
+    if (cpp20_concepts_lambda.run_prefix(5) != 10)
+      throw new RuntimeException("run_prefix(5)");
+
+    // Prefix requires-clause on a templated lambda with no parameter list.
+    if (cpp20_concepts_lambda.run_prefix_no_parms() != 7)
+      throw new RuntimeException("run_prefix_no_parms()");
+
+    // Trailing return type combined with a trailing requires-clause.
+    if (cpp20_concepts_lambda.run_with_ret(6) != 12)
+      throw new RuntimeException("run_with_ret(6)");
+
+    // Both prefix and trailing requires-clauses on the same lambda.
+    if (cpp20_concepts_lambda.run_both_clauses(3) != 6)
+      throw new RuntimeException("run_both_clauses(3)");
   }
 }

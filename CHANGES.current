@@ -7,6 +7,12 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-09: wsfulton
+            #3413 C++20: accept prefix requires-clauses on templated lambdas, and trailing
+            requires-clauses placed after the lambda's return type.
+
+              auto prefix = []<typename T> requires Numeric<T> (T x) { return x + x; };
+
 2026-05-07: wsfulton
             #3413 %template applied to a C++20 concept now reports an error instead of
             silently producing a malformed wrapper.

@@ -7,9 +7,9 @@
 // Per [expr.prim.lambda.general], a lambda may carry a template-parameter-list (since C++14 for generic
 // lambdas with auto, since C++20 for explicit '<typename T>' parameters), an optional prefix
 // requires-clause between the template head and the lambda-declarator, and an optional trailing
-// requires-clause at the end of the lambda-declarator.  SWIG accepts the trailing form in several
-// constraint shapes; the prefix form, the trailing-return-type combination and the auto parameter
-// trailing form all currently fail to parse - those cases are documented at the bottom of the file.
+// requires-clause at the end of the lambda-declarator (after a trailing-return-type when one is
+// present).  All these forms are accepted on templated lambdas; the auto parameter case is a separate
+// preexisting limitation - documented at the bottom of the file.
 
 %warnfilter(SWIGWARN_CPP11_LAMBDA);
 
@@ -35,24 +35,37 @@ auto inline_req = []<typename T>(T a, T b) requires requires(T t) { t + t; } { r
 // requires-clause after the decl-specifier-seq (mutable, constexpr, etc.) inside lambda-declarator.
 auto with_mut = []<typename T>(T x) mutable requires Numeric<T> { return x + x; };
 
+// 5. Prefix requires-clause on a templated lambda, between '<typename T>' and the parameter list.
+auto prefix = []<typename T> requires Numeric<T> (T x) { return x + x; };
+
+// 6. Prefix requires-clause on a templated lambda with no parameter list.
+auto prefix_no_parms = []<typename T> requires Numeric<T> { return T(7); };
+
+// 7. Trailing return type combined with a trailing requires-clause - the C++20 grammar puts the
+// requires-clause after the trailing-return-type.
+auto with_ret = []<typename T>(T x) -> T requires Numeric<T> { return x + x; };
+
+// 8. Both prefix and trailing requires-clauses on the same lambda.
+auto both_clauses = []<typename T> requires Numeric<T> (T x) requires Sized<T> { return x + x; };
+
 // Lambdas are not directly wrapped, so call each through an ordinary wrapped function.
-int run_trailing(int x)        { return trailing(x); }
-int run_compound(int x)        { return compound(x); }
-int run_inline_req(int a, int b) { return inline_req(a, b); }
-int run_with_mut(int x)        { return with_mut(x); }
+int run_trailing(int x)            { return trailing(x); }
+int run_compound(int x)            { return compound(x); }
+int run_inline_req(int a, int b)   { return inline_req(a, b); }
+int run_with_mut(int x)            { return with_mut(x); }
+int run_prefix(int x)              { return prefix(x); }
+int run_prefix_no_parms()          { return prefix_no_parms.template operator()<int>(); }
+int run_with_ret(int x)            { return with_ret(x); }
+int run_both_clauses(int x)        { return both_clauses(x); }
 %}
 
-// Lambda-and-concept forms that SWIG does not currently parse (kept here as documentation):
-//
-//   // Prefix requires-clause on a templated lambda - syntax error in SWIG.
-//   auto prefix = []<typename T> requires Numeric<T> (T x) { return x + x; };
-//
-//   // Trailing-return type combined with a trailing requires-clause - syntax error in SWIG.
-//   auto with_ret = []<typename T>(T x) -> T requires Numeric<T> { return x + x; };
+// Lambda forms that SWIG does not currently parse (kept here as documentation):
 //
 //   // Auto-parameter lambda with a trailing requires-clause - syntax error in SWIG.
 //   auto auto_param = [](auto x) requires Numeric<decltype(x)> { return x + x; };
 //
-// The abbreviated function template syntax inside a lambda parameter list ('Numeric auto x') is
-// unsupported across SWIG generally - see the C++20 chapter Limitations note about type-constraints
-// used in place of typename.
+// This is not a concept/requires limitation - the same syntax error reproduces with just '[](auto x)'
+// (no concepts at all).  The 'parms' grammar rule does not accept bare 'auto' as a parameter type in
+// either lambdas or plain functions, so the C++14 generic lambda form, the C++20 abbreviated function
+// template ('auto fn(auto x)') and the type-constraint-on-auto form ('[](Numeric auto x)') all fail.
+// See the C++20 chapter Limitations note about type-constraints used in place of typename.

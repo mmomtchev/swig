@@ -13,3 +13,15 @@ swig_check(run_inline_req(2, 3), 5)
 
 # 'mutable' followed by trailing requires-clause.
 swig_check(run_with_mut(4), 8)
+
+# Prefix requires-clause on a templated lambda.
+swig_check(run_prefix(5), 10)
+
+# Prefix requires-clause on a templated lambda with no parameter list.
+swig_check(run_prefix_no_parms(), 7)
+
+# Trailing return type combined with a trailing requires-clause.
+swig_check(run_with_ret(6), 12)
+
+# Both prefix and trailing requires-clauses on the same lambda.
+swig_check(run_both_clauses(3), 6)
