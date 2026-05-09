@@ -43,3 +43,6 @@ swig_check(bd.get(), 3.5)
 # 8. Constrained class template using a refining concept.
 fb = FloatBoxFloat(1.25)
 swig_check(fb.get(), 1.25)
+
+# 9. Concept not parsed by SWIG.
+swig_check(tag_int(41), 42)

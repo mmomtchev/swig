@@ -77,6 +77,25 @@ public:
 };
 %}
 
+// 9. Concept declared only in a raw '%{ %}' block - SWIG does NOT parse it but
+//    the C++ compiler does.  SWIG warns about the unresolved type-constraint
+//    (suppressed with the pragma below); the parm is remapped to 'typename T'
+//    with a 'constraint:unresolved' marker; the wrapper still compiles and
+//    runs because 'Hashable' is in scope at wrapper compile time.
+%{
+#include <concepts>
+
+template<typename T>
+concept Hashable = std::integral<T>;
+%}
+
+#pragma SWIG nowarn=SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF
+%inline %{
+template<Hashable T>
+T tag(T x) { return x + T(1); }
+%}
+#pragma SWIG nowarn=
+
 %template(cube_int) cube<int>;
 %template(cube_double) cube<double>;
 %template(half_int) half<int>;
@@ -92,3 +111,4 @@ public:
 %template(BoxInt) Box<int>;
 %template(BoxDouble) Box<double>;
 %template(FloatBoxFloat) FloatBox<float>;
+%template(tag_int) tag<int>;

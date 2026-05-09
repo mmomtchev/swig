@@ -1,1 +1,1 @@
-cpp_concept_not_visible.i:8: Error: Template parameter type 'Numeric' is not declared in scope. Declare a concept of this name, or use 'typename' / 'class' for a non-type template parameter type.
+cpp_concept_not_visible.i:14: Warning 332: Nothing known about type-constraint 'Numeric'. Treated as 'typename'.

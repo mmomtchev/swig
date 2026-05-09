@@ -68,5 +68,9 @@ public class cpp20_concepts_constrained_param_runme {
     FloatBoxFloat fb = new FloatBoxFloat(1.25f);
     if (fb.get() != 1.25f)
       throw new RuntimeException("FloatBoxFloat.get");
+
+    // 9. Concept not parsed by SWIG.
+    if (cpp20_concepts_constrained_param.tag_int(41) != 42)
+      throw new RuntimeException("tag_int");
   }
 }

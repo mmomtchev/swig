@@ -456,14 +456,22 @@ underlying C++ compiler accepts.
 <p>
 A <i>type-constraint</i> may also stand in place of <tt>typename</tt> /
 <tt>class</tt> in a template parameter list.
-The two forms below are equivalent and SWIG treats them interchangeably:
+For example, given the following concept:
 </p>
 
 <div class="code">
 <pre>
 template&lt;typename T&gt;
 concept Numeric = std::integral&lt;T&gt; || std::floating_point&lt;T&gt;;
+</pre>
+</div>
 
+<p>
+the two function declarations below are equivalent and both a C++ compiler and SWIG treats them interchangeably:
+</p>
+
+<div class="code">
+<pre>
 // shorthand
 template&lt;Numeric T&gt;
 T cube(T x);
@@ -477,7 +485,7 @@ T cube(T x);
 <p>
 The shorthand fits anywhere <tt>typename</tt> / <tt>class</tt> would
 appear: <tt>::</tt>-qualified concept-ids, variadic packs, mixed parameter
-lists, default arguments and class templates are all accepted.
+lists, default arguments and class templates are all accepted, such as:
 </p>
 
 <div class="code">
@@ -491,18 +499,17 @@ template&lt;Numeric T&gt; class Box { T v; };                               // c
 </pre>
 </div>
 
-<p>
-The remap from <tt>Numeric T</tt> to <tt>typename T</tt> happens at parse
-time; the concept-id is then attached to the invented type template
-parameter as a constraint, as if an explicit <tt>requires Numeric&lt;T&gt;</tt> was used.
-</p>
 
 <p>
-The concept name must be visible at the point of the template head.  If
-SWIG cannot find a matching concept (or any other declaration) for the
-identifier, it rejects the template head with an error - the user
-typically just needs to make the concept visible, e.g. by re-declaring it
-in the interface file:
+Wrapping procedes by remapping the template parameter from <tt>Numeric T</tt> to <tt>typename T</tt>.
+However, if the concept definition has not been
+parsed by SWIG, a warning is emitted but only if the template is instantiated
+via <tt>%template</tt>.
+The generated wrapper emits the templated call literally
+and the C++ compiler resolves the constraint when compiled the generated wrapper code.
+SWIG always tries a best effort approach to wrapping partial type information and this
+approach usually works even in the absence of missing concept definitions.
+Simple example:
 </p>
 
 <div class="code">
@@ -510,24 +517,29 @@ in the interface file:
 // SWIG has not parsed 'Numeric' anywhere
 template&lt;Numeric T&gt;
 T cube(T x) { return x * x * x; }
+%template(cube_int) cube&lt;int&gt;;
 </pre>
 </div>
 
 <p>
-Resulting error:
+The resulting warning is:
 </p>
 
 <div class="shell">
 <pre>
-example.i:3: Error: Template parameter type 'Numeric' is not declared in scope. Declare a concept of this name, or use 'typename' / 'class' for a non-type template parameter type.
+example.i:3: Warning 332: Nothing known about type-constraint 'Numeric'. Treated as 'typename'.
 </pre>
 </div>
 
 <p>
+Limitation:
+</p>
+
+<p>
 A type-constraint that itself takes template arguments before the
 parameter name (e.g. <tt>template&lt;std::convertible_to&lt;int&gt; T&gt;</tt>)
-is not yet parsed - move the constraint to a <tt>requires</tt>-clause
-instead:
+is not yet supported as it results in a parse error.
+A workaround is to move the constraint to a <tt>requires</tt>-clause instead:
 <tt>template&lt;typename T&gt; requires std::convertible_to&lt;T, int&gt;</tt>.
 </p>
 

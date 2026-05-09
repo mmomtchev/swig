@@ -436,7 +436,7 @@ static int is_operator(String *name) {
  *                  template<MyClass *P>            void deref();        // decorated
  *   TPC_UNKNOWN  candidate but the symbol is not declared in the current
  *                scope -> the user almost certainly meant a concept that
- *                hasn't been made visible to SWIG; the action issues an error
+ *                hasn't been made visible to SWIG - the action remaps anyway but should warn later.
  *                Examples:
  *                  template<Numeric T>         T cube(T x);  // 'Numeric' concept not declared
  *                  template<MisspeltConcept T> T f(T);       // typo - 'MisspeltConcept' unknown
@@ -3188,6 +3188,27 @@ template_directive: SWIGTEMPLATE LPAREN idstringopt RPAREN idcolonnt LESSTHAN va
 		    n = Swig_cparse_template_locate(idcolonnt, $valparms, symname, tscope);
 		  }
 
+		  /* Warn about any C++20 type-constraint in the template whose concept-id
+		   * SWIG could not resolve during earlier parsing. The early parsing remapped the
+                   * parm to from 'Concept T' to 'typename T'. The warning is deferred to here
+                   * so an unused template referencing an out-of-scope concept does not warn unless
+                   * the user actually instantiates it via %template. */
+		  if (n) {
+		    Parm *tp = Getattr(n, "templateparms");
+		    while (tp) {
+		      if (GetFlag(tp, "constraint:unresolved")) {
+			Node *atom = Getattr(tp, "constraint");
+			String *concept_name = atom ? Getattr(atom, "type") : 0;
+			concept_name = concept_name ? Copy(concept_name) : NewString("<unknown>");
+			Swig_warning(WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF, Getfile(tp), Getline(tp),
+				     "Nothing known about type-constraint '%s'. Treated as 'typename'.\n",
+				     concept_name);
+			Delete(concept_name);
+		      }
+		      tp = nextSibling(tp);
+		    }
+		  }
+
 		  /* Patch the argument types to respect namespaces */
 		  p = $valparms;
 		  while (p) {
@@ -4972,7 +4993,24 @@ templateparameter : templcpptype def_args {
                        * parameter, or to flag the identifier as undeclared. */
                       SwigType *t = Getattr(p, "type");
                       int verdict = t ? classify_template_param_type(t) : TPC_KEEP;
-                      if (verdict == TPC_REMAP) {
+                      if (verdict == TPC_REMAP || verdict == TPC_UNKNOWN) {
+                        /* In keeping with SWIG's "best effort wrap on partial type information" policy,
+                         * the unresolved (TPC_UNKNOWN) case is handled the same way as a confirmed concept
+                         * (TPC_REMAP): rewrite the parm to 'typename T' and attach the captured concept-id
+                         * as a constraint atom on the "constraint" attribute.  Reasoning:
+                         *   - The wrapper SWIG eventually emits invokes the user's templated function
+                         *     literally (e.g. 'cube< int >(arg1)') - whether SWIG saw the concept declaration
+                         *     plays no part in that emission.  If the user's C++ build environment has the
+                         *     concept visible the wrapper compiles; if not, the C++ compiler issues its own
+                         *     clear "does not name a concept" error.
+                         *   - In modern C++ a bare unknown identifier in template-parameter position is far
+                         *     more likely a concept-id than a non-type template parameter type (NTTP) which
+                         *     are almost always primitives or registered typedefs and reach TPC_KEEP via
+                         *     SwigType_type / typedef resolution.  Defaulting to remap therefore has a
+                         *     strictly smaller failure surface than rejecting outright.
+                         * For TPC_UNKNOWN we additionally flag the parm with 'constraint:unresolved' so
+                         * the %template instantiation path can warn about a missing concept-id, noting
+                         * that an unused declaration that happens to reference an unparsed concept is silent. */
                         SwigType *new_type = NewString("typename");
                         String *concept_name = Copy(t);
                         Node *atom = Constraint_new_atom("concept-id");
@@ -4983,15 +5021,10 @@ templateparameter : templcpptype def_args {
                         Setattr(atom, "type", concept_name);
                         Setattr(p, "constraint", atom);
                         Setattr(p, "type", new_type);
+                        if (verdict == TPC_UNKNOWN)
+                          SetFlag(p, "constraint:unresolved");
                         Delete(new_type);
                         Delete(concept_name);
-                      } else if (verdict == TPC_UNKNOWN) {
-                        String *bare = SwigType_isvariadic(t) ? SwigType_del_variadic(Copy(t)) : Copy(t);
-                        Swig_error(cparse_file, cparse_line,
-                                   "Template parameter type '%s' is not declared in scope. "
-                                   "Declare a concept of this name, or use 'typename' / 'class' "
-                                   "for a non-type template parameter type.\n", bare);
-                        Delete(bare);
                       }
                     }
                   }

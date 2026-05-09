@@ -10,14 +10,20 @@ Version 4.5.0 (in progress)
 2026-05-09: wsfulton
             C++20: parse and support type-constraints on template parameters.
             'template<Numeric T>' is now accepted as the standard shorthand for
-            'template<typename T> requires Numeric<T>', including ::-qualified
-            concept-ids, variadic packs, default arguments and class templates.
+            'template<typename T> requires Numeric<T>', as per the C++20 standard. This includes
+            ::-qualified concept-ids, variadic packs, default arguments and class templates.
 
               template<typename T>
               concept Numeric = std::integral<T> || std::floating_point<T>;
 
               template<Numeric T> T cube(T x) { return x * x * x; }
               %template(cube_int) cube<int>;
+
+            If the type-constraint identifier has not been parsed by SWIG a warning is issued:
+
+              Nothing known about type-constraint 'Numeric'. Treated as 'typename'.
+
+            The warning only appears if the concept is used via a %template instantiation.
 
 2026-05-09: wsfulton
             C++20: parse abbreviated function templates with constrained auto parameters.
