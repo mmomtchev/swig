@@ -17,6 +17,7 @@
 <li><a href="#CPlusPlus20_spaceship_operator">Spaceship operator</a>
 <li><a href="#CPlusPlus20_lambda_templates">Lambda templates</a>
 <li><a href="#CPlusPlus20_constexpr_destructors">Constexpr destructors</a>
+<li><a href="#CPlusPlus20_abbreviated_templates">Abbreviated function templates</a>
 <li><a href="#CPlusPlus20_concepts">Concepts and requires-clauses</a>
 <li><a href="#CPlusPlus20_variable_templates">Variable templates initialised from a requires-expression</a>
 </ul>
@@ -98,7 +99,39 @@ public:
 </pre>
 </div>
 
-<H3><a name="CPlusPlus20_concepts">10.2.4 Concepts and requires-clauses</a></H3>
+<H3><a name="CPlusPlus20_abbreviated_templates">10.2.4 Abbreviated function templates</a></H3>
+
+
+<p>
+C++20 generalised the C++14
+<a href="CPlusPlus14.html#CPlusPlus14_generic_lambdas">Generic lambdas</a>
+idea to ordinary functions: an <tt>auto</tt> parameter type in a function
+declaration introduces an invented type template parameter, so the
+function becomes a function template.  SWIG parses this form and the
+function is wrapped by instantiating it with <tt>%template</tt>, just
+like an explicit template.  The return type must be explicit; SWIG
+cannot deduce <tt>auto</tt> return types without a trailing return type
+(the same restriction documented in
+<a href="CPlusPlus14.html#CPlusPlus14_return_type_deduction">Return type deduction</a>).
+</p>
+
+<div class="code">
+<pre>
+%inline %{
+int add1(auto a) { return a + 1; }
+double scale(auto x, auto factor) { return x * factor; }
+%}
+
+%template(add1_int) add1&lt;int&gt;;
+%template(scale_id) scale&lt;int, double&gt;;
+</pre>
+</div>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse abbreviated function templates with <tt>auto</tt> parameters.
+</p>
+
+<H3><a name="CPlusPlus20_concepts">10.2.5 Concepts and requires-clauses</a></H3>
 
 
 <p>
@@ -415,7 +448,7 @@ underlying C++ compiler accepts.
 <b>Compatibility note:</b> SWIG-4.5.0 is the first version to support C++20 concepts.
 </p>
 
-<H3><a name="CPlusPlus20_variable_templates">10.2.5 Variable templates initialised from a requires-expression</a></H3>
+<H3><a name="CPlusPlus20_variable_templates">10.2.6 Variable templates initialised from a requires-expression</a></H3>
 
 
 <p>

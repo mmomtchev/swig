@@ -1,0 +1,16 @@
+from cpp20_abbreviated_template import *
+
+from swig_test_utils import swig_check
+
+# Single auto parameter.
+swig_check(twice_int(5), 10)
+swig_check(twice_short(7), 14)
+
+# Two auto parameters with mixed types (int * double => double).
+swig_check(scale_id(3, 2.5), 7.5)
+
+# Three auto parameters.
+swig_check(sum3_iii(1, 2, 3), 6)
+
+# Unnamed auto parameter.
+swig_check(unnamed_auto_int(99), 42)

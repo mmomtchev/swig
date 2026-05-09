@@ -8,6 +8,26 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-09: wsfulton
+            C++14: parse generic lambdas - lambdas with one or more 'auto' parameters.
+            Like non-templated lambdas, generic lambdas are not wrapped, but they no
+            longer cause a syntax error when SWIG parses a header that contains them.
+
+              auto twice = [](auto x) { return x + x; };
+              auto add = [](auto a, auto b) { return a + b; };
+
+2026-05-09: wsfulton
+            C++20: parse abbreviated function templates - ordinary functions with one or
+            more 'auto' parameters. C++20 treats the function as a function template with
+            invented type template parameters for each auto parameter. Abbreviated
+            function templates can now be wrapped with %template, just like a regular
+            templated function. Note that an explicit (non-auto) return type is required.
+            The return type is not included in the %template instantiation and SWIG
+            remains unable to deduce auto return types.
+
+              double scale(auto x, auto factor) { return x * factor; }
+              %template(scale_id) scale<int, double>;
+
+2026-05-09: wsfulton
             #3413 C++20: accept prefix requires-clauses on templated lambdas, and trailing
             requires-clauses placed after the lambda's return type.
 

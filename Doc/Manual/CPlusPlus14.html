@@ -16,6 +16,7 @@
 <ul>
 <li><a href="#CPlusPlus14_binary_literals">Binary integer literals</a>
 <li><a href="#CPlusPlus14_return_type_deduction">Return type deduction</a>
+<li><a href="#CPlusPlus14_generic_lambdas">Generic lambdas</a>
 <li><a href="#CPlusPlus14_variable_templates">Variable templates</a>
 </ul>
 <li><a href="#CPlusPlus14_standard_library_changes">Standard library changes</a>
@@ -117,7 +118,38 @@ SWIG 4.4.0 added support for forward declarations of such functions.
 </p>
 
 
-<H3><a name="CPlusPlus14_variable_templates">8.2.3 Variable templates</a></H3>
+<H3><a name="CPlusPlus14_generic_lambdas">8.2.3 Generic lambdas</a></H3>
+
+
+<p>
+C++14 lifted the restriction that lambda parameters be explicit types and
+allowed <tt>auto</tt> as a parameter type, making the lambda a templated
+function object whose <tt>operator()</tt> deduces each <tt>auto</tt>
+parameter at the call site.  SWIG parses generic lambdas, but - like non-templated
+<a href="CPlusPlus11.html#CPlusPlus11_lambda_functions_and_expressions">Lambda
+functions and expressions</a> - they are not currently automatically wrapped.  Users
+should write additional code to call the lambda from an ordinary wrapped
+function as a workaround, for example:
+</p>
+
+<div class="code">
+<pre>
+%inline %{
+auto twice = [](auto x) { return x + x; };
+auto add = [](auto a, auto b) { return a + b; };
+
+int run_twice(int x)      { return twice(x); }
+int run_add(int a, int b) { return add(a, b); }
+%}
+</pre>
+</div>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse generic lambdas with <tt>auto</tt> parameters.
+</p>
+
+
+<H3><a name="CPlusPlus14_variable_templates">8.2.4 Variable templates</a></H3>
 
 
 <p>

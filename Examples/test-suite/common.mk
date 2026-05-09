@@ -698,6 +698,7 @@ CPP11_TEST_BROKEN = \
 CPP14_TEST_CASES += \
 	cpp14_auto_return_type \
 	cpp14_binary_integer_literals \
+	cpp14_generic_lambda \
 	cpp14_variable_templates \
 
 # Broken C++14 test cases.
@@ -719,6 +720,7 @@ CPP17_TEST_BROKEN = \
 
 # C++20 test cases.
 CPP20_TEST_CASES += \
+	cpp20_abbreviated_template \
 	cpp20_concepts \
 	cpp20_concepts_class_methods \
 	cpp20_concepts_classes \

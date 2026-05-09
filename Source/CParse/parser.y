@@ -410,6 +410,50 @@ static int is_operator(String *name) {
   return Strncmp(name,"operator ", 9) == 0;
 }
 
+/* If the cdecl 'n' has any parameter whose type is "auto" (a C++20 abbreviated function template) replace each such parm
+ * with an invented type template parameter (named "__dummy_auto_<N>__") and convert 'n' to a template node carrying those
+ * typenames as templateparms.  Lets the existing template-instantiation machinery wrap '%template(name) fn<int>;' for an
+ * abbreviated function template.  Returns 1 if a transformation happened, 0 otherwise. */
+static int promote_abbreviated_template(Node *n) {
+  ParmList *parms = Getattr(n, "parms");
+  Parm *p;
+  int auto_count = 0;
+  ParmList *templateparms = 0;
+  Parm *last_synth = 0;
+  static int auto_cnt = 0;
+
+  if (!parms) return 0;
+  for (p = parms; p; p = nextSibling(p)) {
+    SwigType *ty = Getattr(p, "type");
+    if (ty && Equal(ty, "auto")) auto_count++;
+  }
+  if (auto_count == 0) return 0;
+
+  for (p = parms; p; p = nextSibling(p)) {
+    SwigType *ty = Getattr(p, "type");
+    if (ty && Equal(ty, "auto")) {
+      String *synth_name = NewStringf("__dummy_auto_%d__", auto_cnt++);
+      Parm *tp = NewParmWithoutFileLineInfo(NewString("typename"), synth_name);
+      Setfile(tp, Getfile(n));
+      Setline(tp, Getline(n));
+      Setattr(p, "type", Copy(synth_name));
+      if (last_synth) {
+        set_nextSibling(last_synth, tp);
+      } else {
+        templateparms = tp;
+      }
+      last_synth = tp;
+      Delete(synth_name);
+    }
+  }
+
+  Setattr(n, "templatetype", nodeType(n));
+  set_nodeType(n, "template");
+  Setattr(n, "templateparms", templateparms);
+  Setattr(n, "sym:typename", "1");
+  return 1;
+}
+
 /* Add declaration list to symbol table */
 static int  add_only_one = 0;
 
@@ -3432,6 +3476,8 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
+              /* C++20 abbreviated function template: any parm typed 'auto' becomes an invented type template parameter. */
+              if ($$) promote_abbreviated_template($$);
 	      Delete($storage_class);
            }
 	   | storage_class type declarator cpp_const EQUAL error SEMI {
@@ -5518,6 +5564,21 @@ parm_no_dox	: rawtype parameter_declarator {
 		   if ($parameter_declarator.numdefarg)
 		     Setattr($$, "numval", $parameter_declarator.numdefarg);
 		}
+                | AUTO parameter_declarator {
+                   /* C++14 generic lambda / C++20 abbreviated function template parm, e.g. 'auto x'.  Placed in parm_no_dox
+                    * rather than type_right so it does not collide with the 'storage_class AUTO declarator ...' rules. */
+                   SwigType *t = NewString("auto");
+                   SwigType_push(t, $parameter_declarator.type);
+                   $$ = NewParmWithoutFileLineInfo(t, $parameter_declarator.id);
+                   Setfile($$, cparse_file);
+                   Setline($$, cparse_line);
+                   if ($parameter_declarator.defarg)
+                     Setattr($$, "value", $parameter_declarator.defarg);
+                   if ($parameter_declarator.stringdefarg)
+                     Setattr($$, "stringval", $parameter_declarator.stringdefarg);
+                   if ($parameter_declarator.numdefarg)
+                     Setattr($$, "numval", $parameter_declarator.numdefarg);
+                }
                 | ELLIPSIS {
 		  SwigType *t = NewString("v(...)");
 		  $$ = NewParmWithoutFileLineInfo(t, 0);
