@@ -3646,6 +3646,73 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
 	      Delete($storage_class);
 	   }
+           /* C++20 abbreviated function template with a constrained auto return type
+            * combined with an explicit trailing return type, e.g.
+            *   Numeric auto fn(int x) -> int { return x; }
+            * The trailing return type is what SWIG wraps; the concept-id is captured as a
+            * 'concept-id' atom on the 'constraint' attribute for downstream inspection. */
+           | storage_class idcolon AUTO declarator cpp_const ARROW cpp_alternate_rettype virt_specifier_seq_opt initializer c_decl_tail {
+              Node *atom;
+              $$ = new_node("cdecl");
+	      if ($cpp_const.qualifier) SwigType_push($declarator.type, $cpp_const.qualifier);
+	      Setattr($$,"refqualifier",$cpp_const.refqualifier);
+	      Setattr($$,"type",$cpp_alternate_rettype);
+	      Setattr($$,"storage",$storage_class);
+	      Setattr($$,"name",$declarator.id);
+	      Setattr($$,"decl",$declarator.type);
+	      Setattr($$,"parms",$declarator.parms);
+	      Setattr($$,"throws",$cpp_const.throws);
+	      Setattr($$,"throw",$cpp_const.throwf);
+	      Setattr($$,"noexcept",$cpp_const.nexcept);
+	      Setattr($$,"final",$cpp_const.final);
+	      atom = Constraint_new_atom("concept-id");
+	      Setattr(atom, "type", $idcolon);
+	      Setattr($$, "constraint", atom);
+	      if (!$c_decl_tail) {
+		if (Len(scanner_ccode)) {
+		  String *code = Copy(scanner_ccode);
+		  Setattr($$,"code",code);
+		  Delete(code);
+		}
+	      } else {
+		Node *n = $c_decl_tail;
+		while (n) {
+		  String *type = Copy($cpp_alternate_rettype);
+		  Setattr(n,"type",type);
+		  Setattr(n,"storage",$storage_class);
+		  n = nextSibling(n);
+		  Delete(type);
+		}
+	      }
+
+	      if ($declarator.id) {
+		String *p = Swig_scopename_prefix($declarator.id);
+		if (p) {
+		  if ((Namespaceprefix && Strcmp(p, Namespaceprefix) == 0) ||
+		      (Classprefix && Strcmp(p, Classprefix) == 0)) {
+		    String *lstr = Swig_scopename_last($declarator.id);
+		    Setattr($$,"name",lstr);
+		    Delete(lstr);
+		    set_nextSibling($$, $c_decl_tail);
+		  } else {
+		    Delete($$);
+		    $$ = $c_decl_tail;
+		  }
+		  Delete(p);
+		} else if (Strncmp($declarator.id, "::", 2) == 0) {
+		  Delete($$);
+		  $$ = $c_decl_tail;
+		}
+	      } else {
+		set_nextSibling($$, $c_decl_tail);
+	      }
+
+	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
+		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
+              /* Promote any 'auto' / 'Concept auto' parm to an invented type template parameter. */
+              if ($$) promote_abbreviated_template($$);
+	      Delete($storage_class);
+           }
            /* Alternate function syntax introduced in C++11:
               auto funcName(int x, int y) -> int; */
            | storage_class AUTO declarator cpp_const ARROW cpp_alternate_rettype virt_specifier_seq_opt initializer c_decl_tail {
@@ -3704,6 +3771,8 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
+              /* Promote any 'auto' / 'Concept auto' parm to an invented type template parameter. */
+              if ($$) promote_abbreviated_template($$);
 	      Delete($storage_class);
            }
            /* C++14 allows the trailing return type to be omitted.  It's
@@ -3754,6 +3823,54 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
 	      Delete($storage_class);
 	   }
+	   /* C++20 abbreviated function template with a constrained auto return type,
+	    * e.g. 'Numeric auto fn(int x) { return x; }'.  Parses identically to the plain
+	    * 'auto' return form above and inherits the same warn and ignore behaviour when
+	    * SWIG cannot deduce the return type; the concept-id is preserved on the
+	    * 'constraint' attribute as a 'concept-id' atom for downstream inspection. */
+	   | storage_class idcolon AUTO declarator cpp_const LBRACE {
+	      Node *atom;
+	      if (skip_balanced('{','}') < 0) Exit(EXIT_FAILURE);
+
+              $$ = new_node("cdecl");
+	      if ($cpp_const.qualifier) SwigType_push($declarator.type, $cpp_const.qualifier);
+	      Setattr($$, "refqualifier", $cpp_const.refqualifier);
+	      Setattr($$, "type", NewString("auto"));
+	      Setattr($$, "storage", $storage_class);
+	      Setattr($$, "name", $declarator.id);
+	      Setattr($$, "decl", $declarator.type);
+	      Setattr($$, "parms", $declarator.parms);
+	      Setattr($$, "throws", $cpp_const.throws);
+	      Setattr($$, "throw", $cpp_const.throwf);
+	      Setattr($$, "noexcept", $cpp_const.nexcept);
+	      Setattr($$, "final", $cpp_const.final);
+	      atom = Constraint_new_atom("concept-id");
+	      Setattr(atom, "type", $idcolon);
+	      Setattr($$, "constraint", atom);
+
+	      if ($declarator.id) {
+		String *p = Swig_scopename_prefix($declarator.id);
+		if (p) {
+		  if ((Namespaceprefix && Strcmp(p, Namespaceprefix) == 0) ||
+		      (Classprefix && Strcmp(p, Classprefix) == 0)) {
+		    String *lstr = Swig_scopename_last($declarator.id);
+		    Setattr($$, "name", lstr);
+		    Delete(lstr);
+		  } else {
+		    Delete($$);
+		    $$ = 0;
+		  }
+		  Delete(p);
+		} else if (Strncmp($declarator.id, "::", 2) == 0) {
+		  Delete($$);
+		  $$ = 0;
+		}
+	      }
+
+	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
+		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
+	      Delete($storage_class);
+	   }
 	   // C++14.  Like the previous case but a declaration rather than a
 	   // definition.  A C++ compiler will deduce the return type when it
 	   // sees the corresponding definition, but SWIG may never see that
@@ -3788,6 +3905,50 @@ c_decl  : storage_class type declarator cpp_const initializer c_decl_tail {
 		  Delete(p);
 		} else if (Strncmp($declarator.id, "::", 2) == 0) {
 		  /* global scope declaration/definition ignored */
+		  Delete($$);
+		  $$ = 0;
+		}
+	      }
+
+	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
+		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
+	      Delete($storage_class);
+	   }
+	   /* C++20 abbreviated function template with a constrained auto return type,
+	    * declaration form, e.g. 'Numeric auto fn(int x);'.  Inherits the same warn and ignore
+	    * behaviour as the plain 'auto fn(...)' declaration above. */
+	   | storage_class idcolon AUTO declarator cpp_const SEMI {
+	      Node *atom;
+	      $$ = new_node("cdecl");
+	      if ($cpp_const.qualifier) SwigType_push($declarator.type, $cpp_const.qualifier);
+	      Setattr($$, "refqualifier", $cpp_const.refqualifier);
+	      Setattr($$, "type", NewString("auto"));
+	      Setattr($$, "storage", $storage_class);
+	      Setattr($$, "name", $declarator.id);
+	      Setattr($$, "decl", $declarator.type);
+	      Setattr($$, "parms", $declarator.parms);
+	      Setattr($$, "throws", $cpp_const.throws);
+	      Setattr($$, "throw", $cpp_const.throwf);
+	      Setattr($$, "noexcept", $cpp_const.nexcept);
+	      Setattr($$, "final", $cpp_const.final);
+	      atom = Constraint_new_atom("concept-id");
+	      Setattr(atom, "type", $idcolon);
+	      Setattr($$, "constraint", atom);
+
+	      if ($declarator.id) {
+		String *p = Swig_scopename_prefix($declarator.id);
+		if (p) {
+		  if ((Namespaceprefix && Strcmp(p, Namespaceprefix) == 0) ||
+		      (Classprefix && Strcmp(p, Classprefix) == 0)) {
+		    String *lstr = Swig_scopename_last($declarator.id);
+		    Setattr($$, "name", lstr);
+		    Delete(lstr);
+		  } else {
+		    Delete($$);
+		    $$ = 0;
+		  }
+		  Delete(p);
+		} else if (Strncmp($declarator.id, "::", 2) == 0) {
 		  Delete($$);
 		  $$ = 0;
 		}

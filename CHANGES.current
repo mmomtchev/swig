@@ -8,6 +8,21 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-09: wsfulton
+            C++20: parse abbreviated function templates with a constrained auto return
+            type, including the trailing return form:
+
+              Numeric auto half(int x) -> int { return x / 2; }
+              Numeric auto cube_constrained(Sized auto x) -> int { return x*x*x; }
+              %template(cube_constrained_int) cube_constrained<int>;
+
+            When an explicit (non-auto) trailing return type is provided the function
+            wraps normally (the trailing return is the wrapped type); without one, the
+            function is ignored with a warning since SWIG cannot deduce the return type,
+            matching plain 'auto fn(...)' behaviour.  As a side fix, plain 'auto
+            fn(Concept auto x) -> Type' now correctly introduces an invented type template
+            parameter for the auto parameter so '%template' instantiates it.
+
+2026-05-09: wsfulton
             C++20: parse and support type-constraints on template parameters.
             'template<Numeric T>' is now accepted as the standard shorthand for
             'template<typename T> requires Numeric<T>', as per the C++20 standard. This includes

@@ -45,5 +45,15 @@ public class cpp20_abbreviated_template_runme {
     // Unnamed constrained auto.
     if (cpp20_abbreviated_template.unnamed_constrained_int(99) != 42)
       throw new RuntimeException("unnamed_constrained_int(99)");
+
+    // Constrained auto return type with explicit trailing return type.
+    if (cpp20_abbreviated_template.half(10) != 5)
+      throw new RuntimeException("half(10)");
+    if (cpp20_abbreviated_template.cube_constrained_int(3) != 27)
+      throw new RuntimeException("cube_constrained_int(3)");
+
+    // Plain auto return type + constrained auto parameter + trailing return type.
+    if (cpp20_abbreviated_template.twice_n_arrow_int(7) != 14)
+      throw new RuntimeException("twice_n_arrow_int(7)");
   }
 }

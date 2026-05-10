@@ -153,7 +153,24 @@ double scale_mixed(Numeric auto x, Numeric auto factor) { return x * factor; }
 </div>
 
 <p>
-<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse and support abbreviated function templates with <tt>auto</tt> parameters, including the type constrained form.
+A <i>constrained auto return type</i> is parsed using the same syntax.
+As with plain <tt>auto</tt> returns, SWIG can only wrap the function
+when an explicit trailing return type is provided; without one the
+function is ignored with a warning since SWIG cannot deduce the
+return type:
+</p>
+
+<div class="code">
+<pre>
+Numeric auto half(int x) -&gt; int { return x / 2; }                   // wrappable
+Numeric auto cube_constrained(Sized auto x) -&gt; int { return x*x*x; } // wrappable
+Numeric auto times2(int x) { return x * 2; }                         // ignored with warning
+Numeric auto times3(int x);                                          // ignored with warning
+</pre>
+</div>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse and support abbreviated function templates with <tt>auto</tt> parameters, including the constrained auto form in both parameter and return type positions.
 </p>
 
 <H3><a name="CPlusPlus20_concepts">10.2.5 Concepts and requires-clauses</a></H3>

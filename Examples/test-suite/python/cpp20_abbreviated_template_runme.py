@@ -26,3 +26,10 @@ swig_check(add_same_int(4, 5), 9)
 
 # Unnamed constrained auto.
 swig_check(unnamed_constrained_int(99), 42)
+
+# Constrained auto return type with explicit trailing return type.
+swig_check(half(10), 5)
+swig_check(cube_constrained_int(3), 27)
+
+# Plain auto return type + constrained auto parameter + trailing return type.
+swig_check(twice_n_arrow_int(7), 14)
