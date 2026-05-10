@@ -11,10 +11,27 @@
 
 %include <std_vector.i>
 %include <std_map.i>
-%include <std_shared_ptr.i>
 
-// For JavaScript, only Node-API supports shared pointers and
-// it requires this for transparent conversion of std::vector and std::map
+#if defined(SWIGC) || defined(SWIGJAVA) || defined(SWIGCSHARP) || defined(SWIGPYTHON) || defined(SWIGD) || defined(SWIGOCTAVE) || defined(SWIGRUBY) || defined(SWIGR) || defined(SWIGLUA)
+#define SHARED_PTR_WRAPPERS_IMPLEMENTED
+#endif
+
+// For JavaScript, only Node-API supports shared pointers
+#if defined(SWIGJAVASCRIPT)
+#if defined(SWIG_JAVASCRIPT_NAPI)
+#define SHARED_PTR_WRAPPERS_IMPLEMENTED
+%constant int SWIG_NODE_API = 1;
+#else
+%constant int SWIG_NODE_API = 0;
+#endif
+#endif
+
+#if defined(SHARED_PTR_WRAPPERS_IMPLEMENTED)
+%include <std_shared_ptr.i>
+#endif
+
+// Node-API has some additional features
+// and it requires this for transparent conversion of std::vector and std::map
 // Additionally, std::map can be automatically converted only if all the
 // keys are strings
 #if defined(SWIGJAVASCRIPT) && defined(SWIG_JAVASCRIPT_NAPI)
@@ -108,8 +125,10 @@ int base_num(std::map<map_key_t, BasePtr > v) {
 %}
 
 
+#if defined(SHARED_PTR_WRAPPERS_IMPLEMENTED)
 %shared_ptr(Base);
 %shared_ptr(Derived);
+#endif
 
 %template(BaseList) std::vector<std::shared_ptr<Base> >;
 %template(DerivedList) std::vector<std::shared_ptr<Derived> >;
@@ -152,8 +171,10 @@ int base_num(std::vector<std::shared_ptr<Base> > v);
 int base_num(std::map<map_key_t, BasePtr > v);
 
 // ptr to shared_ptr
+#if defined(SHARED_PTR_WRAPPERS_IMPLEMENTED)
 %shared_ptr(Base2);
 %shared_ptr(Derived2)
+#endif
 
 %inline %{
 class Base2 {

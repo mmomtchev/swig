@@ -3,7 +3,7 @@ dnl The macros which aren't shipped with the autotools are stored in the
 dnl Tools/config directory in .m4 files.
 
 AC_INIT([swig],[5.0.12],[https://www.swig.org])
-AC_PREREQ([2.60])
+AC_PREREQ([2.64])
 
 AC_CONFIG_SRCDIR([Source/Swig/swig.h])
 AC_CONFIG_AUX_DIR([Tools/config])
@@ -59,6 +59,10 @@ AC_DEFINE_UNQUOTED(SWIG_PLATFORM, ["$host"], [Platform that SWIG is built for])
 # For AC_EGREP_CPP
 AC_PROG_EGREP
 
+# Root directory
+ROOT_DIR=`pwd`
+ABS_SRCDIR=`(cd ${srcdir} && pwd)`
+
 dnl PCRE
 AC_ARG_WITH([pcre],
   [AS_HELP_STRING([--without-pcre],
@@ -74,8 +78,8 @@ if test x"${with_pcre}" = xyes ; then
   AC_MSG_CHECKING([whether to use local PCRE2])
   local_pcre_config=no
   if test -z "$PCRE2_CONFIG"; then
-    if test -f `pwd`/pcre/pcre-swig-install/bin/pcre2-config; then
-      PCRE2_CONFIG=`pwd`/pcre/pcre-swig-install/bin/pcre2-config
+    if test -f "$ROOT_DIR/pcre/pcre-swig-install/bin/pcre2-config"; then
+      PCRE2_CONFIG="$ROOT_DIR/pcre/pcre-swig-install/bin/pcre2-config"
       local_pcre_config=$PCRE2_CONFIG
     fi
   fi
@@ -117,6 +121,9 @@ if test "$enable_ccache" = yes; then
 fi
 AC_SUBST(ENABLE_CCACHE)
 
+#----------------------------------------------------------------
+# Optional packages for development
+#----------------------------------------------------------------
 
 echo ""
 echo "Checking packages required for SWIG developers."
@@ -128,6 +135,47 @@ if test -z "$BISON"; then
 else
   AC_MSG_NOTICE([Using bison from environment variable BISON... ${BISON}])
 fi
+
+#----------------------------------------------------------------
+# clang-format
+#----------------------------------------------------------------
+
+AC_ARG_WITH(clang-format, AS_HELP_STRING([--without-clang-format], [Disable clang-format])
+AS_HELP_STRING([--with-clang-format=path], [Set location of clang-format executable]),[with_clang_format="$withval"], [with_clang_format="yes"])
+
+# First, check for "--without-clang-format" or "--with-clang-format=no".
+if test x"$with_clang_format" = xno; then
+  AC_MSG_NOTICE([Disabling clang-format])
+  CLANG_FORMAT=
+else
+  if test "x$with_clang_format" = xyes; then
+    # Specific versions searched for below are those that are known to work
+    AC_CHECK_PROGS(CLANG_FORMAT, clang-format-22 clang-format-21 clang-format-20 clang-format-19 clang-format-18 clang-format)
+  else
+    AC_MSG_CHECKING([clang-format])
+    CLANG_FORMAT="$with_clang_format"
+    AC_MSG_RESULT([$CLANG_FORMAT])
+  fi
+fi
+if test -n "$CLANG_FORMAT" ; then
+  AC_MSG_CHECKING([for clang-format version])
+  clang_format_version=[$($CLANG_FORMAT --version | sed 's/^.*version \([0-9][0-9.]*\).*$/\1/')]
+  AC_MSG_RESULT([$clang_format_version])
+  clang_format_major_version=[$(echo "$clang_format_version" | sed 's/^\([0-9][0-9]*\)\(.[0-9.]*\).*$/\1/')]
+  AC_MSG_CHECKING([whether clang-format major version ($clang_format_major_version) >= required minimum version (18) and should be enabled]) # 18 is first version to support .clang-format-ignore
+  if test $clang_format_major_version -ge 18; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    CLANG_FORMAT=
+  fi
+fi
+
+AC_SUBST(CLANG_FORMAT)
+
+#----------------------------------------------------------------
+# Optional for target language examples/testing
+#----------------------------------------------------------------
 
 echo ""
 echo "Checking for installed target languages and other information in order to compile and run"
@@ -215,7 +263,8 @@ then
 	*-*-linux*) LDSHARED="\$(CC) -shared";;
 	*-*-dgux*) LDSHARED="ld -G";;
 	*-*-freebsd3*) LDSHARED="\$(CC) -shared";;
-	*-*-freebsd* | *-*-openbsd*) LDSHARED="ld -Bshareable";;
+	*-*-freebsd*) LDSHARED="ld -Bshareable";;
+	*-*-openbsd*) LDSHARED="\$(CC) -shared";;
 	*-*-netbsd*)
 		if [[ "`\$(CC) -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -224,7 +273,7 @@ then
 			LDSHARED="ld -Bshareable"
 		fi;;
 	*-sco-sysv*) LDSHARED="\$(CC) -G -KPIC -Ki486 -belf -Wl,-Bexport";;
-	*-*-darwin*) LDSHARED="\$(CC) -bundle -undefined suppress -flat_namespace";;
+	*-*-darwin*) LDSHARED="\$(CC) -bundle -undefined dynamic_lookup -flat_namespace";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -236,7 +285,8 @@ AC_MSG_RESULT($LDSHARED)
 AC_MSG_CHECKING(CXXSHARED)
 if test -z "$CXXSHARED"
 then
-	CXXSHARED="$LDSHARED"
+	# Ensure we use CXX for C++
+	CXXSHARED="$(echo "$LDSHARED" | sed 's%\$(CC)%\$(CXX)%')"
 fi
 AC_MSG_RESULT($CXXSHARED)
 
@@ -250,7 +300,7 @@ then
              else TRYLINKINGWITHCXX="CXXSHARED= \$(CXX) -G -L/opt/SUNWspro/lib -lCrun -lCstd"
              fi;;
         *-*-hp*) TRYLINKINGWITHCXX="CXXSHARED= \$(CXX) +z ";;
-        *-*-darwin*) TRYLINKINGWITHCXX="CXXSHARED= \$(CXX) -bundle -undefined suppress -flat_namespace";;
+        *-*-darwin*) TRYLINKINGWITHCXX="CXXSHARED= \$(CXX) -bundle -undefined dynamic_lookup -flat_namespace";;
         *-*-cygwin* | *-*-mingw* | *-*-msys*)
             if test "$GCC" = yes; then
                 TRYLINKINGWITHCXX="CXXSHARED= \$(CXX) -shared "
@@ -302,6 +352,12 @@ then
 	esac
 fi
 AC_MSG_RESULT($RPATH)
+
+dnl cygpath: Converts POSIX and Windows format paths
+dnl See: https://cygwin.com/cygwin-ug-net/cygpath.html
+AC_CHECK_TOOL([CYGPATH], [cygpath])
+dnl stop if used with windows lacking the tool!
+AS_IF([test -z "$CYGPATH"], [AS_VAR_SET([CYGPATH], [false])])
 
 # LINKFORSHARED are the flags passed to the $(CC) command that links
 # a few executables -- this is only needed for a few systems
@@ -661,7 +717,9 @@ else
   CSHARPCOMPILER="$CSHARPCOMPILERBIN"
 fi
 
-CSHARPCONVERTPATH="Tools/convertpath -u"
+AS_IF([test "$CYGPATH" = "false" ],
+      [AS_VAR_SET([CSHARPCONVERTPATH], [echo])],
+      [AS_VAR_SET([CSHARPCONVERTPATH], ["$CYGPATH -u"])])
 if test -z "$CSHARPBIN" ; then
   CSHARPCILINTERPRETER=""
   CSHARPCILINTERPRETER_FLAGS=""
@@ -687,8 +745,8 @@ if test -z "$CSHARPBIN" ; then
         AC_CHECK_PROGS(CSHARPCILINTERPRETER, mono) # Mono JIT
         CSHARPCILINTERPRETER_FLAGS="--debug"
     else
-      if test "csc" = "$CSHARPCOMPILER"; then
-          CSHARPCONVERTPATH="Tools/convertpath -w"
+      if test "csc" = "$CSHARPCOMPILER" && test "$CYGPATH" != "false"; then
+          CSHARPCONVERTPATH="$CYGPATH -w"
       fi
     fi
   fi
@@ -815,20 +873,23 @@ else
   GOOPT=
   GCCGOOPT=
   GOVERSIONOPTION=
+  GOMINVER='1.20'
+  case $host in
+  *-*-cygwin* | *-*-mingw* | *-*-msys*)
+    AS_IF([test "$CYGPATH" != "false" ],
+        [AS_VAR_SET([GO_CYGPATH], ["$CYGPATH"])])
+    ;;
+  esac
 
   if test -n "$GO" ; then
     GOVERSIONOPTION=version
-    go_version=$($GO $GOVERSIONOPTION | sed -e 's/go version //')
+    go_version="$($GO $GOVERSIONOPTION | sed 's%go *%%g;s%version *%%;s% .*%%')"
     AC_MSG_CHECKING([whether go version is too old])
-    case $go_version in
-    go1.[012]*)
-      AC_MSG_RESULT([yes - minimum version is 1.3])
-      GO=
-      ;;
-    *)
-      AC_MSG_RESULT([no])
-      ;;
-    esac
+    AS_VERSION_COMPARE(["$go_version"], ["$GOMINVER"],
+                   [AC_MSG_RESULT([yes - minimum version is $GOMINVER])
+                    AS_UNSET([GO])],        dnl bellow GOMINVER
+                   [AC_MSG_RESULT([no])],   dnl equal GOMINVER
+                   [AC_MSG_RESULT([no])])   dnl above GOMINVER
   fi
 
   AC_CHECK_PROGS(GCCGO, gccgo)
@@ -864,6 +925,8 @@ AC_SUBST(GO15)
 AC_SUBST(GOOPT)
 AC_SUBST(GCCGOOPT)
 AC_SUBST(GOVERSIONOPTION)
+AC_SUBST(GOMINVER)
+AC_SUBST(GO_CYGPATH)
 
 #----------------------------------------------------------------
 # Look for Guile
@@ -975,15 +1038,10 @@ dnl
 dnl If JAVA_HOME is defined and contains everything needed, as it's supposed to,
 dnl just use it. Otherwise try to locate the necessary files in the path.
 case $host in
-  *-*-cygwin*)
+  *-*-cygwin*|*-*-mingw*|*-*-msys*)
     dnl Ensure that JAVA_HOME is in the form we can use, it's typically set to Windows path by the installer.
     if test -n "$JAVA_HOME"; then
-      JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
-    fi
-    ;;
-  *-*-mingw*)
-    if test -n "$JAVA_HOME"; then
-      JAVA_HOME=`${srcdir}/Tools/convertpath -u "$JAVA_HOME"`
+      JAVA_HOME="`$CYGPATH -m "$JAVA_HOME"`"
     fi
     ;;
   *-*-darwin*)
@@ -1062,13 +1120,13 @@ if test -n "$JAVAC"; then
   JAVA_VERSION_MAJOR="1"
   if test -n "$java_version_num"; then
     dnl Until Java 8 version number was in format "1.x.y_z", starting from Java 9 it's "x.y.z".
-    JAVA_VERSION_MAJOR=[$(echo "$java_version_num" | sed -e "s/^1\.//" | sed -e "s/^\([0-9]\+\)\..*/\1/")]
+    JAVA_VERSION_MAJOR=`echo "$java_version_num" | sed 's%^1\.%%;s%\..*%%'`
   fi
   AC_MSG_RESULT([$JAVA_VERSION_MAJOR])
 
 # Check Java version: we require Java 9 or later for Doxygen tests.
   JAVA_SKIP_DOXYGEN_TEST_CASES=
-  if test "$JAVA_VERSION_MAJOR" -le "8"; then
+  if test $JAVA_VERSION_MAJOR -le 8; then
     JAVA_SKIP_DOXYGEN_TEST_CASES="1"
   fi
 
@@ -1157,7 +1215,7 @@ case $host in
         JAVACFLAGS=""
     fi ;;
 *-*-darwin*)
-        JAVADYNAMICLINKING="-dynamiclib -framework JavaVM"
+        JAVADYNAMICLINKING="-dynamiclib"
         JAVACFLAGS=""
         ;;
 *)
@@ -1198,6 +1256,14 @@ fi
 
 # Turned off due to spurious warnings in later versions of openjdk-1.8
 # JAVAFLAGS=-Xcheck:jni
+
+# Allow using 'System.loadLibrary', which is marked restricted!
+# https://docs.oracle.com/en/java/javase/25/core/restricted-methods.html
+# https://bugs.openjdk.org/browse/JDK-8317242
+if test $JAVA_VERSION_MAJOR -gt 21; then
+    JAVAC_OPTIONS+=" -Xlint:-restricted"
+    JAVAFLAGS+=" --enable-native-access=ALL-UNNAMED"
+fi
 
 AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
@@ -2165,9 +2231,7 @@ else
 
       AC_MSG_CHECKING([for Python 3.x version])
 
-      # Need to do this hack since autoconf replaces __file__ with the name of the configure file
-      filehack="file__"
-      PY3VERSION=`($PYTHON3 -c "import string,operator,os.path; print(operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1))") 2>/dev/null`
+      PY3VERSION=`($PYTHON3 -c "import sys;print('python%d.%d' % (sys.version_info.major, sys.version_info.minor))") 2>/dev/null`
       AC_MSG_RESULT($PY3VERSION)
 
       # Find the directory for libraries this is necessary to deal with
@@ -2683,8 +2747,8 @@ esac
 
 case $host in
 *-*-darwin*)
-    TCLLDSHARED='$(CC) -dynamiclib -undefined suppress -flat_namespace'
-    TCLCXXSHARED='$(CXX) -dynamiclib -undefined suppress -flat_namespace'
+    TCLLDSHARED='$(CC) -dynamiclib -undefined dynamic_lookup -flat_namespace'
+    TCLCXXSHARED='$(CXX) -dynamiclib -undefined dynamic_lookup -flat_namespace'
     ;;
 *)
     TCLLDSHARED='$(LDSHARED)'
@@ -2844,34 +2908,18 @@ AC_SUBST(SKIP_ANDROID)
 # Miscellaneous
 #----------------------------------------------------------------
 
-ABS_SRCDIR=`(cd ${srcdir} && pwd)`
-
 dnl Under Cygwin, we may need native absolute path as it is used by SWIG, which
 dnl may be a native, and not a Cygwin, program (this is the case when it's
 dnl built using MinGW or cccl compiler in Cygwin environment). However it may,
 dnl although this is probably more rare, also be built as a Cygwin program.
 dnl Using "mixed" path like we do here allows the path to work in both cases.
 case $host in
-  *-*-mingw* ) ABS_SRCDIR=`${srcdir}/Tools/convertpath -m $ABS_SRCDIR` ;;
-  *-*-cygwin* | *-*-msys*) ABS_SRCDIR=`cygpath --mixed $ABS_SRCDIR` ;;
-esac
-
-# Root directory
-ROOT_DIR=`pwd`
-case $host in
-*-*-cygwin*)
-  # Translate path for native Windows compilers for use with 'make check'
-  if (cygpath --mixed $ROOT_DIR) >/dev/null 2>/dev/null; then
-    ROOT_DIR=`cygpath --mixed $ROOT_DIR`
-  fi
-  ;;
-esac
-
-case $host in
-*-*-cygwin* | *-*-mingw* | *-*-msys*)
-  # Extra files generated by some Windows compilers
-  EXTRA_CLEAN="*.stackdump *.exp *.lib *.pdb *.ilk"
-  ;;
+  *-*-cygwin* | *-*-mingw* | *-*-msys*)
+    ROOT_DIR="`$CYGPATH -m "$ROOT_DIR"`"
+    ABS_SRCDIR="`$CYGPATH -m "$ABS_SRCDIR"`"
+    # Extra files generated by some Windows compilers
+    EXTRA_CLEAN="*.stackdump *.exp *.lib *.pdb *.ilk"
+    ;;
 esac
 
 AC_SUBST(ROOT_DIR)

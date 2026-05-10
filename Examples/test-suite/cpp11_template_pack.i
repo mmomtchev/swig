@@ -5,7 +5,7 @@
   class Object {
     int v;
   public:
-    Object(int x): v{x} {};
+    Object(int x): v{x} {}
   };
 
   template <typename T, typename... U>
@@ -20,7 +20,7 @@
     Unique(const Unique &) = default;
 #endif
     Unique(Unique &&) = default;
-    Unique(int x): v{x} {};
+    Unique(int x): v{x} {}
   };
 
   template <typename T, typename... U>
@@ -48,7 +48,7 @@
     cpp_function() = default;
     RET operator()(ARGS...) {
       return RET{};
-    };
+    }
   };
   template <typename RET, typename... ARGS>
   RET call_function(cpp_function<RET(ARGS...)> fn, ARGS ...args) {

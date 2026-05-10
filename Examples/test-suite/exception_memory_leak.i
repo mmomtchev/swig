@@ -105,13 +105,13 @@
   }
 
   struct ThrowingCtorString {
-    ThrowingCtorString(const std::string &) { throw (int)1; };
+    ThrowingCtorString(const std::string &) { throw (int)1; }
   };
   struct ThrowingCtorChar {
-    ThrowingCtorChar(const char *) { throw (int)2; };
+    ThrowingCtorChar(const char *) { throw (int)2; }
   };
   struct ThrowingCtorOverloaded {
-    ThrowingCtorOverloaded(const std::string &) { throw (int)3; };
-    ThrowingCtorOverloaded(int) { throw (int)4; };
+    ThrowingCtorOverloaded(const std::string &) { throw (int)3; }
+    ThrowingCtorOverloaded(int) { throw (int)4; }
   };
 %}
