@@ -101,15 +101,15 @@ find_package (BISON 3.5 REQUIRED)
 # --------------
 
 include_directories (
-    ${PROJECT_BINARY_DIR}/Source/Include
-    ${PROJECT_BINARY_DIR}/Source/CParse
-    ${PROJECT_SOURCE_DIR}/Source/Doxygen
     ${SWIG_SOURCE_DIR}/CParse
     ${SWIG_SOURCE_DIR}/Include
     ${SWIG_SOURCE_DIR}/DOH
     ${SWIG_SOURCE_DIR}/Swig
     ${SWIG_SOURCE_DIR}/Preprocessor
     ${SWIG_SOURCE_DIR}/Modules
+    ${PROJECT_BINARY_DIR}/Source/Include
+    ${PROJECT_BINARY_DIR}/Source/CParse
+    ${PROJECT_SOURCE_DIR}/Source/Doxygen
 )
 
 # generate the parser source code (depends on bison)
@@ -172,7 +172,8 @@ enable_testing ()
 add_test (NAME cmd_version COMMAND swig -version)
 add_test (NAME cmd_pcreversion COMMAND swig -pcreversion)
 add_test (NAME cmd_swiglib COMMAND swig -swiglib)
-if (SWIG_RELOCATABLE)
+add_test(NAME cmd_external_runtime COMMAND swig -external-runtime ext_rt.h)
+if(SWIG_RELOCATABLE)
   get_filename_component(SWIG_EXE_DIR swig DIRECTORY)
   # credits to https://gitlab.kitware.com/cmake/cmake/-/issues/18580#note_483128
   string (REGEX REPLACE "([][+.*()^])" "\\\\\\1" SWIG_LIB_REGEX "${SWIG_EXE_DIR}/${SWIG_LIB}")
@@ -182,6 +183,5 @@ endif()
 # match both / and \
 string(REPLACE "/" "[\\/\\\\]" SWIG_LIB_REGEX "${SWIG_LIB_REGEX}")
 set_property(TEST cmd_swiglib PROPERTY PASS_REGULAR_EXPRESSION "${SWIG_LIB_REGEX}")
-add_test(NAME cmd_external_runtime COMMAND swig -external-runtime ext_rt.h)
 set_tests_properties(cmd_external_runtime PROPERTIES ENVIRONMENT "SWIG_LIB=${PROJECT_SOURCE_DIR}/Lib")
 

@@ -187,13 +187,13 @@ jobs:
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
-          COMPILER: emscripten
+          compiler: emscripten
           cacheid: -napi-wasm
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
-          COMPILER: emscripten
+          compiler: emscripten
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: async+lock
           cacheid: -napi-wasm-async
@@ -566,7 +566,6 @@ jobs:
       CPPSTD: ${{ matrix.CPPSTD }}
       CPPFLAGS: ${{ matrix.CPPFLAGS }}
       PY_ABI_VER: ${{ matrix.PY_ABI_VER }}
-      COMPILER: ${{ matrix.compiler || 'gcc' }}
       ASAN: ${{ matrix.ASAN }}
       RELOCATABLE: ${{ matrix.RELOCATABLE }}
 

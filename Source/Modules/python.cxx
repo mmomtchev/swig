@@ -885,7 +885,7 @@ public:
     Printf(f_wrappers, "#ifdef __cplusplus\n");
     Printf(f_wrappers, "}\n");
     Printf(f_wrappers, "#endif\n");
-  
+
     if (have_fast_proxy_static_member_method_callback)
       Printf(f_init, "  SWIG_Python_FixMethods(SwigMethods_proxydocs, swig_const_table, swig_types, swig_type_initial);\n\n");
 

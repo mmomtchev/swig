@@ -42,8 +42,13 @@ else
 	CC="gcc"
 	CXX="g++"
 fi
+[ -z "$TARGET_CC" ] && TARGET_CC="$CC"
+[ -z "$TARGET_CXX" ] && TARGET_CXX="$CXX"
 update_env 'CC' "$CC"
 update_env 'CXX' "$CXX"
+update_env 'TARGET_CC' "$TARGET_CC"
+update_env 'TARGET_CXX' "$TARGET_CXX"
+
 ls -la $(which $CC) $(which $CXX)
 $CC --version
 $CXX --version
@@ -128,10 +133,10 @@ case "$SWIGLANG" in
 				else
 					$RETRY npm install -g node-addon-api@8.1.0
 				fi
-				if [ "$COMPILER" == "emscripten" ]; then
+				if [ "$compiler" == "emscripten" ]; then
 				        $RETRY npm install --ignore-scripts -g emnapi @emnapi/runtime
 				fi
-				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript @types/node
+				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript@5 @types/node
 				;;
 			"jsc")
 				$RETRY sudo apt-get -qq install libjavascriptcoregtk-${VER}-dev

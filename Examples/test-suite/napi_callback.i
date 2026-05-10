@@ -128,7 +128,6 @@ std::string GiveMeFive(std::function<std::string(int, const std::string &)> give
 std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &)> giver);
 std::string GiveMeFive_C(std::string (*giver)(void *, int, const std::string &), void *context);
 void JustCall(std::function<void()> cb);
-void PermanentWithoutDelete(std::function<void()> cb);
 %}
 
 // The function definitions -> goes to the code
@@ -155,16 +154,55 @@ std::string GiveMeFiveRepeats(std::function<std::string(int, const std::string &
     r += giver(i, ".");
   return r;
 }
+%}
 
-void PermanentWithoutDelete(std::function<void()> cb) {
-  // This leaks memory, in the real world this function will have to be stored
-  // somewhere - the environment instance context is a very good choice.
+// This is a very particular case:
+// C/C++ wants a permanent pointer to a function
+// that will never be freed and the user of the module
+// will pass a JavaScript function that will be forever
+// protected from the GC.
+// We cannot store this descriptor in a static variable since
+// the resulting module won't be compatible with worker_threads.
+// Thus, we store this descriptor in the module instance context.
+// Refer to proj.js for a real-world case where this is used to
+// pass a JS callback to be used by PROJ for logging.
+
+// Declare a structure to hold the instance data
+%inline %{
+struct napi_callback_instance_data {
+  std::function<void()> cb;
+};
+%}
+
+// Automatically produce instance_data arguments
+%typemap(in, numinputs=0) napi_callback_instance_data *context {
+  $1 = static_cast<napi_callback_instance_data *>(SWIG_NAPI_GetInstanceData(env));
+}
+
+// The function exposed to JS
+%inline %{
+void PermanentWithoutDelete(napi_callback_instance_data *context, std::function<void()> cb);
+%}
+
+// Add this structure to the module instance context
+%init {
+  auto *instance_data = new napi_callback_instance_data;
+  SWIG_NAPI_SetInstanceData(env, instance_data);
+  env.AddCleanupHook([instance_data] () {
+    delete instance_data;
+  });
+}
+
+// Store the permanent function in the module instance context
+%insert("wrapper") %{
+void PermanentWithoutDelete(napi_callback_instance_data *context, std::function<void()> cb) {
   using cb_t = decltype(cb);
-  auto *copy = new cb_t{cb};
+  context->cb = cb;
   JustCall_C([](void *data) -> void {
+      auto *instance_data = reinterpret_cast<napi_callback_instance_data *>(data);
       auto cb_ = reinterpret_cast<cb_t*>(data);
-      (*cb_)();
+      instance_data->cb();
     },
-    copy);
+    context);
 }
 %}

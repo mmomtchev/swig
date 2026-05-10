@@ -1341,7 +1341,7 @@ static int name_match_nameobj(Hash *rn, Node *n) {
           // Special case of empty string matches everything that is not null
           match = 1;
         } else {
-          match = regexmatch ? name_regexmatch_value(n, kwval, nval)   : name_match_value(kwval, nval);
+          match = regexmatch ? name_regexmatch_value(n, kwval, nval) : name_match_value(kwval, nval);
         }
 #ifdef SWIG_DEBUG
         Printf(stdout, "val %s %s %d %d \n", nval, kwval, match, ilen);

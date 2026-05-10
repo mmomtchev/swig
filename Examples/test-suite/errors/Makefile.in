@@ -81,4 +81,4 @@ STRIP_SRCDIR = sed -e 's|\\|/|g' -e 's|^$(SRCDIR)||'
 
 clean:
 	$(MAKE) -f $(top_builddir)/$(EXAMPLES)/Makefile SRCDIR='$(SRCDIR)' python_clean
-	@rm -f *.$(ERROR_EXT) *.py
+	@rm -f *.$(ERROR_EXT) *.py *.d.ts

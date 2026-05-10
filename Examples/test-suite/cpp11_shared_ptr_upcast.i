@@ -16,12 +16,22 @@
 #define SHARED_PTR_WRAPPERS_IMPLEMENTED
 #endif
 
+// For JavaScript, only Node-API supports shared pointers
+#if defined(SWIGJAVASCRIPT)
+#if defined(SWIG_JAVASCRIPT_NAPI)
+#define SHARED_PTR_WRAPPERS_IMPLEMENTED
+%constant int SWIG_NODE_API = 1;
+#else
+%constant int SWIG_NODE_API = 0;
+#endif
+#endif
+
 #if defined(SHARED_PTR_WRAPPERS_IMPLEMENTED)
 %include <std_shared_ptr.i>
 #endif
 
-// For JavaScript, only Node-API supports shared pointers and
-// it requires this for transparent conversion of std::vector and std::map
+// Node-API has some additional features
+// and it requires this for transparent conversion of std::vector and std::map
 // Additionally, std::map can be automatically converted only if all the
 // keys are strings
 #if defined(SWIGJAVASCRIPT) && defined(SWIG_JAVASCRIPT_NAPI)
