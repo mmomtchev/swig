@@ -302,15 +302,8 @@ jobs:
           VER: '2.2'
         - SWIGLANG: ruby
           VER: '2.3'
-# Ruby 2.4 and 2.6 both fail with ubuntu-22.04 with error:
-#   Error running '__rvm_make -j4',
-#   please read /usr/share/rvm/log/1740710476_ruby-3.0.0/make.log
-#        - SWIGLANG: ruby
-#          VER: '2.4'
         - SWIGLANG: ruby
           VER: '2.5'
-#        - SWIGLANG: ruby
-#          VER: '2.6'
         - SWIGLANG: ruby
           VER: '2.7'
         - SWIGLANG: ruby
@@ -566,6 +559,7 @@ jobs:
       CPPSTD: ${{ matrix.CPPSTD }}
       CPPFLAGS: ${{ matrix.CPPFLAGS }}
       PY_ABI_VER: ${{ matrix.PY_ABI_VER }}
+      SKIP_CACHED_TOOLS: ${{ matrix.SKIP_CACHED_TOOLS }}
       ASAN: ${{ matrix.ASAN }}
       RELOCATABLE: ${{ matrix.RELOCATABLE }}
 

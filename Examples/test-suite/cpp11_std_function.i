@@ -1,8 +1,5 @@
 %module cpp11_std_function
 
-// function is a reserved word in many languages
-%warnfilter(SWIGWARN_PARSE_KEYWORD);
-
 %header %{
 #include <functional>
 #include <string>
@@ -10,7 +7,7 @@
 %}
 
 %include <std_string.i>
-%include <std/std_function.i>
+%include <std_function.i>
 %include <exception.i>
 
 %exception {
@@ -21,24 +18,28 @@
     }
 }
 
-%rename(cpp_function_string_int_const_string) std::function<std::string(int, const std::string &)>;
-
-std::function<std::string(int, const std::string &)> return_function(int ask_for_pass);
+std::function<bool(int, const std::string &)> pass_checker(int pass);
 
 %header %{
-extern "C++" std::function<std::string(int, const std::string &)> return_function(int ask_for_pass);
+extern "C++" std::function<bool(int, const std::string &)> pass_checker(int pass);
 %}
 
 %wrapper %{
-extern "C++" std::function<std::string(int, const std::string &)> return_function(int ask_for_pass) {
-  return [ask_for_pass](int passcode, const std::string &name) -> std::string {
-    if (passcode == ask_for_pass) {
-      return name + " passed the test";
-    }
-    throw std::runtime_error{"Test failed"};
+extern "C++" std::function<bool(int, const std::string &)> pass_checker(int pass) {
+  return [pass](int passcode, const std::string &name) -> bool {
+    return passcode == pass && name == "Petka";
   };
 }
 %}
 
-%template(cpp_function_string_int_const_string) std::function<std::string(int, const std::string &)>;
-%template(call_function) _SWIG_call_std_function<std::string, int, const std::string &>;
+%template(cpp_lambda) std::function<bool(int, const std::string &)>;
+
+// Expose a wrapper function to call the functor
+%inline %{
+template <typename RET, typename... ARGS>
+RET call_std_function(std::function<RET(ARGS...)> fn, ARGS ...args) {
+  return fn(args...);
+}
+%}
+
+%template(call_function) call_std_function<bool, int, const std::string &>;
