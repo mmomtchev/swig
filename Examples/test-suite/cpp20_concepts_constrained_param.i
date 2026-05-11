@@ -78,10 +78,9 @@ public:
 %}
 
 // 9. Concept declared only in a raw '%{ %}' block - SWIG does NOT parse it but
-//    the C++ compiler does.  SWIG warns about the unresolved type-constraint
-//    (suppressed with %warnfilter targeting the primary template by name); the
-//    parm is still remapped to 'typename T' but warns. The wrapper still compiles
-//    and runs because 'Hashable' is in scope at wrapper compile time.
+//    the C++ compiler does.  The parm is silently remapped to 'typename T' and
+//    the wrapper compiles and runs because 'Hashable' is in scope at
+//    wrapper compile time.
 %{
 #include <concepts>
 
@@ -89,7 +88,6 @@ template<typename T>
 concept Hashable = std::integral<T>;
 %}
 
-%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) tag;
 %inline %{
 template<Hashable T>
 T tag(T x) { return x + T(1); }
@@ -99,8 +97,9 @@ T tag(T x) { return x + T(1); }
 //     before the parameter name.  Equivalent to 'requires Concept<T, args...>'.
 
 // 10a. STL template-id concept-id.  'std::convertible_to' is declared in
-//      <concepts> which SWIG does not parse, so the parm is remapped and warns.
-%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) to_int;
+//      <concepts> which SWIG does not parse, but the parm is silently remapped
+//      and the wrapper compiles because the concept is visible to the C++
+//      compiler.
 %inline %{
 template<std::convertible_to<int> T>
 int to_int(T x) { return (int)x; }
@@ -110,7 +109,6 @@ int to_int(T x) { return (int)x; }
 //      classifier treats the template parameter list of a class template the
 //      same as for a function template).  'get()' returns int to exercise the
 //      'T -> int' conversion the 'std::convertible_to<int>' constraint asserts.
-%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) ConvertibleCrate;
 %inline %{
 template<std::convertible_to<int> T>
 class ConvertibleCrate {

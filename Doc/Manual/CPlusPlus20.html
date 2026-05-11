@@ -519,14 +519,13 @@ template&lt;Numeric T&gt; class Box { T v; };                               // c
 
 <p>
 Wrapping procedes by remapping the template parameter from <tt>Numeric T</tt> to <tt>typename T</tt>.
-However, if the concept definition has not been
-parsed by SWIG, a warning is emitted but only if the template is instantiated
-via <tt>%template</tt>.
-The generated wrapper emits the templated call literally
-and the C++ compiler resolves the constraint when compiled the generated wrapper code.
-SWIG always tries a best effort approach to wrapping partial type information and this
-approach usually works even in the absence of missing concept definitions.
-Simple example:
+If the concept definition has not been parsed by SWIG the remap is still
+applied silently, since SWIG always tries a best effort approach to wrapping
+partial type information.
+The generated wrapper emits the templated call literally and the C++ compiler
+resolves the constraint when compiling the generated wrapper code.
+For example, the following wraps cleanly even though SWIG has not seen the
+declaration of <tt>Numeric</tt>:
 </p>
 
 <div class="code">
@@ -537,23 +536,6 @@ T cube(T x) { return x * x * x; }
 %template(cube_int) cube&lt;int&gt;;
 </pre>
 </div>
-
-<p>
-The resulting warning is:
-</p>
-
-<div class="shell">
-<pre>
-example.i:4: Warning 332: In instantiation of template 'cube&lt; int &gt;' with name 'cube_int',
-example.i:2: Warning 332: nothing known about type-constraint 'Numeric' - treated as 'typename'.
-</pre>
-</div>
-
-<p>
-The first line points at the <tt>%template</tt> directive that triggered the
-warning; the second line points at the parameter list where the unresolved
-type-constraint appeared.
-</p>
 
 <p>
 The examples above all use single parameter concepts, but a type-constraint may

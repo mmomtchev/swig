@@ -7,6 +7,12 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-11: wsfulton
+            C++20: warning 332 (unresolved type-constraint in a templated
+            parameter list) is no longer emitted. The remap to 'typename T' is
+            still applied silently, so wrappers continue to compile when the
+            concept definition is visible only to the C++ compiler.
+
 2026-05-10: wsfulton
             C++20: template parameters with a type-constraint now accept a
             template-id concept-id as the constraint, the form most often seen with

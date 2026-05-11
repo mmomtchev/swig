@@ -1,2 +1,0 @@
-cpp_concept_not_visible.i:17: Warning 332: In instantiation of template 'cube< int >' with name 'cube_int',
-cpp_concept_not_visible.i:15: Warning 332: nothing known about type-constraint 'Numeric' - treated as 'typename'.

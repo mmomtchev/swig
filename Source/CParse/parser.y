@@ -3296,9 +3296,16 @@ template_directive: SWIGTEMPLATE LPAREN idstringopt RPAREN idcolonnt LESSTHAN va
 			  }
                           add_symbols_copy(templnode);
 
-                          /* Warn about any C++20 type-constraint in the template whose concept-id SWIG could not resolve
-                           * during earlier parsing. The early parsing remapped the parm from 'Concept T' to 'typename T'.
-                           * The warning is deferred to here when the template is instantiated. */
+                          /* Warning 332 (WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) for any C++20 type-constraint in the
+                           * template whose concept-id SWIG could not resolve during earlier parsing is intentionally
+                           * disabled below.  SWIG's template substitution machinery (templ.c) is name based: a
+                           * templateparm's name is replaced throughout the body by the valparm's value/type regardless
+                           * of whether the templateparm was classified as 'typename T' or as a non-type parm.  The
+                           * 'constraint:unresolved' remap of 'Concept T' to 'typename T' therefore has no observable
+                           * effect on the generated wrapper. The warning would just result in unnecessary warnings about
+                           * any missing typedef info for NNTP parameters, that wouldn't make any difference to the generated
+                           * code if addressed.
+                           *
                           {
                             Parm *tp = Getattr(nn, "templateparms");
                             SWIG_WARN_NODE_BEGIN(templnode);
@@ -3319,6 +3326,7 @@ template_directive: SWIGTEMPLATE LPAREN idstringopt RPAREN idcolonnt LESSTHAN va
                             }
                             SWIG_WARN_NODE_END(templnode);
                           }
+                          */
 
 			  if (Equal(nodeType(templnode), "classforward") && !(GetFlag(templnode, "feature:ignore") || GetFlag(templnode, "hidden"))) {
 			    SWIG_WARN_NODE_BEGIN(templnode);
