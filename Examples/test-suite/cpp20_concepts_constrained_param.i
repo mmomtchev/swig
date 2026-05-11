@@ -79,9 +79,9 @@ public:
 
 // 9. Concept declared only in a raw '%{ %}' block - SWIG does NOT parse it but
 //    the C++ compiler does.  SWIG warns about the unresolved type-constraint
-//    (suppressed with the pragma below); the parm is remapped to 'typename T'
-//    with a 'constraint:unresolved' marker; the wrapper still compiles and
-//    runs because 'Hashable' is in scope at wrapper compile time.
+//    (suppressed with %warnfilter targeting the primary template by name); the
+//    parm is still remapped to 'typename T' but warns. The wrapper still compiles
+//    and runs because 'Hashable' is in scope at wrapper compile time.
 %{
 #include <concepts>
 
@@ -89,12 +89,75 @@ template<typename T>
 concept Hashable = std::integral<T>;
 %}
 
-#pragma SWIG nowarn=SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF
+%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) tag;
 %inline %{
 template<Hashable T>
 T tag(T x) { return x + T(1); }
 %}
-#pragma SWIG nowarn=
+
+// 10. Template-id concept-id - the concept-id itself carries template arguments
+//     before the parameter name.  Equivalent to 'requires Concept<T, args...>'.
+
+// 10a. STL template-id concept-id.  'std::convertible_to' is declared in
+//      <concepts> which SWIG does not parse, so the parm is remapped and warns.
+%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) to_int;
+%inline %{
+template<std::convertible_to<int> T>
+int to_int(T x) { return (int)x; }
+%}
+
+// 10b. STL template-id concept-id on a class template (verifies the
+//      classifier treats the template parameter list of a class template the
+//      same as for a function template).  'get()' returns int to exercise the
+//      'T -> int' conversion the 'std::convertible_to<int>' constraint asserts.
+%warnfilter(SWIGWARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF) ConvertibleCrate;
+%inline %{
+template<std::convertible_to<int> T>
+class ConvertibleCrate {
+  T v;
+public:
+  ConvertibleCrate() : v(T()) {}
+  ConvertibleCrate(T x) : v(x) {}
+  int get() const { return (int)v; }
+};
+%}
+
+%inline %{
+// 10c. User defined 2-parameter concept used in template-id form.  The
+//      classifier resolves 'Pair' and remaps the parm to 'typename T' plus a
+//      'concept-id' constraint atom carrying the full 'Pair<(int)>' string.
+template<typename T, typename U>
+concept Pair = std::convertible_to<T, U>;
+
+template<Pair<int> T>
+int first_int(T x) { return (int)x; }
+
+// 10d. Variadic template-id concept-id pack.
+template<Pair<int>... Ts>
+int count_pair(Ts...) { return int(sizeof...(Ts)); }
+
+// 10e. Default template argument with a template-id concept-id.
+template<Pair<int> T = double>
+int with_default(T x) { return (int)x; }
+
+// 10f. Constrained class template with a template-id concept-id.
+template<Pair<int> T>
+class Crate {
+  T v;
+public:
+  Crate() : v(T()) {}
+  Crate(T x) : v(x) {}
+  T get() const { return v; }
+};
+
+// 10g. ::-qualified template-id concept-id.
+namespace nest {
+  template<typename T, typename U>
+  concept NestPair = std::convertible_to<T, U>;
+}
+template<nest::NestPair<int> T>
+int nested_pair(T x) { return (int)x; }
+%}
 
 %template(cube_int) cube<int>;
 %template(cube_double) cube<double>;
@@ -112,3 +175,13 @@ T tag(T x) { return x + T(1); }
 %template(BoxDouble) Box<double>;
 %template(FloatBoxFloat) FloatBox<float>;
 %template(tag_int) tag<int>;
+%template(to_int_d)         to_int<double>;
+%template(ConvertibleCrateDouble)   ConvertibleCrate<double>;
+%template(first_int_d)      first_int<double>;
+%template(count_pair_1)     count_pair<int>;
+%template(count_pair_3)     count_pair<int, double, char>;
+%template(with_default_int) with_default<int>;
+%template(with_default_d)   with_default<double>; // TODO exact argument count needed. Does not work: with_default<>;
+%template(CrateInt)         Crate<int>;
+%template(CrateDouble)      Crate<double>;
+%template(nested_pair_d)    nested_pair<double>;

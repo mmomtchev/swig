@@ -7,6 +7,16 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-10: wsfulton
+            C++20: template parameters with a type-constraint now accept a
+            template-id concept-id as the constraint, the form most often seen with
+            STL concepts like 'std::convertible_to', 'std::same_as', 'std::derived_from'
+            or 'std::predicate'. Examples:
+
+              template<std::convertible_to<int> T> int to_int(T x);
+              template<typename T, typename U> concept Pair = std::convertible_to<T, U>;
+              template<Pair<int> T>                int first_int(T x);
+
 2026-05-09: wsfulton
             C++20: parse abbreviated function templates with a constrained auto return
             type, including the trailing return form:
@@ -34,9 +44,10 @@ Version 4.5.0 (in progress)
               template<Numeric T> T cube(T x) { return x * x * x; }
               %template(cube_int) cube<int>;
 
-            If the type-constraint identifier has not been parsed by SWIG a warning is issued:
+            If the type-constraint identifier has not been parsed by SWIG warning 332 is issued:
 
-              Nothing known about type-constraint 'Numeric'. Treated as 'typename'.
+              In instantiation of template 'cube< int >' with name 'cube_int',
+              nothing known about type-constraint 'Numeric' - treated as 'typename'.
 
             The warning only appears if the concept is used via a %template instantiation.
 

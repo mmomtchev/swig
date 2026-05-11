@@ -46,3 +46,30 @@ swig_check(fb.get(), 1.25)
 
 # 9. Concept not parsed by SWIG.
 swig_check(tag_int(41), 42)
+
+# 10a. std lib template-id concept-id.
+swig_check(to_int_d(3.5), 3)
+
+# 10b. std lib template-id concept-id on a class template.
+cc = ConvertibleCrateDouble(4.25)
+swig_check(cc.get(), 4)
+
+# 10c. User defined 2-param concept in template-id form.
+swig_check(first_int_d(3.5), 3)
+
+# 10d. Variadic template-id concept-id pack.
+swig_check(count_pair_1(1), 1)
+swig_check(count_pair_3(1, 2.0, 'x'), 3)
+
+# 10e. Default template argument paired with a template-id concept-id.
+swig_check(with_default_int(42), 42)
+swig_check(with_default_d(3.5), 3)
+
+# 10f. Constrained class template with a template-id concept-id.
+c = CrateInt(5)
+swig_check(c.get(), 5)
+cd = CrateDouble(3.25)
+swig_check(cd.get(), 3.25)
+
+# 10g. ::-qualified template-id concept-id.
+swig_check(nested_pair_d(7.5), 7)

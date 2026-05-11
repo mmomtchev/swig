@@ -412,21 +412,26 @@ static int is_operator(String *name) {
 
 /* Classifier for the 'type' attribute of a parm reaching the templateparameter
  * 'parm' fallback with a name set.  Distinguishes a C++20 type-constraint
- * ('template<Numeric T>' / 'template<Printable... Ts>') from a real non-type
- * template parameter and from an undeclared identifier.  The "candidate
- * concept-id" test (below) accepts a possibly variadic prefixed scope qualified
- * identifier that names neither a built in nor an enum nor a template-id and
- * carries no SwigType decoration (where 'type' contains the template parameters
- * in the examples below):
+ * ('template<Numeric T>' / 'template<Printable... Ts>' / 'template<Pair<int> T>')
+ * from a real non-type template parameter and from an undeclared identifier.
+ * The "candidate concept-id" test (below) accepts a possibly variadic prefixed
+ * scope qualified identifier (with or without template arguments) that names
+ * neither a built in primitive nor an enum and carries no SwigType decoration (where
+ * 'type' contains the template parameters in the examples below):
  *
- *   TPC_REMAP    candidate and the symbol resolves to a concept
+ *   TPC_REMAP    candidate and the symbol resolves to a concept (for a
+ *                template-id like 'Pair<int>' the bare prefix 'Pair' is the
+ *                symbol that must resolve to a concept)
  *                -> rewrite the parm to 'typename T' (or 'v.typename Ts...')
- *                   and attach a concept-id constraint atom
+ *                   and attach a concept-id constraint atom carrying the full
+ *                   (possibly template-id) concept-id string
  *                Examples:
- *                  template<Numeric T>             T cube(T x);
- *                  template<nest::Integral T>      T half(T x);
- *                  template<Numeric... Ts>         int count(Ts...);
- *   TPC_KEEP     not a candidate, or the symbol resolves to a type
+ *                  template<Numeric T>                  T cube(T x);
+ *                  template<nest::Integral T>           T half(T x);
+ *                  template<Numeric... Ts>              int count(Ts...);
+ *                  template<std::convertible_to<int> T> T as_int(T x);    // template-id is a concept (and SWIG has parsed the concept definition)
+ *                  template<Pair<int> T>                T first_int(T x); // template-id is a concept (not a class)
+ *   TPC_KEEP     not a candidate, or the symbol resolves to a type (non-concept)
  *                (typedef, class, enum) -> leave as a non-type parameter
  *                Examples:
  *                  template<int N>                 int times_n(int x);  // primitive
@@ -434,12 +439,15 @@ static int is_operator(String *name) {
  *                  template<size_t N>              int times_n(int x);  // typedef'd alias
  *                  template<Color C>               int as_int();        // enum
  *                  template<MyClass *P>            void deref();        // decorated
+ *                  template<std::convertible_to<int> T> T as_int(T x);  // template-id is a concept (and SWIG has NOT parsed the concept definition)
+ *                  template<std::array<int,4> A>   int sum_array();     // template-id naming a class (not a concept)
  *   TPC_UNKNOWN  candidate but the symbol is not declared in the current
  *                scope -> the user almost certainly meant a concept that
  *                hasn't been made visible to SWIG - the action remaps anyway but should warn later.
  *                Examples:
- *                  template<Numeric T>         T cube(T x);  // 'Numeric' concept not declared
- *                  template<MisspeltConcept T> T f(T);       // typo - 'MisspeltConcept' unknown
+ *                  template<Numeric T>                  T cube(T x);   // 'Numeric' not declared
+ *                  template<MisspeltConcept T>          T f(T);        // typo
+ *                  template<UndeclaredConcept<int> T>   T g(T);        // template-id, prefix unknown
  */
 enum {
   TPC_KEEP = 0,
@@ -463,12 +471,20 @@ static int classify_template_param_type(const SwigType *type) {
    * T_INT in SwigType_type, so SwigType_isenum() rejects them separately. */
   if (SwigType_type(probe) != T_USER ||
       SwigType_isenum(probe) ||
-      !SwigType_issimple(probe) ||
-      SwigType_istemplate(probe)) {
+      !SwigType_issimple(probe)) {
     Delete(probe);
     return TPC_KEEP;
   }
-  n = Swig_symbol_clookup(probe, 0);
+  /* For a template-id concept-id like 'Pair<(int)>' or 'std::convertible_to<(int)>'
+   * the concept declaration is registered under the bare template prefix.  Look that
+   * up; for a probe that is not a template-id the prefix is the probe itself. */
+  if (SwigType_istemplate(probe)) {
+    String *prefix = SwigType_templateprefix(probe);
+    n = Swig_symbol_clookup(prefix, 0);
+    Delete(prefix);
+  } else {
+    n = Swig_symbol_clookup(probe, 0);
+  }
   templatetype = n ? Getattr(n, "templatetype") : 0;
   if (templatetype && Equal(templatetype, "concept")) {
     verdict = TPC_REMAP;
@@ -3188,27 +3204,6 @@ template_directive: SWIGTEMPLATE LPAREN idstringopt RPAREN idcolonnt LESSTHAN va
 		    n = Swig_cparse_template_locate(idcolonnt, $valparms, symname, tscope);
 		  }
 
-		  /* Warn about any C++20 type-constraint in the template whose concept-id
-		   * SWIG could not resolve during earlier parsing. The early parsing remapped the
-                   * parm to from 'Concept T' to 'typename T'. The warning is deferred to here
-                   * so an unused template referencing an out-of-scope concept does not warn unless
-                   * the user actually instantiates it via %template. */
-		  if (n) {
-		    Parm *tp = Getattr(n, "templateparms");
-		    while (tp) {
-		      if (GetFlag(tp, "constraint:unresolved")) {
-			Node *atom = Getattr(tp, "constraint");
-			String *concept_name = atom ? Getattr(atom, "type") : 0;
-			concept_name = concept_name ? Copy(concept_name) : NewString("<unknown>");
-			Swig_warning(WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF, Getfile(tp), Getline(tp),
-				     "Nothing known about type-constraint '%s'. Treated as 'typename'.\n",
-				     concept_name);
-			Delete(concept_name);
-		      }
-		      tp = nextSibling(tp);
-		    }
-		  }
-
 		  /* Patch the argument types to respect namespaces */
 		  p = $valparms;
 		  while (p) {
@@ -3300,6 +3295,30 @@ template_directive: SWIGTEMPLATE LPAREN idstringopt RPAREN idcolonnt LESSTHAN va
 			    Setattr(templnode, "nested:outer", outer_class);
 			  }
                           add_symbols_copy(templnode);
+
+                          /* Warn about any C++20 type-constraint in the template whose concept-id SWIG could not resolve
+                           * during earlier parsing. The early parsing remapped the parm from 'Concept T' to 'typename T'.
+                           * The warning is deferred to here when the template is instantiated. */
+                          {
+                            Parm *tp = Getattr(nn, "templateparms");
+                            SWIG_WARN_NODE_BEGIN(templnode);
+                            while (tp) {
+                              if (GetFlag(tp, "constraint:unresolved")) {
+                                Node *atom = Getattr(tp, "constraint");
+                                String *concept_name = atom ? Getattr(atom, "type") : 0;
+                                concept_name = concept_name ? Copy(concept_name) : NewString("<unknown>");
+                                Swig_warning(WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF, cparse_file, cparse_line,
+                                             "In instantiation of template '%s' with name '%s',\n",
+                                             Swig_name_str(templnode), Getattr(templnode, "sym:name"));
+                                Swig_warning(WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF, Getfile(nn), Getline(nn),
+                                             "nothing known about type-constraint '%s' - treated as 'typename'.\n",
+                                             SwigType_str(concept_name, 0));
+                                Delete(concept_name);
+                              }
+                              tp = nextSibling(tp);
+                            }
+                            SWIG_WARN_NODE_END(templnode);
+                          }
 
 			  if (Equal(nodeType(templnode), "classforward") && !(GetFlag(templnode, "feature:ignore") || GetFlag(templnode, "hidden"))) {
 			    SWIG_WARN_NODE_BEGIN(templnode);

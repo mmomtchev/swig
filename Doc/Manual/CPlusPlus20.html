@@ -544,24 +544,73 @@ The resulting warning is:
 
 <div class="shell">
 <pre>
-example.i:3: Warning 332: Nothing known about type-constraint 'Numeric'. Treated as 'typename'.
+example.i:4: Warning 332: In instantiation of template 'cube&lt; int &gt;' with name 'cube_int',
+example.i:2: Warning 332: nothing known about type-constraint 'Numeric' - treated as 'typename'.
 </pre>
 </div>
 
 <p>
-Limitation:
+The first line points at the <tt>%template</tt> directive that triggered the
+warning; the second line points at the parameter list where the unresolved
+type-constraint appeared.
 </p>
 
 <p>
-A type-constraint that itself takes template arguments before the
-parameter name (e.g. <tt>template&lt;std::convertible_to&lt;int&gt; T&gt;</tt>)
-is not yet supported as it results in a parse error.
-A workaround is to move the constraint to a <tt>requires</tt>-clause instead:
-<tt>template&lt;typename T&gt; requires std::convertible_to&lt;T, int&gt;</tt>.
+The examples above all use single parameter concepts, but a type-constraint may
+itself be a concept-id with explicit template arguments.  This is the form most
+often seen with the STL and SWIG also supports these two parameter concepts such as
+<tt>std::convertible_to&lt;From, To&gt;</tt>, <tt>std::same_as&lt;T, U&gt;</tt>,
+<tt>std::derived_from&lt;Derived, Base&gt;</tt> and
+<tt>std::predicate&lt;F, Args...&gt;</tt>.
 </p>
 
 <p>
-<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse type constrained template parameters.
+The rule the C++ standard gives is that the constrained template parameter is
+prepended to the list in angle brackets to form the full concept-id, becoming the
+<i>first</i> argument; the arguments written inside the brackets supply the
+remaining arguments.  So the shorthand:
+</p>
+
+<div class="code">
+<pre>
+template&lt;std::convertible_to&lt;int&gt; T&gt;
+T to_int(T x);
+</pre>
+</div>
+
+<p>
+is equivalent to the fully spelt out form:
+</p>
+
+<div class="code">
+<pre>
+template&lt;typename T&gt; requires std::convertible_to&lt;T, int&gt;
+T to_int(T x);
+</pre>
+</div>
+
+<p>
+that is, <tt>T</tt> is constrained to be convertible to <tt>int</tt>.  A
+user defined two parameter concept follows the same rule:
+</p>
+
+<div class="code">
+<pre>
+%inline %{
+template&lt;typename T, typename U&gt;
+concept Pair = std::convertible_to&lt;T, U&gt;;
+
+template&lt;Pair&lt;int&gt; T&gt;        // requires Pair&lt;T, int&gt;
+int first_int(T x) { return (int)x; }
+%}
+
+%template(first_int_d) first_int&lt;double&gt;;
+</pre>
+</div>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse template parameters
+carrying a type-constraint, including the template-id form above.
 </p>
 
 <H3><a name="CPlusPlus20_variable_templates">10.2.7 Variable templates initialised from a requires-expression</a></H3>

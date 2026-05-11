@@ -72,5 +72,42 @@ public class cpp20_concepts_constrained_param_runme {
     // 9. Concept not parsed by SWIG.
     if (cpp20_concepts_constrained_param.tag_int(41) != 42)
       throw new RuntimeException("tag_int");
+
+    // 10a. STL template-id concept-id.
+    if (cpp20_concepts_constrained_param.to_int_d(3.5) != 3)
+      throw new RuntimeException("to_int_d");
+
+    // 10b. STL template-id concept-id on a class template.
+    ConvertibleCrateDouble cc = new ConvertibleCrateDouble(4.25);
+    if (cc.get() != 4)
+      throw new RuntimeException("ConvertibleCrateDouble.get");
+
+    // 10c. User defined 2-param concept in template-id form.
+    if (cpp20_concepts_constrained_param.first_int_d(3.5) != 3)
+      throw new RuntimeException("first_int_d");
+
+    // 10d. Variadic template-id concept-id pack.
+    if (cpp20_concepts_constrained_param.count_pair_1(1) != 1)
+      throw new RuntimeException("count_pair_1");
+    if (cpp20_concepts_constrained_param.count_pair_3(1, 2.0, 'x') != 3)
+      throw new RuntimeException("count_pair_3");
+
+    // 10e. Default template argument paired with a template-id concept-id.
+    if (cpp20_concepts_constrained_param.with_default_int(42) != 42)
+      throw new RuntimeException("with_default_int");
+    if (cpp20_concepts_constrained_param.with_default_d(3.5) != 3)
+      throw new RuntimeException("with_default_d");
+
+    // 10f. Constrained class template with a template-id concept-id.
+    CrateInt c = new CrateInt(5);
+    if (c.get() != 5)
+      throw new RuntimeException("CrateInt.get");
+    CrateDouble cd = new CrateDouble(3.25);
+    if (cd.get() != 3.25)
+      throw new RuntimeException("CrateDouble.get");
+
+    // 10g. ::-qualified template-id concept-id.
+    if (cpp20_concepts_constrained_param.nested_pair_d(7.5) != 7)
+      throw new RuntimeException("nested_pair_d");
   }
 }
