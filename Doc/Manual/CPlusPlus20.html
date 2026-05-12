@@ -162,7 +162,7 @@ return type:
 
 <div class="code">
 <pre>
-Numeric auto half(int x) -&gt; int { return x / 2; }                   // wrappable
+Numeric auto half(int x) -&gt; int { return x / 2; }                    // wrappable
 Numeric auto cube_constrained(Sized auto x) -&gt; int { return x*x*x; } // wrappable
 Numeric auto times2(int x) { return x * 2; }                         // ignored with warning
 Numeric auto times3(int x);                                          // ignored with warning
@@ -170,7 +170,65 @@ Numeric auto times3(int x);                                          // ignored 
 </div>
 
 <p>
-<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse and support abbreviated function templates with <tt>auto</tt> parameters, including the constrained auto form in both parameter and return type positions.
+The <tt>auto</tt> parameter form combines freely with an explicit
+<tt>template&lt;...&gt;</tt> template parameter list.  Per the C++20
+standard each <tt>auto</tt> parameter introduces a distinct invented
+type template parameter that is appended to the explicit template
+parameter list.
+When instantiating with <tt>%template</tt> the user supplies one
+argument for each parameter in order - first the explicit parameters,
+then one for each <tt>auto</tt> parameter in declaration order:
+</p>
+
+<div class="code">
+<pre>
+%include &lt;std_string.i&gt;
+
+%inline %{
+#include &lt;string&gt;
+
+template&lt;typename T&gt;
+T tag(T prefix, auto count) { return prefix + std::to_string(count); }
+%}
+
+%template(tag_si) tag&lt;std::string, int&gt;;
+</pre>
+</div>
+
+<p>
+Above, <tt>tag</tt> has two template parameters: the explicit
+<tt>T</tt> and an invented type template parameter for the
+<tt>auto</tt> parameter.  The <tt>%template</tt> arguments
+<tt>&lt;std::string, int&gt;</tt> bind them in that order, so
+<tt>T</tt> becomes <tt>std::string</tt> (the type of <tt>prefix</tt>)
+and the invented parameter becomes <tt>int</tt> (the type of
+<tt>count</tt>).  Calling <tt>tag_si("v", 3)</tt> returns
+<tt>"v3"</tt>. Variadic packs, type-constraints
+and trailing return types all mix the same way.
+</p>
+
+<p>
+The <tt>auto</tt> placeholder may carry the usual parameter decorations -
+reference, pointer, forwarding reference, and CV-qualifiers.
+</p>
+
+<div class="code">
+<pre>
+int h(auto&amp; x);                   // reference to invented type
+int i(auto* x);                   // pointer to invented type
+int j(auto&amp;&amp; x);                  // forwarding reference
+int k(const auto x);              // const-qualified by value
+int l(const auto&amp; x);             // const reference
+int m(Numeric auto&amp; x);           // constrained reference
+int n(const Numeric auto&amp; x);     // const-qualified constrained reference
+
+template&lt;typename T&gt;
+T o(T x, const auto&amp; y);          // decorated auto mixed with explicit head
+</pre>
+</div>
+
+<p>
+<b>Compatibility note:</b> SWIG-4.5.0 is the first version to parse and support abbreviated function templates with <tt>auto</tt> parameters, including the constrained auto form in both parameter and return type positions, mixing with an explicit template parameter list, and CV-qualifier / reference / pointer decorations on the <tt>auto</tt> placeholder.
 </p>
 
 <H3><a name="CPlusPlus20_concepts">10.2.5 Concepts and requires-clauses</a></H3>
@@ -179,8 +237,8 @@ Numeric auto times3(int x);                                          // ignored 
 <p>
 SWIG provides support for parsing C++20 <tt>concept</tt> declarations
 and <tt>requires</tt>-clauses, in both the trailing position (after the
-parameter list) and the prefix position (between the template head and
-the declarator).  Constraints are accepted on function templates, class
+parameter list) and the prefix position (between the template parameter
+list and the declarator).  Constraints are accepted on function templates, class
 templates and member function templates; both constructs are consumed by
 the parser and a constrained template wraps as if it were unconstrained.
 This is sufficient for SWIG to accept headers that use concepts to
@@ -290,7 +348,7 @@ T add_same(T a, T b) requires AddableSame&lt;T&gt; {
 
 <p>
 A class template can carry a prefix <tt>requires</tt>-clause on its
-template head; the constraint propagates to every instantiation:
+template parameter list; the constraint propagates to every instantiation:
 </p>
 
 <div class="code">
@@ -371,8 +429,8 @@ T accumulate(T a, T b) { return a + b; }
 
 <p>
 A class template can have a structural partial specialization (such as
-<tt>T</tt> against <tt>T*</tt>) whose template head additionally carries
-a <tt>requires</tt>-clause.  SWIG selects between primary and partial
+<tt>T</tt> against <tt>T*</tt>) whose template parameter list additionally
+carries a <tt>requires</tt>-clause.  SWIG selects between primary and partial
 spec on the structural pattern alone; the <tt>requires</tt>-clause is
 captured but does not participate in selection.  The two specs wrap as
 distinct types with their own method sets:

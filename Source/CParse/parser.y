@@ -497,21 +497,12 @@ static int classify_template_param_type(const SwigType *type) {
   return verdict;
 }
 
-/* Returns the concept-id portion of a 'Concept auto' type string, or NULL if the type is not an abbreviated template parm. */
-static String *abbreviated_template_concept(SwigType *ty) {
-  int n;
-  if (!ty) return 0;
-  if (Equal(ty, "auto")) return 0;
-  n = Len(ty);
-  if (n < 5) return 0;
-  if (Strncmp(Char(ty) + n - 5, " auto", 5) != 0) return 0;
-  return NewStringWithSize(Char(ty), n - 5);
-}
-
-/* If the cdecl 'n' has any parameter whose type is "auto" or "Concept auto" (a C++20 abbreviated function template) replace
- * each such parm with an invented type template parameter (named "__dummy_auto_<N>__") and convert 'n' to a template node
+/* If the cdecl 'n' has any parameter whose type is 'auto' or 'Concept auto' (a C++20 abbreviated function template) replace
+ * each such parm with an invented type template parameter (named '__dummy_auto_<N>__') and convert 'n' to a template node
  * carrying those typenames as templateparms.  When a concept type-constraint is present, attach it as a 'constraint' attribute
  * on the invented template parm. This lets the existing %template machinery work for abbreviated function templates.
+ * Detection uses SwigType_isauto, which looks through any decoration prefix and recognises both the bare 'auto' base form and
+ * the C++20 'auto.c(<id>)' constrained form.  The concept-id (if any) is read via SwigType_concept_name.
  * Returns 1 if a transformation happened, 0 otherwise. */
 static int promote_abbreviated_template(Node *n) {
   ParmList *parms = Getattr(n, "parms");
@@ -526,7 +517,7 @@ static int promote_abbreviated_template(Node *n) {
 
   for (p = parms; p; p = nextSibling(p)) {
     SwigType *ty = Getattr(p, "type");
-    if (ty && (Equal(ty, "auto") || abbreviated_template_concept(ty)))
+    if (SwigType_isauto(ty))
       auto_count++;
   }
 
@@ -535,22 +526,24 @@ static int promote_abbreviated_template(Node *n) {
 
   for (p = parms; p; p = nextSibling(p)) {
     SwigType *ty = Getattr(p, "type");
-    if (!ty)
-      continue;
-    String *concept_name = abbreviated_template_concept(ty);
-    if (!Equal(ty, "auto") && !concept_name)
+    String *concept_name;
+    if (!ty || !SwigType_isauto(ty))
       continue;
     {
       String *invented_name = NewStringf("__dummy_auto_%d__", auto_cnt++);
       Parm *tp = NewParmWithoutFileLineInfo(NewString("typename"), invented_name);
       Setfile(tp, Getfile(n));
       Setline(tp, Getline(n));
+      concept_name = SwigType_concept_name(ty);
       if (concept_name) {
         Node *atom = Constraint_new_atom("concept-id");
         Setattr(atom, "type", concept_name);
         Setattr(tp, "constraint", atom);
       }
-      Setattr(p, "type", Copy(invented_name));
+      /* Replace the 'auto' placeholder (and any 'c(<id>)' base) with the invented name,
+       * preserving outer decoration so 'r.auto' -> 'r.__dummy_auto_N__',
+       * 'r.q(const).auto.c(Numeric)' -> 'r.q(const).__dummy_auto_N__', etc. */
+      Setattr(p, "type", SwigType_replace_auto_base(ty, invented_name));
       if (last_invented) {
         set_nextSibling(last_invented, tp);
       } else {
@@ -5001,9 +4994,27 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			    Delete(fname);
 			  }
 			} else if ($$) {
-			  Setattr($$, "templatetype", nodeType($$));
-			  set_nodeType($$,"template");
-			  Setattr($$,"templateparms", $template_parms);
+			  ParmList *invented = Getattr($$, "templateparms");
+			  if (invented && Equal(nodeType($$), "template")) {
+			    /* The inner cdecl was already promoted to a template by promote_abbreviated_template
+			     * (its parms contain auto / Concept auto), so it already has templatetype, nodeType
+			     * and a templateparms list of invented __dummy_auto_N__ parms.  Per C++20 [dcl.fct]/19
+			     * the invented type template parameters are appended to the explicit template parameter
+			     * list, so merge here rather than overwriting (which would orphan the invented parms
+			     * and trigger an infinite recursion in cparse_template_expand).  The nodeType check
+			     * keeps us out of this branch when the templateparms attribute was propagated from a
+			     * matching forward declaration onto an out of line nested class definition - that case
+			     * has nodeType "class", and the else branch correctly overwrites with $template_parms.
+			     * Note: mixing 'auto' with a variadic explicit parm is not %template-instantiable -
+			     * C++ binds the variadic and the invented parm differently to SWIG's emission and the
+			     * resulting wrapper won't compile.  Real-world callers in that shape can write a thin
+			     * non-templated wrapper. */
+			    Setattr($$, "templateparms", ParmList_join($template_parms, invented));
+			  } else {
+			    Setattr($$, "templatetype", nodeType($$));
+			    set_nodeType($$, "template");
+			    Setattr($$, "templateparms", $template_parms);
+			  }
 			  if (!Getattr($$,"sym:weak")) {
 			    Setattr($$,"sym:typename","1");
 			  }
@@ -5933,7 +5944,40 @@ parm_no_dox	: rawtype parameter_declarator {
                 }
                 | idcolon AUTO parameter_declarator {
                    /* C++20 abbreviated function template with concept type-constraint, e.g. 'Numeric auto x'. */
-                   SwigType *t = NewStringf("%s auto", $idcolon);
+                   SwigType *t = NewStringf("c(%s)", $idcolon);
+                   SwigType_push(t, "auto.");
+                   SwigType_push(t, $parameter_declarator.type);
+                   $$ = NewParmWithoutFileLineInfo(t, $parameter_declarator.id);
+                   Setfile($$, cparse_file);
+                   Setline($$, cparse_line);
+                   if ($parameter_declarator.defarg)
+                     Setattr($$, "value", $parameter_declarator.defarg);
+                   if ($parameter_declarator.stringdefarg)
+                     Setattr($$, "stringval", $parameter_declarator.stringdefarg);
+                   if ($parameter_declarator.numdefarg)
+                     Setattr($$, "numval", $parameter_declarator.numdefarg);
+                }
+                | type_qualifier AUTO parameter_declarator {
+                   /* C++20 abbreviated function template with a CV-qualifier on the auto placeholder, e.g.
+                    * 'const auto x', 'const auto& x', 'volatile auto* x'. */
+                   SwigType *t = NewString("auto");
+                   SwigType_push(t, $type_qualifier);
+                   SwigType_push(t, $parameter_declarator.type);
+                   $$ = NewParmWithoutFileLineInfo(t, $parameter_declarator.id);
+                   Setfile($$, cparse_file);
+                   Setline($$, cparse_line);
+                   if ($parameter_declarator.defarg)
+                     Setattr($$, "value", $parameter_declarator.defarg);
+                   if ($parameter_declarator.stringdefarg)
+                     Setattr($$, "stringval", $parameter_declarator.stringdefarg);
+                   if ($parameter_declarator.numdefarg)
+                     Setattr($$, "numval", $parameter_declarator.numdefarg);
+                }
+                | type_qualifier idcolon AUTO parameter_declarator {
+                   /* C++20 abbreviated function template with a CV-qualified type-constraint, e.g. 'const Numeric auto& x'. */
+                   SwigType *t = NewStringf("c(%s)", $idcolon);
+                   SwigType_push(t, "auto.");
+                   SwigType_push(t, $type_qualifier);
                    SwigType_push(t, $parameter_declarator.type);
                    $$ = NewParmWithoutFileLineInfo(t, $parameter_declarator.id);
                    Setfile($$, cparse_file);

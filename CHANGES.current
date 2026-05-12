@@ -7,6 +7,31 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 4.5.0 (in progress)
 ===========================
 
+2026-05-12: wsfulton
+            C++20: parse and support decorated 'auto' parameters in abbreviated
+            function templates:
+
+              int h(auto& x);                  // reference
+              int i(auto* x);                  // pointer
+              int j(auto&& x);                 // forwarding reference
+              int k(const auto x);             // const by value
+              int l(const auto& x);            // const reference
+              int m(Numeric auto& x);          // constrained reference
+              int n(const Numeric auto& x);    // const constrained reference
+
+2026-05-12: wsfulton
+            C++20: fix segmentation fault when mixing abbreviated function template
+            'auto' parameters with an explicit template parameter list, e.g.
+
+              template<typename T>
+              T mix(T x, auto y) { return T(x + y); }
+              %template(mix_id) mix<int, double>;
+
+            Each 'auto' parameter introduces an invented type template parameter
+            appended to the explicit template parameter list.  When using
+            %template, supply arguments for the explicit parameters first, then
+            one for each 'auto' parameter in declaration order.
+
 2026-05-11: wsfulton
             C++20: warning 332 (unresolved type-constraint in a templated
             parameter list) is no longer emitted. The remap to 'typename T' is
@@ -50,12 +75,9 @@ Version 4.5.0 (in progress)
               template<Numeric T> T cube(T x) { return x * x * x; }
               %template(cube_int) cube<int>;
 
-            If the type-constraint identifier has not been parsed by SWIG warning 332 is issued:
-
-              In instantiation of template 'cube< int >' with name 'cube_int',
-              nothing known about type-constraint 'Numeric' - treated as 'typename'.
-
-            The warning only appears if the concept is used via a %template instantiation.
+            If the type-constraint identifier has not been parsed by SWIG, the parameter
+            is silently remapped to 'typename T'; the generated wrapper compiles when
+            the concept is visible to the C++ compiler.
 
 2026-05-09: wsfulton
             C++20: parse abbreviated function templates with constrained auto parameters.
@@ -119,7 +141,7 @@ Version 4.5.0 (in progress)
 2026-05-04: wsfulton
             #3413 Basic support for C++20 concept declarations and requires-clauses on
             function templates, in both the trailing position and the prefix position
-            (between the template head and the declarator).  Both constructs are silently
+            (between the template parameter list and the declarator).  Both constructs are silently
             consumed: a concept declaration produces no parse tree node, and a constrained
             template wraps as if it were unconstrained.
 
