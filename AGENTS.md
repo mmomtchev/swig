@@ -32,9 +32,9 @@ Key configure options:
 - `--prefix=/path` — install location
 - `--without-pcre` — disable PCRE2 dependency
 
-The built executable is `./swig` at the repo root. The test-suite and examples invoke `./preinst-swig` instead — a thin wrapper that sets `SWIG_LIB=./Lib` so tests run against the just-built binary without needing `make install`.
+The built executable is `./swig` at the repo root. The test suite and examples invoke `./preinst-swig` instead — a thin wrapper that sets `SWIG_LIB=./Lib` so tests run against the just-built binary without needing `make install`.
 
-A `CMakeLists.txt` is also provided as an alternative build system, but Autotools is the primary path used by CI and the test-suite.
+A `CMakeLists.txt` is also provided as an alternative build system, but Autotools is the primary path used by CI and the test suite.
 
 `CCache/` builds `ccache-swig` (a SWIG-specific ccache fork). It's built by default; `make check` runs `check-ccache` as part of the suite.
 
@@ -50,14 +50,14 @@ Format config: `Source/.clang-format` (Google style, 160 column limit).
 ## Testing
 
 ```bash
-make -k check                          # full test-suite, keep going on errors
+make -k check                          # full test suite, keep going on errors
 make check-python-test-suite           # all tests for one language
 make -j8 check-java-test-suite         # parallel execution
 
 cd Examples/test-suite/python
 make -s ret_by_value.cpptest           # single C++ test (silent)
 make -s ret_by_value.ctest             # single C test
-make -s ret_by_value.multicpptest      # single multi-module test
+make -s ret_by_value.multicpptest      # single multi module test
 make -s ret_by_value.clean             # clean generated files
 ```
 
@@ -65,7 +65,7 @@ Test suffixes match source type: `.cpptest` (C++), `.ctest` (C), `.multicpptest`
 
 Available language test targets: `c`, `csharp`, `d`, `go`, `guile`, `java`, `javascript`, `lua`, `ocaml`, `octave`, `perl5`, `php`, `python`, `r`, `ruby`, `scilab`, `tcl`.
 
-Bug fixes and new features should ideally land with a regression test in the test-suite.
+Bug fixes and new features should ideally land with a regression test in the test suite.
 
 Test cases live in `Examples/test-suite/<language>/`. Each test consists of a `.i` interface file in `Examples/test-suite/` (shared across all languages) and an optional `<testname>_runme.<ext>` script in the language subdirectory. The `.i` file drives wrapper generation/compilation; the runme exercises the wrapped code at runtime — language-specific behavior belongs in the runme, not the shared `.i`.
 
@@ -128,7 +128,7 @@ C++ template instantiation is handled in `Source/CParse/templ.c`. Template speci
 Almost every SWIG internal data structure is a DOH object. Common operations:
 
 - `NewString(s)`, `NewStringf(fmt, ...)`, `Copy(obj)`, `Delete(obj)` — strings and lifetime
-- `Getattr(node, "name")`, `Setattr(node, "name", val)` — parse-tree node access (nodes are hashes)
+- `Getattr(node, "name")`, `Setattr(node, "name", val)` — parse tree node access (nodes are hashes)
 - `Printf(out, fmt, ...)` where `out` may be a `String` or `File` — main emission primitive
 - `Firstitem(list)` / `Nextitem(list)` — list iteration
 
@@ -178,7 +178,7 @@ A future cleanup pass will run `clang-format` over `parser.y` to normalise the f
 - `Doc/Devel/internals.html` — SWIG internals (DOH, parse tree, type system)
 - `Doc/Devel/engineering.html` — engineering guidelines
 - `Doc/Devel/tree.html` — parse tree node attributes
-- `Doc/Manual/Extending.html` — guide to extending SWIG, adding a new target language, and the test-suite
+- `Doc/Manual/Extending.html` — guide to extending SWIG, adding a new target language, and the test suite
 
 Useful background for contributors: C API design, the C++ type system, and SWIG's typemap mechanism. Adding a new target language follows the recipe in `Doc/Manual/Extending.html`.
 

@@ -661,7 +661,7 @@ static void resolve_partial_arglists(List *c_inner, List *pp_inner, ParmList **t
  * Walk partialtype against concrete, pairing each $N substitution with the
  * corresponding sub-component of concrete and binding it into *templateparms_p.
  *
- * partialtype: type from a partial specialization where template-parameter
+ * partialtype: type from a partial specialization where template parameter
  *   names have been replaced by $N variables, eg "Pack<($1,v.$2)>".
  * concrete:    matching instantiated type, eg "Pack<(int,double)>".
  * templateparmsraw: unmodified partial-spec parm list, used only to decide
