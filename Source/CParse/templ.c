@@ -73,7 +73,8 @@ static void add_parms(ParmList *p, List *patchlist, List *typelist, int is_patte
 static void expand_variadic_parms(Node *n, const char *attribute, Parm *unexpanded_variadic_parm, ParmList *expanded_variadic_parms) {
   ParmList *p = Getattr(n, attribute);
   if (unexpanded_variadic_parm) {
-    Parm *variadic = ParmList_variadic_parm(p);
+    int variadic_pos = 0;
+    Parm *variadic = ParmList_find_variadic_parm(p, &variadic_pos);
     if (variadic) {
       SwigType *type = Getattr(variadic, "type");
       String *name = Getattr(variadic, "name");
@@ -89,8 +90,11 @@ static void expand_variadic_parms(Node *n, const char *attribute, Parm *unexpand
         Setattr(ep, "name", name ? NewStringf("%s%d", name, ++i) : 0);
         ep = nextSibling(ep);
       }
-      expanded = ParmList_replace_last(p, expanded);
-      Setattr(n, attribute, expanded);
+      /* Splice the expanded list into p in place of the variadic parm.  Function parameter
+       * lists can hold parms after a pack when those trailing parms come from C++20 abbreviated
+       * 'auto' (the trailing parms must be deducible at call time), so the splice must preserve
+       * everything after the variadic. */
+      Setattr(n, attribute, ParmList_replace_at(p, variadic_pos, expanded));
     }
   }
 }
@@ -739,7 +743,31 @@ int Swig_cparse_template_expand(Node *n, String *rname, ParmList *tparms, Symtab
   typelist = NewList();   /* List of SwigType * types */
 
   templateargs = NewStringEmpty();
-  SwigType_add_template(templateargs, tparms);
+  /* Drop invented type template parameters introduced by C++20 abbreviated 'auto'
+   * parms from the emitted C++ template-argument list.  The invented parm is
+   * always appended after the explicit parms ([dcl.fct]/19), so a trailing count
+   * suffices.  Wrapper signature has concrete types in place of 'auto', so the
+   * C++ compiler deduces the invented type from the call - emitting it
+   * explicitly would either be redundant (no pack) or invalid (with a pack the
+   * trailing invented parm is unreachable behind the greedy pack). */
+  {
+    int trailing_invented = 0;
+    Parm *p;
+    for (p = templateparms; p; p = nextSibling(p)) {
+      if (GetFlag(p, "abbreviated_auto"))
+        ++trailing_invented;
+      else
+        trailing_invented = 0;
+    }
+    if (trailing_invented > 0) {
+      int emit_count = ParmList_len(tparms) - trailing_invented;
+      ParmList *emit_parms = CopyParmListMax(tparms, emit_count);
+      SwigType_add_template(templateargs, emit_parms);
+      Delete(emit_parms);
+    } else {
+      SwigType_add_template(templateargs, tparms);
+    }
+  }
 
   tname = Copy(Getattr(n, "name"));
   tbase = Swig_scopename_last(tname);
@@ -774,11 +802,22 @@ int Swig_cparse_template_expand(Node *n, String *rname, ParmList *tparms, Symtab
     Setattr(n, "templateparms", templateparms);
   }
 
-  /* Handle variadic parms for partially specialized templates */
+  /* Handle variadic parms.  The variadic may sit anywhere in the templateparms list -
+   * C++20 [dcl.fct]/19 appends invented type template parameters (from abbreviated
+   * 'auto' parms) after the explicit list, which can leave the pack in the middle.
+   * Slice out exactly the user args the pack absorbs so downstream consumers
+   * (expand_variadic_parms, SwigType_variadic_replace) iterate to NULL without
+   * accidentally walking into trailing invented entries. */
   templateparmsraw = Getattr(n, "templateparmsraw");
-  unexpanded_variadic_parm = ParmList_variadic_parm(templateparmsraw);
-  if (unexpanded_variadic_parm)
-    expanded_variadic_parms = ParmList_nth_parm(templateparms, ParmList_len(templateparmsraw) - 1);
+  {
+    int variadic_pos = 0;
+    unexpanded_variadic_parm = ParmList_find_variadic_parm(templateparmsraw, &variadic_pos);
+    if (unexpanded_variadic_parm) {
+      int absorbed = ParmList_len(templateparms) - ParmList_len(templateparmsraw) + 1;
+      Parm *slice = ParmList_nth_parm(templateparms, variadic_pos);
+      expanded_variadic_parms = CopyParmListMax(slice, absorbed);
+    }
+  }
 
   /*  Printf(stdout,"targs = '%s'\n", templateargs);
      Printf(stdout,"rname = '%s'\n", rname);
@@ -917,6 +956,7 @@ int Swig_cparse_template_expand(Node *n, String *rname, ParmList *tparms, Symtab
   Delete(tbase);
   Delete(tname);
   Delete(templateargs);
+  Delete(expanded_variadic_parms);
 
   return 0;
 }
@@ -1645,7 +1685,7 @@ Node *Swig_cparse_template_locate(String *name, Parm *instantiated_parms, String
       while (n) {
         if (Strcmp(nodeType(n), "template") == 0) {
           Parm *tparmsfound = Getattr(n, "templateparms");
-          if (!ParmList_variadic_parm(tparmsfound)) {
+          if (!ParmList_find_variadic_parm(tparmsfound, NULL)) {
             if (ParmList_len(instantiated_parms) == ParmList_len(tparmsfound)) {
               /* successful match */
               if (template_debug) {
@@ -1665,13 +1705,16 @@ Node *Swig_cparse_template_locate(String *name, Parm *instantiated_parms, String
         n = Getattr(n, "sym:nextSibling");
       }
 
-      /* Only consider variadic templates if there are no non-variadic template matches */
+      /* Only consider variadic templates if there are no non-variadic template matches.
+       * The variadic parm may sit anywhere in the templateparms list - C++20 [dcl.fct]/19
+       * appends invented type template parameters (from abbreviated 'auto' parameters)
+       * after the explicit list, which can leave the pack in the middle. */
       if (!match) {
         n = firstn;
         while (n) {
           if (Strcmp(nodeType(n), "template") == 0) {
             Parm *tparmsfound = Getattr(n, "templateparms");
-            if (ParmList_variadic_parm(tparmsfound)) {
+            if (ParmList_find_variadic_parm(tparmsfound, NULL)) {
               if (ParmList_len(instantiated_parms) >= ParmList_len(tparmsfound) - 1) {
                 /* successful variadic match */
                 if (template_debug) {
@@ -1712,20 +1755,65 @@ Node *Swig_cparse_template_locate(String *name, Parm *instantiated_parms, String
  * Non-type template parameters have no type information in expanded_templateparms.
  * Grab them from templateparms.
  *
+ * When templateparms contains a variadic pack that is not the last element
+ * (C++20 abbreviated function templates with an explicit pack and an 'auto' parm
+ * place the invented type template parameter after the pack per [dcl.fct]/19),
+ * the pairing absorbs the middle entries of expanded_templateparms with the pack
+ * and pairs the trailing entries with the templateparms after the pack.
+ *
  * Return 1 if there are variadic template parameters, 0 otherwise.
  * ----------------------------------------------------------------------------- */
 
 static int merge_parameters(ParmList *expanded_templateparms, ParmList *templateparms) {
+  int variadic_pos = 0;
+  Parm *variadic = ParmList_find_variadic_parm(templateparms, &variadic_pos);
   Parm *p = expanded_templateparms;
   Parm *tp = templateparms;
-  while (p && tp) {
-    Setattr(p, "name", Getattr(tp, "name"));
-    if (!Getattr(p, "type"))
-      Setattr(p, "type", Getattr(tp, "type"));
-    p = nextSibling(p);
-    tp = nextSibling(tp);
+  if (!variadic) {
+    while (p && tp) {
+      Setattr(p, "name", Getattr(tp, "name"));
+      if (!Getattr(p, "type"))
+        Setattr(p, "type", Getattr(tp, "type"));
+      p = nextSibling(p);
+      tp = nextSibling(tp);
+    }
+    return 0;
   }
-  return ParmList_variadic_parm(templateparms) ? 1 : 0;
+  {
+    int i = 0;
+    int tp_len = ParmList_len(templateparms);
+    int p_len = ParmList_len(expanded_templateparms);
+    int absorbed = p_len - tp_len + 1;          /* variadic absorbs this many user args */
+    int absorbed_end = variadic_pos + absorbed; /* exclusive */
+    /* Leading non-variadics pair one to one. */
+    while (p && i < variadic_pos) {
+      Setattr(p, "name", Getattr(tp, "name"));
+      if (!Getattr(p, "type"))
+        Setattr(p, "type", Getattr(tp, "type"));
+      p = nextSibling(p);
+      tp = nextSibling(tp);
+      ++i;
+    }
+    /* Pack absorbs entries [variadic_pos, variadic_pos + absorbed). */
+    while (p && i < absorbed_end) {
+      Setattr(p, "name", Getattr(variadic, "name"));
+      if (!Getattr(p, "type"))
+        Setattr(p, "type", Getattr(variadic, "type"));
+      p = nextSibling(p);
+      ++i;
+    }
+    /* Trailing non-variadics (e.g. invented auto parms) pair one to one with
+     * the templateparms entries after the pack. */
+    tp = nextSibling(variadic);
+    while (p && tp) {
+      Setattr(p, "name", Getattr(tp, "name"));
+      if (!Getattr(p, "type"))
+        Setattr(p, "type", Getattr(tp, "type"));
+      p = nextSibling(p);
+      tp = nextSibling(tp);
+    }
+  }
+  return 1;
 }
 
 /* -----------------------------------------------------------------------------

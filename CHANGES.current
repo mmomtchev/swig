@@ -8,6 +8,26 @@ Version 4.5.0 (in progress)
 ===========================
 
 2026-05-12: wsfulton
+            C++20: %template can now instantiate abbreviated function templates
+            that mix 'auto' parameters with a variadic explicit template pack,
+            e.g.
+
+              template<typename... Ts>
+              std::string f_mix(auto x, Ts... ys);
+              %template(f_mix_isd) f_mix<int, std::string, double>;
+
+            Per the C++20 standard ([dcl.fct]/19) the invented type template-
+            parameter for each 'auto' parm is appended after the explicit list,
+            so the %template argument list is bound positionally: leading
+            non-variadic parameters first, the variadic pack absorbs the middle
+            args, then one trailing arg per 'auto' in declaration order.  Above,
+            Ts={int, std::string} (absorbed by the pack) and the trailing
+            'double' binds to the invented parm for 'x', giving the effective
+            wrapper signature as:
+
+              f_mix(double x, int y1, std::string y2)
+
+2026-05-12: wsfulton
             C++20: parse and support decorated 'auto' parameters in abbreviated
             function templates:
 

@@ -1,7 +1,7 @@
 %module cpp20_abbreviated_template
 
 // C++20 abbreviated function templates - 'auto' as a parameter type in an ordinary function.  Each auto
-// parameter introduces an invented type template parameter (per [dcl.fct]/22), so the function becomes
+// parameter introduces an invented type template parameter (per [dcl.fct]/19), so the function becomes
 // a function template that the user can instantiate with %template just like a regular template.
 //
 // The function must declare an explicit (non-auto) return type for SWIG to wrap it - SWIG cannot deduce

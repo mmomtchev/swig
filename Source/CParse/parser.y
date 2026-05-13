@@ -534,6 +534,7 @@ static int promote_abbreviated_template(Node *n) {
       Parm *tp = NewParmWithoutFileLineInfo(NewString("typename"), invented_name);
       Setfile(tp, Getfile(n));
       Setline(tp, Getline(n));
+      SetFlag(tp, "abbreviated_auto");
       concept_name = SwigType_concept_name(ty);
       if (concept_name) {
         Node *atom = Constraint_new_atom("concept-id");
@@ -5004,11 +5005,7 @@ cpp_template_decl : TEMPLATE LESSTHAN template_parms GREATERTHAN requires_clause
 			     * and trigger an infinite recursion in cparse_template_expand).  The nodeType check
 			     * keeps us out of this branch when the templateparms attribute was propagated from a
 			     * matching forward declaration onto an out of line nested class definition - that case
-			     * has nodeType "class", and the else branch correctly overwrites with $template_parms.
-			     * Note: mixing 'auto' with a variadic explicit parm is not %template-instantiable -
-			     * C++ binds the variadic and the invented parm differently to SWIG's emission and the
-			     * resulting wrapper won't compile.  Real-world callers in that shape can write a thin
-			     * non-templated wrapper. */
+			     * has nodeType "class", and the else branch correctly overwrites with $template_parms. */
 			    Setattr($$, "templateparms", ParmList_join($template_parms, invented));
 			  } else {
 			    Setattr($$, "templatetype", nodeType($$));

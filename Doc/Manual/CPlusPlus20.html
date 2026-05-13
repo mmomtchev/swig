@@ -203,8 +203,40 @@ Above, <tt>tag</tt> has two template parameters: the explicit
 <tt>T</tt> becomes <tt>std::string</tt> (the type of <tt>prefix</tt>)
 and the invented parameter becomes <tt>int</tt> (the type of
 <tt>count</tt>).  Calling <tt>tag_si("v", 3)</tt> returns
-<tt>"v3"</tt>. Variadic packs, type-constraints
-and trailing return types all mix the same way.
+<tt>"v3"</tt>. Type-constraints and trailing return types mix the same way.
+</p>
+
+<p>
+A variadic explicit template pack can also be combined with one or more
+<tt>auto</tt> parameters.  Per [dcl.fct]/19 the invented type template parameter
+for each <tt>auto</tt> is appended after the explicit list, so when the explicit
+list ends in a pack the invented sits past it.  The <tt>%template</tt> argument
+list is bound positionally: leading non-variadic parameters first, the variadic
+pack absorbs the middle args, and trailing args bind to the invented parms in
+declaration order.
+</p>
+
+<div class="code">
+<pre>
+%include &lt;std_string.i&gt;
+
+%inline %{
+#include &lt;string&gt;
+
+template&lt;typename... Ts&gt;
+std::string f_mix(auto x, Ts... ys);
+%}
+
+%template(f_mix_isd) f_mix&lt;int, std::string, double&gt;;
+</pre>
+</div>
+
+<p>
+Here <tt>f_mix</tt> has the invented type template parameter for <tt>x</tt>
+appended after <tt>Ts...</tt>.  The three <tt>%template</tt> arguments bind as
+<tt>Ts = {int, std::string}</tt> (absorbed by the pack) and the trailing
+<tt>double</tt> binds to the invented parm for <tt>x</tt>, giving the
+wrapper signature <tt>f_mix(double x, int y1, std::string y2)</tt>.
 </p>
 
 <p>

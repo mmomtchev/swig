@@ -135,24 +135,33 @@ ParmList *ParmList_join(ParmList *p, ParmList *p2) {
 }
 
 /* -----------------------------------------------------------------------------
- * ParmList_replace_last()
+ * ParmList_replace_at()
  *
- * Delete last parameter in p and replace it with parameter list p2.
- * p must have at least one element, that is, must not be NULL.
- * Return beginning of modified parameter list.
+ * Delete the parm at zero based 'position' in p and splice parameter list p2
+ * into its place, preserving any parms that follow.  p must have at least
+ * position + 1 elements, that is, the parm being replaced must exist.  p2 may
+ * be NULL, in which case the parm is simply removed.
+ *
+ * Return beginning of the modified parameter list.
  * ----------------------------------------------------------------------------- */
 
-ParmList *ParmList_replace_last(ParmList *p, ParmList *p2) {
-  ParmList *start = p;
-  int len = ParmList_len(p);
-  assert(p);
-  if (len == 1) {
-    start = p2;
-  } else if (len > 1) {
-    Parm *secondlastparm = ParmList_nth_parm(p, len - 2);
-    set_nextSibling(secondlastparm, p2);
+ParmList *ParmList_replace_at(ParmList *p, int position, ParmList *p2) {
+  Parm *target = ParmList_nth_parm(p, position);
+  ParmList *trailing;
+  assert(target);
+  trailing = nextSibling(target);
+  if (p2) {
+    Parm *tail = p2;
+    while (nextSibling(tail))
+      tail = nextSibling(tail);
+    set_nextSibling(tail, trailing);
+  } else {
+    p2 = trailing;
   }
-  return start;
+  if (position == 0)
+    return p2;
+  set_nextSibling(ParmList_nth_parm(p, position - 1), p2);
+  return p;
 }
 
 /* -----------------------------------------------------------------------------
@@ -186,6 +195,33 @@ Parm *ParmList_variadic_parm(ParmList *p) {
     p = nextSibling(p);
   }
   return lastparm && SwigType_isvariadic(Getattr(lastparm, "type")) ? lastparm : 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * ParmList_find_variadic_parm()
+ *
+ * Return the first variadic parm anywhere in the list (not just at the end),
+ * NULL otherwise.  If position is non-NULL, the zero based index of the parm
+ * is written through it (left unchanged when no variadic is found).
+ *
+ * C++20 abbreviated function templates that mix an explicit variadic pack
+ * with an 'auto' parm produce a templateparms list where the invented type
+ * template parameter for the 'auto' sits after the pack ([dcl.fct]/19).  This
+ * helper lets the matcher and expand machinery find the pack in that case.
+ * ----------------------------------------------------------------------------- */
+
+Parm *ParmList_find_variadic_parm(ParmList *p, int *position) {
+  int i = 0;
+  while (p) {
+    if (SwigType_isvariadic(Getattr(p, "type"))) {
+      if (position)
+        *position = i;
+      return p;
+    }
+    p = nextSibling(p);
+    ++i;
+  }
+  return 0;
 }
 
 /* -----------------------------------------------------------------------------
