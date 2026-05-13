@@ -514,22 +514,13 @@ static void splice_partial_slot(int index, SwigType *bound_type, ParmList **temp
       }
       last_new_parm = new_parm;
     }
+    new_parms = ParmList_join(new_parms, nextSibling(parm));
     if (index == 0) {
-      if (new_parms) {
-        set_nextSibling(last_new_parm, nextSibling(parm));
-        *templateparms_p = new_parms;
-      } else {
-        *templateparms_p = nextSibling(parm);
-      }
+      *templateparms_p = new_parms;
     } else {
       Parm *prev = ParmList_nth_parm(templateparms, index - 1);
       assert(prev);
-      if (new_parms) {
-        set_nextSibling(last_new_parm, nextSibling(parm));
-        set_nextSibling(prev, new_parms);
-      } else {
-        set_nextSibling(prev, nextSibling(parm));
-      }
+      set_nextSibling(prev, new_parms);
     }
     Delete(types);
   } else {

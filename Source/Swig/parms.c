@@ -147,17 +147,8 @@ ParmList *ParmList_join(ParmList *p, ParmList *p2) {
 
 ParmList *ParmList_replace_at(ParmList *p, int position, ParmList *p2) {
   Parm *target = ParmList_nth_parm(p, position);
-  ParmList *trailing;
   assert(target);
-  trailing = nextSibling(target);
-  if (p2) {
-    Parm *tail = p2;
-    while (nextSibling(tail))
-      tail = nextSibling(tail);
-    set_nextSibling(tail, trailing);
-  } else {
-    p2 = trailing;
-  }
+  p2 = ParmList_join(p2, nextSibling(target));
   if (position == 0)
     return p2;
   set_nextSibling(ParmList_nth_parm(p, position - 1), p2);
