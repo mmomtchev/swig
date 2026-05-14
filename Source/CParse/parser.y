@@ -6623,12 +6623,13 @@ direct_declarator : idcolon {
 		    }
 		  }
                  /* User-defined string literals. eg.
-                    int operator"" _mySuffix(const char* val, int length) {...} */
+                    int operator""_mySuffix(const char* val, int length) {...}
+                    The whitespace form 'operator "" _suffix' is deprecated by CWG2521 (applied to
+                    C++23), so SWIG emits the joined form: 'operator ""_suffix'. */
 		 /* This produces one S/R conflict. */
                  | OPERATOR ID LPAREN parms RPAREN {
 		    $$ = default_decl;
 		    SwigType *t;
-                    Append($OPERATOR, " "); /* intervening space is mandatory */
 		    Append($OPERATOR, $ID);
 		    $$.id = Char($OPERATOR);
 		    t = NewStringEmpty();
