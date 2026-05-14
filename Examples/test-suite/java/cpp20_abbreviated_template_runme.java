@@ -55,5 +55,12 @@ public class cpp20_abbreviated_template_runme {
     // Plain auto return type + constrained auto parameter + trailing return type.
     if (cpp20_abbreviated_template.twice_n_arrow_int(7) != 14)
       throw new RuntimeException("twice_n_arrow_int(7)");
+
+    // Constrained 'Numeric auto' return without a trailing return type - SWIG cannot deduce so the function is ignored.
+    try {
+      cpp20_abbreviated_template.class.getMethod("half_numeric", int.class);
+      throw new RuntimeException("half_numeric should be ignored (deduced return type)");
+    } catch (NoSuchMethodException expected) {
+    }
   }
 }

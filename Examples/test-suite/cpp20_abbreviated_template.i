@@ -11,6 +11,7 @@
 // 'Numeric auto fn(int x) { ... }' and 'Numeric auto fn(int x);' parse cleanly but the return type
 // stays 'auto', so SWIG cannot deduce the actual return type and ignores the function with a warning.
 // Suppress the warning per declaration so the test build is clean while still exercising the parser.
+%warnfilter(SWIGWARN_CPP14_AUTO) half_numeric;
 %warnfilter(SWIGWARN_CPP14_AUTO) times2;
 %warnfilter(SWIGWARN_CPP14_AUTO) times3;
 
@@ -48,14 +49,19 @@ int add_same_concept(Sized auto a, Sized auto b) { return a + b; }
 // Unnamed constrained auto - the type-constraint still applies to the invented type template parameter.
 int unnamed_constrained(Numeric auto) { return 42; }
 
-// Constrained auto return type with an explicit trailing return type - SWIG wraps the trailing return type.
-Numeric auto half(int x) -> int { return x / 2; }
+// Plain auto return type with an explicit trailing return type - SWIG wraps the trailing return type.
+// A type-constraint on the return ('Numeric auto fn(...) -> int') is rejected by clang and MSVC, so the
+// constrained-return case is exercised separately below without the trailing return type.
+auto half(int x) -> int { return x / 2; }
 
-// Constrained auto return type combined with a constrained auto parameter; trailing 'int' is the wrapped type.
-Numeric auto cube_constrained(Sized auto x) -> int { return x * x * x; }
+// Constrained auto parameter with an explicit trailing return type; trailing 'int' is the wrapped type.
+auto cube_constrained(Sized auto x) -> int { return x * x * x; }
 
 // Plain auto return type plus a constrained auto parameter and a trailing return type - both sides wrap.
 auto twice_n_arrow(Numeric auto x) -> int { return x + x; }
+
+// Constrained auto return type without a trailing return type - parses but ignored with warning since SWIG cannot deduce the return type.
+Numeric auto half_numeric(int x) { return x / 2; }
 
 // Constrained auto return type without a trailing return type - parses but ignored with warning since SWIG cannot deduce the return type.
 Numeric auto times2(int x) { return x * 2; }

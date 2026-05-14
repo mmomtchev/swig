@@ -1,6 +1,7 @@
 from cpp20_abbreviated_template import *
+import cpp20_abbreviated_template as _mod
 
-from swig_test_utils import swig_check
+from swig_test_utils import swig_assert, swig_check
 
 # Single auto parameter.
 swig_check(twice_int(5), 10)
@@ -33,3 +34,6 @@ swig_check(cube_constrained_int(3), 27)
 
 # Plain auto return type + constrained auto parameter + trailing return type.
 swig_check(twice_n_arrow_int(7), 14)
+
+# Constrained 'Numeric auto' return without a trailing return type - SWIG cannot deduce so the function is ignored.
+swig_assert(not hasattr(_mod, "half_numeric"), "half_numeric should be ignored (deduced return type)")
