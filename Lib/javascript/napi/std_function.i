@@ -14,7 +14,15 @@
  *   %feature("async", "1") _SWIG_call_std_function<std::string, int, const std::string &>;
  */
 
-%rename(_cpp_std_function, regextarget=1, fullname=1) "^std::function";
+// This is the function that SWIG will wrap, the user does not have to know about it.
+// We don't use a member method because the name of the wrapper will be more difficult
+// to produce using a macro.
+%inline %{
+template <typename RET, typename... ARGS>
+RET _SWIG_call_std_function(std::function<RET(ARGS...)> _swig_std_fn, ARGS ...args) {
+  return _swig_std_fn(args...);
+}
+%}
 
 // The logic:
 //    * SWIG creates a JS-call convention wrapper function called _wrap__##NAME##_call
