@@ -133,11 +133,11 @@ jobs:
         - SWIGLANG: ruby
           VER: '3.3'
           COMPILER: gcc
+          MSYS2_ENV: ucrt64
         - SWIGLANG: python
           VER: '3.13'
           INSTALL: 'true'
           SWIGLIB: 'C:/swiglib'
-          MSYS2_ENV: ucrt64
         - SWIGLANG: go
           VER: '1.25'
           COMPILER: gcc
