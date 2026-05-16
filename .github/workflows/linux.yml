@@ -122,6 +122,7 @@ jobs:
           CPPSTD: c++20
           CPPFLAGS: -DSWIG_NAPI_USE_BASIC_FINALIZERS
           desc: Basic Finalizers
+          os: ubuntu-24.04
           cacheid: -napi-basicenv
         - SWIGLANG: javascript
           ENGINE: napi
@@ -129,6 +130,7 @@ jobs:
           CPPSTD: c++20
           ASAN: 1
           cacheid: -napi-asan
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: node
           VER: '12'
@@ -140,6 +142,7 @@ jobs:
           SWIG_FEATURES: -async -w470
           desc: async
           cacheid: -napi-async
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -148,6 +151,7 @@ jobs:
           ASAN: 1
           desc: async+ASAN
           cacheid: -napi-async-locked-asan
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -155,6 +159,7 @@ jobs:
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: async+lock
           cacheid: -napi-async-locked
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -162,6 +167,7 @@ jobs:
           SWIG_FEATURES: -typescript
           desc: TypeScript
           cacheid: -napi-typescript
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -169,6 +175,7 @@ jobs:
           SWIG_FEATURES: -typescript -async -w470
           desc: TS+async
           cacheid: -napi-typescript-async
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -176,6 +183,7 @@ jobs:
           SWIG_FEATURES: -split
           desc: split
           cacheid: -napi-splitting
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -183,12 +191,14 @@ jobs:
           SWIG_FEATURES: -split -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: async+lock
           cacheid: -napi-splitting-async
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
           CPPSTD: c++20
           compiler: emscripten
           cacheid: -napi-wasm
+          os: ubuntu-24.04
         - SWIGLANG: javascript
           ENGINE: napi
           VER: '24'
@@ -197,6 +207,7 @@ jobs:
           SWIG_FEATURES: -async -async-locking -DSWIG_NAPI_FULL_LOCKING=1
           desc: async+lock
           cacheid: -napi-wasm-async
+          os: ubuntu-24.04
         - SWIGLANG: lua
         - SWIGLANG: lua
           VER: '5.3'
