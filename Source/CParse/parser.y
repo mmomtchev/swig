@@ -3690,7 +3690,7 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
             *   Numeric auto fn(int x) -> int { return x; }
             * The trailing return type is what SWIG wraps; the concept-id is captured as a
             * 'concept-id' atom on the 'constraint' attribute for downstream inspection. */
-           | storage_class idcolon AUTO declarator cpp_const ARROW cpp_alternate_rettype virt_specifier_seq_opt initializer c_decl_tail {
+           | attribute storage_class idcolon AUTO declarator cpp_const ARROW cpp_alternate_rettype virt_specifier_seq_opt initializer c_decl_tail {
               Node *atom;
               $$ = new_node("cdecl");
 	      if ($cpp_const.qualifier) SwigType_push($declarator.type, $cpp_const.qualifier);
@@ -3744,6 +3744,9 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 		}
 	      } else {
 		set_nextSibling($$, $c_decl_tail);
+	      }
+	      if ($attribute) {
+	        Setattr($$, "attribute", $attribute);
 	      }
 
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
@@ -3875,7 +3878,7 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 	    * 'auto' return form above and inherits the same warn and ignore behaviour when
 	    * SWIG cannot deduce the return type; the concept-id is preserved on the
 	    * 'constraint' attribute as a 'concept-id' atom for downstream inspection. */
-	   | storage_class idcolon AUTO declarator cpp_const LBRACE {
+	   | attribute storage_class idcolon AUTO declarator cpp_const LBRACE {
 	      Node *atom;
 	      if (skip_balanced('{','}') < 0) Exit(EXIT_FAILURE);
 
@@ -3912,6 +3915,9 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 		  Delete($$);
 		  $$ = 0;
 		}
+	      }
+	      if ($attribute) {
+		Setattr($$, "attribute", $attribute);
 	      }
 
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
@@ -3956,7 +3962,9 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 		  $$ = 0;
 		}
 	      }
-
+	      if ($attribute) {
+		Setattr($$, "attribute", $attribute);
+	      }
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
 	      Delete($storage_class);
@@ -3964,7 +3972,7 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 	   /* C++20 abbreviated function template with a constrained auto return type,
 	    * declaration form, e.g. 'Numeric auto fn(int x);'.  Inherits the same warn and ignore
 	    * behaviour as the plain 'auto fn(...)' declaration above. */
-	   | storage_class idcolon AUTO declarator cpp_const SEMI {
+	   | attribute storage_class idcolon AUTO declarator cpp_const SEMI {
 	      Node *atom;
 	      $$ = new_node("cdecl");
 	      if ($cpp_const.qualifier) SwigType_push($declarator.type, $cpp_const.qualifier);
@@ -4000,7 +4008,9 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 		  $$ = 0;
 		}
 	      }
-
+	      if ($attribute) {
+		Setattr($$, "attribute", $attribute);
+	      }
 	      if ($cpp_const.qualifier && $storage_class && Strstr($storage_class, "static"))
 		Swig_error(cparse_file, cparse_line, "Static function %s cannot have a qualifier.\n", Swig_name_decl($$));
 	      Delete($storage_class);
