@@ -1,9 +1,11 @@
 var cpp11_std_function = require("cpp11_std_function");
 
 var fn = /* await */(cpp11_std_function.pass_checker(420));
-if (process.env.ENGINE === 'napi') {
-  if (!fn.toString().match("std::function"))
-    throw new Error("std::function object not properly identified");
+if (typeof process !== 'undefined') {
+  if (process.env.ENGINE === 'napi') {
+    if (!fn.toString().match("std::function"))
+      throw new Error("std::function object not properly identified");
+  }
 }
 
 // invoke functor via call method
@@ -15,7 +17,7 @@ var result2 = /* await */(fn.call(419, "Chapai"));
 if (result2)
   throw new Error("Petka 419 should be false");
 
- // call wrapper
+// call wrapper
 var result3 = /* await */(cpp11_std_function.call_function(fn, 420, "Petka"));
 if (!result3)
   throw new Error("Petka 420 should be true");
