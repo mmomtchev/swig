@@ -13,8 +13,8 @@ Version 5.0.13
             destructors fixing a memory leak
             [mmomtchev/swig#185](https://github.com/mmomtchev/swig/issues/185)
 
-2026-01-23: mmomtchev
-            Merge SWIG from upstream up to 2026-01-23
+2026-05-16: mmomtchev
+            Merge SWIG from upstream up to 2026-05-15
 
 2026-01-23: mmomtchev
             [TypeScript] Set the correct `tsout` merging strategy for
