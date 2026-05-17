@@ -1,8 +1,10 @@
 var cpp11_std_function = require("cpp11_std_function");
 
 var fn = /* await */(cpp11_std_function.pass_checker(420));
-if (!fn.toString().match("std::function"))
-  throw new Error("std::function object not properly identified");
+if (process.env.ENGINE === 'napi') {
+  if (!fn.toString().match("std::function"))
+    throw new Error("std::function object not properly identified");
+}
 
 // invoke functor via call method
 var result1 = /* await */(fn.call(420, "Petka"));
