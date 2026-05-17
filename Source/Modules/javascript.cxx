@@ -3710,6 +3710,7 @@ int NAPIEmitter::exitClass(Node *n) {
       .replace("$jswrapper", state.clazz(CTOR))
       .replace("$jsname", state.clazz(NAME))
       .replace("$jsparent", state.clazz(PARENT_MANGLED))
+      .replace("$jsmangledtype", state.clazz(TYPE_MANGLED))
       .pretty_print(result);
     Append(f_template_definitions, result);
   }

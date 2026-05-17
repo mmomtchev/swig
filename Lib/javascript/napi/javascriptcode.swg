@@ -63,6 +63,7 @@ $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(bool, const Napi::Call
  * js_veto_ctor:  a vetoing ctor for abstract classes
  *   - $jsmangledname:    mangled name of class
  *   - $jsparent:         mangled name of parent (or SWIG_NAPI_ObjectWrap if none)
+ *   - $jsmangledtype:    mangled type of class
  * ----------------------------------------------------------------------------- */
 %fragment ("js_veto_ctor", "templates")
 %{
@@ -71,6 +72,7 @@ template <typename SWIG_OBJ_WRAP>
 $jsmangledname_templ<SWIG_OBJ_WRAP>::$jsmangledname_templ(const Napi::CallbackInfo &info)
         : $jsparent_templ<SWIG_OBJ_WRAP>(true, info) {
   Napi::Env env = info.Env();
+  this->info = SWIGTYPE_$jsmangledtype;
   if (info.Length() == 1 && info[0].IsExternal()) {
     // This constructor has been called internally from C++/SWIG
     // to wrap an already existing C++ object in JS as its
