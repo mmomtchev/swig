@@ -1,7 +1,5 @@
 var cpp11_std_function = require("cpp11_std_function");
 
-console.log(cpp11_std_function);
-
 var fn = /* await */(cpp11_std_function.pass_checker(420));
 if (!fn.toString().match("std::function"))
   throw new Error("std::function object not properly identified");
