@@ -287,7 +287,7 @@ void SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>::SWIG_Finalize(Napi::Env)
 class SWIG_NAPI_ObjectWrap_inst : public SWIG_NAPI_ObjectWrap_templ<SWIG_NAPI_ObjectWrap_inst> {
 public:
   using SWIG_NAPI_ObjectWrap_templ::SWIG_NAPI_ObjectWrap_templ;
-  ~SWIG_NAPI_ObjectWrap_inst();
+  virtual ~SWIG_NAPI_ObjectWrap_inst();
   static Napi::Function GetClass(Napi::Env);
   static void GetMembers(
     Napi::Env,
