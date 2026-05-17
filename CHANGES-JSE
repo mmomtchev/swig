@@ -7,6 +7,12 @@ the issue number to the end of the URL: https://github.com/swig/swig/issues/
 Version 5.0.13
 ===========================
 
+2026-05-17: mmomtchev
+            [JavaScript] Identify properly C++ objects constructed from
+            a class that is abstract in JavaScript and call their
+            destructors fixing a memory leak
+            [mmomtchev/swig#185](https://github.com/mmomtchev/swig/issues/185)
+
 2026-01-23: mmomtchev
             Merge SWIG from upstream up to 2026-01-23
 
