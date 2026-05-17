@@ -184,7 +184,7 @@ _setup = \
 
 SWIGOPT += -$(JSENGINE)
 
-TSCOPT = --typeRoots @NODETYPES_DIR@ --target es2017 --module esnext --moduleResolution node --allowSyntheticDefaultImports
+TSCOPT = --typeRoots @NODETYPES_DIR@ --target es2017 --module node16 --moduleResolution node16 --allowSyntheticDefaultImports
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
@@ -304,10 +304,9 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 				sed -E \
 					's@(var|let|const)[[:space:]]*(.*)[[:space:]]*=[[:space:]]*require\(("|\x27)(.*)("|\x27)\)@import \2 from "'"$(CURDIR)"'/\4/index.js"@g; \
 					s|.*//[[:space:]]*@ts-replace(.*)|\1|g; ' \
-					$${RUNME} > $*_ts_runme.ts && \
+					$${RUNME} > $*_ts_runme.mts && \
 					cp $*.d.ts $*/index.d.ts && \
-					$(TSC) $(TSCOPT) $*_ts_runme.ts && \
-					mv $*_ts_runme.js $*_ts_runme.mjs && \
+					$(TSC) $(TSCOPT) $*_ts_runme.mts && \
 					RUNME=$*_ts_runme.mjs; \
 			fi && \
 			env NODE_PATH=$$PWD:$(srcdir) LD_PRELOAD=$(ASAN_PRELOAD) LSAN_OPTIONS=$(LSAN_OPTIONS) \

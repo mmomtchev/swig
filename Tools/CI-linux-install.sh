@@ -129,7 +129,7 @@ case "$SWIGLANG" in
 				if [ "$compiler" == "emscripten" ]; then
 				        $RETRY npm install --ignore-scripts -g emnapi @emnapi/runtime
 				fi
-				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript@5 @types/node
+				[[ ${SWIG_FEATURES} =~ typescript ]] && $RETRY npm install -g typescript @types/node
 				;;
 			"jsc")
 				$RETRY sudo apt-get -qq install libjavascriptcoregtk-${VER}-dev
