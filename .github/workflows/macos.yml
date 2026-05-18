@@ -132,6 +132,10 @@ jobs:
           VER: '1.25'
         - SWIGLANG: perl5
         - SWIGLANG: tcl
+        - SWIGLANG: javascript
+          ENGINE: napi
+          VER: '20'
+          CPPSTD: c++11
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
@@ -142,6 +146,7 @@ jobs:
       GCC: ${{ matrix.GCC }}
       CPPSTD: ${{ matrix.CPPSTD }}
       CSTD: ${{ matrix.CSTD }}
+      ENGINE: ${{ matrix.ENGINE }}
 
     steps:
     - name: Machine Info
@@ -249,6 +254,13 @@ jobs:
               go)
                 go_dir="$(ls -d /Users/runner/hostedtoolcache/go/$VER.*/$arc/bin)"
                 echo "$go_dir" >> $GITHUB_PATH
+                ;;
+              javascript)
+                if [ "$CPPSTD" == "c++17" ] || [ "$CPPSTD" == "c++20" ] ; then
+                  npm install -g node-addon-api@8.5.0
+                else
+                  npm install -g node-addon-api@8.1.0
+                fi
                 ;;
               esac
             fi
