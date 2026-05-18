@@ -184,7 +184,7 @@ _setup = \
 
 SWIGOPT += -$(JSENGINE)
 
-TSCOPT = --typeRoots @NODETYPES_DIR@ --target es2017 --module node16 --moduleResolution node16 --allowSyntheticDefaultImports
+TSCOPT = --typeRoots @NODETYPES_DIR@ --target es2017 --module node16 --moduleResolution node16 --allowSyntheticDefaultImports --noImplicitAny false --useUnknownInCatchVariables false --strictNullChecks false
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
