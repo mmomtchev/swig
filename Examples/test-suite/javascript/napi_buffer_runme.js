@@ -1,5 +1,3 @@
-/// <reference types="node" />
-
 const napi_buffer = require('napi_buffer');
 
 // Test producing a Buffer
