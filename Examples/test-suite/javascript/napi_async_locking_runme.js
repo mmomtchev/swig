@@ -1,12 +1,15 @@
 // This test works only with NAPI in async mode
 const napi_async_locking = require('napi_async_locking');
 
-async function test(name, fail, async, sync) {
+// @ts-replace type TesteeSync = (this: napi_async_locking.Integer, b: napi_async_locking.Integer) => void;
+// @ts-replace type TesteeAsync = (this: napi_async_locking.Integer, b: napi_async_locking.Integer) => Promise<void>;
+
+async function test(name, fail, async, sync) { // @ts-replace async function test(name: string, fail: boolean, async: TesteeAsync, sync?: TesteeSync) {
   // This tests locking
   const a = new napi_async_locking.Integer(42);
   const b = new napi_async_locking.Integer(9000);
 
-  const q = [];
+  const q = []; // @ts-replace const q = [] as Promise<void>[];
   for (let i = 0; i < 1e4; i++) {
     // Test the deadlock prevention too
     q.push(async.call(a, b));
