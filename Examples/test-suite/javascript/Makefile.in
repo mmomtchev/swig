@@ -184,7 +184,14 @@ _setup = \
 
 SWIGOPT += -$(JSENGINE)
 
-TSCOPT = --typeRoots @NODETYPES_DIR@ --types node --target es2017 --module node16 --moduleResolution node16 --allowSyntheticDefaultImports --noImplicitAny false --useUnknownInCatchVariables false --strictNullChecks false
+# These are in non-standard location because of SWIG CI
+TSCOPT  = --typeRoots @NODETYPES_DIR@ --types node
+# Transpile to modern ES6
+TSCOPT += --target es2017 --module node16 --moduleResolution node16
+# Allow importing in ES6 mode
+TSCOPT += --allowSyntheticDefaultImports
+# Disable the new defaults in TS6, not all unit tests support these
+TSCOPT += --noImplicitAny false --useUnknownInCatchVariables false --strictNullChecks false
 
 ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
