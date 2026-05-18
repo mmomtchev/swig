@@ -261,6 +261,7 @@ jobs:
                 else
                   npm install -g node-addon-api@8.1.0
                 fi
+                npm install -g node-gyp
                 ;;
               esac
             fi
