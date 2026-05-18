@@ -21,7 +21,7 @@ const napi_callback = require('napi_callback');
   if (r2 !== 'received from JS: sent from JS with extra cheese')
     throw new Error(`not the expected value, received "${r2}"`);
 
-  const values = [];
+  const values = []; // @ts-replace const values = [] as number[];
   const repeat = /* await */(napi_callback.GiveMeFiveRepeats((i, s) => {
     values.push(i);
     if (typeof s !== 'string') throw new Error('expected a string as name');
@@ -43,9 +43,10 @@ const napi_callback = require('napi_callback');
   let first = false;
   try {
     /* await */(napi_callback.GiveMeFive(() => {
-      throw new Error('First');
+    throw new Error('First');
   }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/First/))
       first = true;
   }
@@ -54,9 +55,10 @@ const napi_callback = require('napi_callback');
   let second = false;
   try {
     /* await */(napi_callback.GiveMeFive_C(() => {
-      throw new Error('Second');
+    throw new Error('Second');
   }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/Second/))
       second = true;
   }
@@ -65,9 +67,10 @@ const napi_callback = require('napi_callback');
   let third = false;
   try {
     /* await */(napi_callback.JustCall(() => {
-      throw new Error('Third');
-    }));
+    throw new Error('Third');
+  }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/Third/))
       third = true;
   }
@@ -96,7 +99,7 @@ const napi_callback = require('napi_callback');
     throw new Error(`not the expected value, received "${r2}"`);
 
   try {
-    const values = [];
+    const values = []; // @ts-replace const values = [] as number[];
     const repeat = /* await */(napi_callback.GiveMeFiveRepeats((i, s) => {
       values.push(i);
       if (typeof s !== 'string') throw new Error('expected a string as name');
@@ -106,9 +109,12 @@ const napi_callback = require('napi_callback');
       throw new Error(`not the expected value, result is ${values}`);
     if (repeat !== '!.!.!.!.!.!.!.!.!.!.')
       throw new Error(`not the expected value, received "${repeat}"`);
-  } catch(e) {
+  } catch (e) {
+    // @ts-ignore
     if (!(e.message.match(/Can't resolve a Promise when called synchronously/) ||
-        e.message.match(/No multithreading support/)))
+      // @ts-ignore
+      e.message.match(/No multithreading support/)))
+      // @ts-ignore
       throw new Error(`Unexpected exception ${e.message}`);
   }
 
@@ -123,9 +129,10 @@ const napi_callback = require('napi_callback');
   let first = false;
   try {
     /* await */(napi_callback.GiveMeFive(/* async */() => {
-      throw new Error('First');
-    }));
+    throw new Error('First');
+  }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/First/))
       first = true;
   }
@@ -134,9 +141,10 @@ const napi_callback = require('napi_callback');
   let second = false;
   try {
     /* await */(napi_callback.GiveMeFive_C(/* async */() => {
-      throw new Error('Second');
-    }));
+    throw new Error('Second');
+  }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/Second/))
       second = true;
   }
@@ -145,9 +153,10 @@ const napi_callback = require('napi_callback');
   let third = false;
   try {
     /* await */(napi_callback.JustCall(/* async */() => {
-      throw new Error('Third');
-    }));
+    throw new Error('Third');
+  }));
   } catch (e) {
+    // @ts-ignore
     if (e.message.match(/Third/))
       third = true;
   }

@@ -76,6 +76,7 @@ var pass = false;
 try {
   /* await */(napi_li_typemaps.return_multiple_values(0));
 } catch (e) {
+  // @ts-ignore TS does not know if e is an Error or not
   if (e.message.match(/Zero/))
     pass = true;
 }
