@@ -134,8 +134,8 @@ jobs:
         - SWIGLANG: tcl
         - SWIGLANG: javascript
           ENGINE: napi
-          VER: '20'
-          CPPSTD: c++11
+          VER: '22'
+          CPPSTD: c++17
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
