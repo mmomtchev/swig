@@ -33,6 +33,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04, macos-14, macos-26]
+        relocatable: [true, false]
       # Run all of them, as opposed to aborting when one fails
       fail-fast: false
 
@@ -90,13 +91,17 @@ jobs:
           cmake --version
           cmake -S . -B build \
             -DCMAKE_INSTALL_PREFIX=$SWIG_INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            ${{ matrix.relocatable && '' || '-DSWIG_RELOCATABLE=ON -DSWIG_LIB=../Lib'}}
 
     - name: Build
       run: cmake --build build -j
 
     - name: Test
       run: ctest --test-dir build -V --output-on-failure
+
+    - name: Show SWIG_LIB
+      run: swig -swiglib
 
     - name: Install
       run: |
