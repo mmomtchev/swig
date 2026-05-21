@@ -28,7 +28,7 @@ jobs:
   cmake:
     runs-on: ${{ matrix.os }}
 
-    name: cmake ${{ matrix.os }}
+    name: cmake ${{ matrix.os }} relocatable=${{ matrix.relocatable }}
 
     strategy:
       matrix:
