@@ -28,7 +28,7 @@ jobs:
   cmake:
     runs-on: ${{ matrix.os }}
 
-    name: cmake ${{ matrix.os }} ${{ matrix.relocatable && '' || 'relocatable' }}
+    name: cmake ${{ matrix.os }} ${{ matrix.relocatable && ' ' || 'relocatable' }}
 
     strategy:
       matrix:
@@ -92,7 +92,7 @@ jobs:
           cmake -S . -B build \
             -DCMAKE_INSTALL_PREFIX=$SWIG_INSTALL_PREFIX \
             -DCMAKE_BUILD_TYPE=Release \
-            ${{ matrix.relocatable && '' || '-DSWIG_RELOCATABLE=ON -DSWIG_LIB=../Lib'}}
+            ${{ matrix.relocatable && ' ' || '-DSWIG_RELOCATABLE=ON -DSWIG_LIB=../Lib'}}
 
     - name: Build
       run: cmake --build build -j
