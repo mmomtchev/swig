@@ -58,7 +58,7 @@ auto lambda5 = []() { return thing; };
 
 void fn1() {
   int stuff = 0;
-  auto lambdaxxxx = [=,&stuff]() { return thing; };
+  auto lambdaxxxx = [=,&stuff]() { (void)stuff; return thing; };
 }
 auto lambda6 = [] (int a, int b) mutable { return a + b; };
 auto lambda7 = [] (int x, int y) -> int { return x+y; };
