@@ -12,12 +12,12 @@ typedef double(*fn_ptr)(double);
 #ifdef SWIG_JAVASCRIPT_NAPI
 // Node-API includes <functional>
 %{
-#define SWIG_JAVASCRIPT_NAPI
+#define FUNCTIONAL_INCLUDED
 %}
 #endif
 
 %{
-#if __cplusplus >= 202002L || (__cplusplus >= 201703L && !defined(SWIG_JAVASCRIPT_NAPI))
+#if __cplusplus >= 202002L || (__cplusplus >= 201703L && !defined(FUNCTIONAL_INCLUDED))
 namespace std {
   // Forward declaration of result_of
   template<typename Func> struct result_of;
