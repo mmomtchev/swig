@@ -101,7 +101,7 @@ jobs:
       run: ctest --test-dir build -V --output-on-failure
 
     - name: Show SWIG_LIB
-      run: swig -swiglib
+      run: ./swig -swiglib
 
     - name: Install
       run: |
