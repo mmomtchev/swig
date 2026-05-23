@@ -51,7 +51,7 @@ def get_cxxflags(language, std, compiler):
     if platform.system() != 'Darwin':
         cxx_common += " -Wunused-variable"
     else:
-        cxx_common += " -Wno-deprecated-declarations"
+        cxx_common += " -Wno-deprecated-declarations -Wno-unnecessary-virtual-specifier"
 
     # not applicable for these languages as headers emit the warning
     if language not in ["octave", "javascript"]:
