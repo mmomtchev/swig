@@ -53,7 +53,7 @@ def get_cxxflags(language, std, compiler):
     else:
         cxx_common += " -Wno-deprecated-declarations"
         if int(platform.mac_ver()[0].split('.')[0]) > 15:
-          cxx_common += "-Wno-unnecessary-virtual-specifier"
+          cxx_common += " -Wno-unnecessary-virtual-specifier"
 
     # not applicable for these languages as headers emit the warning
     if language not in ["octave", "javascript"]:
