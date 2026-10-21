@@ -148,7 +148,7 @@ static void SwigPHP_emit_pointer_type_registrations() {
 
   Printf(s_wrappers, "/* Implement __toString equivalent, since that worked for the old-style resource wrapped pointers. */\n");
   Append(s_wrappers, "#if PHP_MAJOR_VERSION > 8 || PHP_MINOR_VERSION >= 2\n");
-  Printf(s_wrappers, "static ZEND_RESULT_CODE swig_ptr_cast_object(zend_object *zobj, zval *retval, int type) {\n");
+  Printf(s_wrappers, "static zend_result swig_ptr_cast_object(zend_object *zobj, zval *retval, int type) {\n");
   Append(s_wrappers, "#else\n");
   Printf(s_wrappers, "static int swig_ptr_cast_object(zend_object *zobj, zval *retval, int type) {\n");
   Append(s_wrappers, "#endif\n");
@@ -162,7 +162,7 @@ static void SwigPHP_emit_pointer_type_registrations() {
 
   Printf(s_oinit, "\n  /* Register classes to represent non-class pointer types */\n");
   Printf(s_oinit, "  swig_ptr_object_handlers = *zend_get_std_object_handlers();\n");
-  Printf(s_oinit, "  swig_ptr_object_handlers.offset = XtOffsetOf(swig_object_wrapper, std);\n");
+  Printf(s_oinit, "  swig_ptr_object_handlers.offset = offsetof(swig_object_wrapper, std);\n");
   Printf(s_oinit, "  swig_ptr_object_handlers.cast_object = swig_ptr_cast_object;\n");
 
   while (ki.key) {
@@ -1122,7 +1122,8 @@ public:
     Printf(f->code, "  swig_object_wrapper *arg = SWIG_Z_FETCH_OBJ_P(ZEND_THIS);\n");
     Printf(f->code, "  zval args[2];\n  zend_string *arg2 = 0;\n\n");
     Printf(f->code, "  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {\n");
-    Printf(f->code, "\tWRONG_PARAM_COUNT;\n}\n\n");
+    Printf(f->code, "\tzend_wrong_param_count();\n");
+    Printf(f->code, "\tRETURN_THROWS();\n}\n\n");
     Printf(f->code, "  if (!arg) {\n");
     Printf(f->code, "    zend_throw_exception(zend_ce_type_error, \"this pointer is NULL\", 0);\n");
     Printf(f->code, "    return;\n");
@@ -1163,7 +1164,8 @@ public:
     Printf(f->code, "  swig_object_wrapper *arg = SWIG_Z_FETCH_OBJ_P(ZEND_THIS);\n");
     Printf(f->code, "  zval args[1];\n  zend_string *arg2 = 0;\n\n");
     Printf(f->code, "  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {\n");
-    Printf(f->code, "\tWRONG_PARAM_COUNT;\n}\n\n");
+    Printf(f->code, "\tzend_wrong_param_count();\n");
+    Printf(f->code, "\tRETURN_THROWS();\n}\n\n");
     Printf(f->code, "  if (!arg) {\n");
     Printf(f->code, "    zend_throw_exception(zend_ce_type_error, \"this pointer is NULL\", 0);\n");
     Printf(f->code, "    return;\n");
@@ -1195,7 +1197,8 @@ public:
     Printf(f->code, "  swig_object_wrapper *arg = SWIG_Z_FETCH_OBJ_P(ZEND_THIS);\n");
     Printf(f->code, "  zval args[1];\n  zend_string *arg2 = 0;\n\n");
     Printf(f->code, "  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {\n");
-    Printf(f->code, "\tWRONG_PARAM_COUNT;\n}\n\n");
+    Printf(f->code, "\tzend_wrong_param_count();\n");
+    Printf(f->code, "\tRETURN_THROWS();\n}\n\n");
     Printf(f->code, "  if(!arg) {\n");
     Printf(f->code, "    zend_throw_exception(zend_ce_type_error, \"this pointer is NULL\", 0);\n");
     Printf(f->code, "    return;\n");
@@ -1458,8 +1461,9 @@ public:
       Wrapper_add_local(f, "arg_count", "int arg_count");
       Printf(f->code, "arg_count = ZEND_NUM_ARGS();\n");
       Printf(f->code, "if(arg_count<%d || arg_count>%d ||\n", num_required, num_arguments);
-      Printf(f->code, "   zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)\n");
-      Printf(f->code, "\tWRONG_PARAM_COUNT;\n\n");
+      Printf(f->code, "   zend_get_parameters_array_ex(arg_count,args)!=SUCCESS) {\n");
+      Printf(f->code, "\tzend_wrong_param_count();\n");
+      Printf(f->code, "\tRETURN_THROWS();\n}\n\n");
     } else if (static_setter || static_getter) {
       if (num_arguments == 0) {
         Printf(f->code, "if(ZEND_NUM_ARGS() == 0) {\n");
@@ -1472,7 +1476,8 @@ public:
       } else {
         Printf(f->code, "if(ZEND_NUM_ARGS() != %d || zend_get_parameters_array_ex(%d, args) != SUCCESS) {\n", num_arguments, num_arguments);
       }
-      Printf(f->code, "WRONG_PARAM_COUNT;\n}\n\n");
+      Printf(f->code, "zend_wrong_param_count();\n");
+      Printf(f->code, "RETURN_THROWS();\n}\n\n");
     }
 
     /* Now convert from PHP to C variables */
@@ -1665,7 +1670,7 @@ public:
     Replaceall(f->code, "$cleanup", cleanup);
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     Replaceall(f->code, "$symname", iname);
 
@@ -1750,7 +1755,6 @@ public:
       }
     }
 
-    wrapperType = standard;
     return SWIG_OK;
   }
 
@@ -1983,7 +1987,7 @@ public:
       // for classes without a destructor, and copy as the basis for other
       // classes.
       Printf(s_oinit, "  Swig_Php_base_object_handlers = *zend_get_std_object_handlers();\n");
-      Printf(s_oinit, "  Swig_Php_base_object_handlers.offset = XtOffsetOf(swig_object_wrapper, std);\n");
+      Printf(s_oinit, "  Swig_Php_base_object_handlers.offset = offsetof(swig_object_wrapper, std);\n");
       Printf(s_oinit, "  Swig_Php_base_object_handlers.clone_obj = NULL;\n");
       emitted_base_object_handlers = true;
     }
@@ -2098,11 +2102,21 @@ public:
 
     String *v_name = GetChar(n, "name");
 
+    wrapperType = membervar;
+    Language::membervariableHandler(n);
+    wrapperType = standard;
+
     Printf(magic_set, "\nelse if (strcmp(ZSTR_VAL(arg2),\"%s\") == 0) {\n", v_name);
-    Printf(magic_set, "zend_string *swig_funcname = ZSTR_INIT_LITERAL(\"%s_set\", 0);\n", v_name);
-    Append(magic_set, "zend_function *swig_zend_func = zend_std_get_method(&Z_OBJ_P(ZEND_THIS), swig_funcname, NULL);\n");
-    Append(magic_set, "zend_string_release(swig_funcname);\n");
-    Printf(magic_set, "zend_call_known_instance_method(swig_zend_func, Z_OBJ_P(ZEND_THIS), return_value, 1, &args[1]);\n");
+    if (GetFlag(n, "feature:immutable")) {
+      // No set method was generated
+      Printf(magic_set, "zend_throw_error(NULL, \"Cannot modify readonly property %%s::$%s\", ZSTR_VAL(Z_OBJCE_P(ZEND_THIS)->name));\n", v_name);
+      Append(magic_set, "RETURN_THROWS();\n");
+    } else {
+      Printf(magic_set, "zend_string *swig_funcname = ZSTR_INIT_LITERAL(\"%s_set\", 0);\n", v_name);
+      Append(magic_set, "zend_function *swig_zend_func = zend_std_get_method(&Z_OBJ_P(ZEND_THIS), swig_funcname, NULL);\n");
+      Append(magic_set, "zend_string_release(swig_funcname);\n");
+      Printf(magic_set, "zend_call_known_instance_method(swig_zend_func, Z_OBJ_P(ZEND_THIS), return_value, 1, &args[1]);\n");
+    }
     Printf(magic_set, "}\n");
 
     Printf(magic_get, "\nelse if (strcmp(ZSTR_VAL(arg2),\"%s\") == 0) {\n", v_name);
@@ -2114,10 +2128,6 @@ public:
 
     Printf(magic_isset, "\nelse if (strcmp(ZSTR_VAL(arg2),\"%s\") == 0) {\n", v_name);
     Printf(magic_isset, "RETVAL_TRUE;\n}\n");
-
-    wrapperType = membervar;
-    Language::membervariableHandler(n);
-    wrapperType = standard;
 
     return SWIG_OK;
   }
@@ -2488,7 +2498,7 @@ public:
         if (tm != 0) {
           Replaceall(tm, "$input", Swig_cresult_name());
           char temp[24];
-          sprintf(temp, "%d", idx);
+          snprintf(temp, sizeof(temp), "%d", idx);
           Replaceall(tm, "$argnum", temp);
 
           /* TODO check this */
@@ -2561,7 +2571,7 @@ public:
 
     /* emit the director method */
     if (status == SWIG_OK) {
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!Getattr(n, "defaultargs")) {
         Replaceall(w->code, "$symname", symname);
         Wrapper_print(w, f_directors);

@@ -11,12 +11,18 @@ SCRIPTASYNCSUFFIX = _async_runme.mjs
 SCRIPTWASMSUFFIX = _wasm_runme.mjs
 OBJEXT = @OBJEXT@
 SO = @SO@
+# node-gyp's Release configuration hardcodes -O3, which dominates the node and napi test-suite run times. GYP_OPTFLAGS
+# is appended after the flags node-gyp adds itself, so the last -O option wins - override with -O2 to compile optimised.
+GYP_OPTFLAGS = -O0
 NPM_PREFIX = @NODENPM_PREFIX@
+
 
 HAVE_CXX11   = @HAVE_CXX11@
 HAVE_CXX14   = @HAVE_CXX14@
 HAVE_CXX17   = @HAVE_CXX17@
 HAVE_CXX20   = @HAVE_CXX20@
+HAVE_CXX23   = @HAVE_CXX23@
+HAVE_CXX26   = @HAVE_CXX26@
 srcdir       = @srcdir@
 top_srcdir   = @top_srcdir@
 top_builddir = @top_builddir@
@@ -26,9 +32,14 @@ CPP_TEST_CASES += \
 	inplaceadd \
 	input \
 	javascript_lib_arrays \
+	li_cdata_carrays_cpp \
 	li_factory \
 	li_std_containers_int \
-	li_std_map_member
+	li_std_map_member \
+
+C_TEST_CASES += \
+	javascript_uint8array_fragment \
+	li_cdata_carrays \
 
 SWIGEXE   = $(top_builddir)/swig
 SWIG_LIB_DIR = $(top_srcdir)/Lib
@@ -89,6 +100,9 @@ typemap_out_optimal.cpptest: SWIGOPT += -w474
 napi_li_std_vector.cpptest: SWIGOPT += -w302
 li_std_vector.cpptest: SWIGOPT += -w302
 
+# Another extra warning because of TypeScript
+class_scope_namespace.cpptest: SWIGOPT += -w406
+
 # napi_exports_file is a test that uses Node.js ES6 and has no meaning in WASM
 ifneq (emcc, $(CC))
 CPP_TEST_CASES += \
@@ -143,7 +157,7 @@ ifeq (emcc, $(CC))
         ifeq (, $(EMNAPI_DIR))
                 $(error emnapi not found)
         endif
-  	GYP_CXXFLAGS = -I@NODENAPI_DIR@
+        GYP_CXXFLAGS = @NAPI_INCLUDE@
   	GYP_TEMPLATE = wasm_template
   	SWIGOPT += -DSWIG_EMSCRIPTEN
   	EMNAPI_LIB = -lemnapi
@@ -158,7 +172,7 @@ ifeq (emcc, $(CC))
   	expressions.cpptest: GYP_CFLAGS += \"-Wno-constant-logical-operand\",
   	cpp11_userdefined_literals.cpptest: GYP_CFLAGS += \"-Wno-deprecated-literal-operator\",
 else
-  	GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ -I@NODENAPI_DIR@
+        GYP_CXXFLAGS = @BOOST_CPPFLAGS@ @PLATCXXFLAGS@ @NAPI_INCLUDE@ $(GYP_OPTFLAGS)
   	GYP_TEMPLATE = node_template
 endif
 
@@ -371,7 +385,7 @@ clean:
 	for ext in _wrap.cxx _wrap.$(OBJEXT) $(SO); do \
 		rm -f clientdata_prop_a$${ext} clientdata_prop_b$${ext}; \
 		rm -f import_share_a$${ext} import_share_b$${ext} import_share_c$${ext}; \
-		rm -f import_stl_a$${ext} import_stl_b$${ext}; \
+		rm -f import_stl_a$${ext} import_stl_b$${ext} import_stl_c$${ext}; \
 		rm -f imports_a$${ext} imports_b$${ext}; \
 		rm -f mod_a$${ext} mod_b$${ext}; \
 		rm -f multi_import_a$${ext} multi_import_b$${ext} multi_import_d$${ext}; \

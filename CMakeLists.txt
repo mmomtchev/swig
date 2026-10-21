@@ -87,7 +87,8 @@ endif ()
 
 option (WITH_PCRE "Enable PCRE" ON)
 if (WITH_PCRE)
-  find_package (PCRE2 10.39 REQUIRED COMPONENTS 8BIT)
+  # No minimum version as SWIG only uses the PCRE2 API available since 10.00, matching configure which accepts any version
+  find_package (PCRE2 REQUIRED COMPONENTS 8BIT)
   set (HAVE_PCRE 1)
 endif()
 
@@ -115,9 +116,12 @@ include_directories (
 # generate the parser source code (depends on bison)
 file (MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Source/CParse)
 
+# Keep the flags in step with AM_YFLAGS in Source/Makefile.am so that both build systems
+# reject the same bison warnings, such as an undeclared grammar conflict
 BISON_TARGET (swig_parser
     ${SWIG_SOURCE_DIR}/CParse/parser.y
     ${PROJECT_BINARY_DIR}/Source/CParse/parser.c
+    COMPILE_FLAGS "-d -Wall -Werror"
 )
 
 # generate swigwarn.swg

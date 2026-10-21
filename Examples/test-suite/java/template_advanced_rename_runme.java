@@ -26,5 +26,27 @@ public class template_advanced_rename_runme {
 
     template_advanced_rename.Goose(40);
     template_advanced_rename.Golden_goose(true);
+
+    if (new Wonky_Renamed().twiddle(5) != 5)
+      throw new RuntimeException("Wonky_Renamed failed");
+    if (new WONKY().twiddle(5.5) != 5.5)
+      throw new RuntimeException("WONKY failed");
+    if (new Quirky_Wonky().twiddle(true) != true)
+      throw new RuntimeException("Quirky_Wonky failed");
+
+    if (new BumpyInt().flat(5) != 5)
+      throw new RuntimeException("BumpyInt failed");
+    if (new BumpyBool().boolish(true) != true)
+      throw new RuntimeException("BumpyBool failed");
+    if (new BumpyPtr() == null)
+      throw new RuntimeException("BumpyPtr failed");
+
+    check(1, template_advanced_rename.spinner(10));
+    check(2, template_advanced_rename.spinner(10, 20));
+  }
+
+  static void check(int expected, int actual) {
+    if (expected != actual)
+      throw new RuntimeException("expected " + expected + " but got " + actual);
   }
 }

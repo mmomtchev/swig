@@ -448,8 +448,10 @@ public:
     Printv(magic,
            "#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n",
            "#define MAGIC_CLASS\n",
-           "SWIGCLASS_STATIC int swig_magic_readonly(pTHX_ SV *SWIGUNUSEDPARM(sv), MAGIC *SWIGUNUSEDPARM(mg)) {\n",
+           "SWIGCLASS_STATIC int swig_magic_readonly(pTHX_ SV *sv, MAGIC *SWIGUNUSEDPARM(mg)) {\n",
            "  MAGIC_PPERL\n",
+           "  if (SvROK(sv))\n",
+           "    sv_setsv(sv, &PL_sv_undef);\n",
            "  croak(\"Value is read-only.\");\n",
            "  return 0;\n",
            "}\n",
@@ -732,7 +734,7 @@ public:
       SwigType *pt = Getattr(p, "type");
 
       /* Produce string representation of source and target arguments */
-      sprintf(source, "ST(%d)", i);
+      snprintf(source, sizeof(source), "ST(%d)", i);
 
       if (i >= num_required) {
         Printf(f->code, "    if (items > %d) {\n", i);
@@ -760,7 +762,7 @@ public:
 
     if (varargs) {
       if (p && (tm = Getattr(p, "tmap:in"))) {
-        sprintf(source, "ST(%d)", i);
+        snprintf(source, sizeof(source), "ST(%d)", i);
         Replaceall(tm, "$input", source);
         Setattr(p, "emit:input", source);
         Printf(f->code, "if (items >= %d) {\n", i);
@@ -805,7 +807,7 @@ public:
 
         String *in = Getattr(p, "emit:input");
         if (in) {
-          sprintf(temp, "_saved[%d]", num_saved);
+          snprintf(temp, sizeof(temp), "_saved[%d]", num_saved);
           Replaceall(tm, "$arg", temp);
           Replaceall(tm, "$input", temp);
           Printf(f->code, "_saved[%d] = %s;\n", num_saved, in);
@@ -820,7 +822,7 @@ public:
 
     /* If there were any saved arguments, emit a local variable for them */
     if (num_saved) {
-      sprintf(temp, "_saved[%d]", num_saved);
+      snprintf(temp, sizeof(temp), "_saved[%d]", num_saved);
       Wrapper_add_localv(f, "_saved", "SV *", temp, NIL);
     }
 
@@ -920,7 +922,7 @@ public:
     Replaceall(f->code, "$cleanup", cleanup);
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     Replaceall(f->code, "$symname", iname);
 
@@ -1016,8 +1018,17 @@ public:
         DelWrapper(getf);
         return SWIG_NOWRAP;
       }
+      /* Perl leaves the variable holding the assigned value. When that is a reference, such as to another pointer object
+         for a variable linked as a pointer object, reading the variable would change what it refers to. The variable is
+         left undefined instead, whether the set succeeds or fails, so reading it makes its own value again. */
+      Printf(setf->code, "    if (SvROK(sv))\n");
+      Printf(setf->code, "      sv_setsv(sv, &PL_sv_undef);\n");
+      Printf(setf->code, "    return 1;\n");
       Printf(setf->code, "fail:\n");
-      Printf(setf->code, "    return 1;\n}\n");
+      Printf(setf->code, "    if (SvROK(sv))\n");
+      Printf(setf->code, "      sv_setsv(sv, &PL_sv_undef);\n");
+      Printf(setf->code, "    SWIG_croak_null();\n");
+      Printf(setf->code, "    return 0;\n}\n");
       Replaceall(setf->code, "$symname", iname);
       Wrapper_print(setf, magic);
     }
@@ -2309,7 +2320,7 @@ public:
         String *ptype = Getattr(p, "type");
 
         if ((tm = Getattr(p, "tmap:directorin")) != 0) {
-          sprintf(source, "obj%d", idx++);
+          snprintf(source, sizeof(source), "obj%d", idx++);
           String *input = NewString(source);
           Setattr(p, "emit:directorinput", input);
           Replaceall(tm, "$input", input);
@@ -2337,7 +2348,7 @@ public:
           if (SwigType_ispointer(ptype) || SwigType_isreference(ptype)) {
             Node *module = Getattr(parent, "module");
             Node *target = Swig_directormap(module, ptype);
-            sprintf(source, "obj%d", idx++);
+            snprintf(source, sizeof(source), "obj%d", idx++);
             String *nonconst = 0;
             /* strip pointer/reference --- should move to Swig/stype.c */
             String *nptype = NewString(Char(ptype) + 2);
@@ -2474,7 +2485,7 @@ public:
             Replaceall(tm, "$input", Swig_cresult_name());
           }
           char temp[24];
-          sprintf(temp, "%d", idx);
+          snprintf(temp, sizeof(temp), "%d", idx);
           Replaceall(tm, "$argnum", temp);
 
           /* TODO check this */
@@ -2557,7 +2568,7 @@ public:
 
     /* emit the director method */
     if (status == SWIG_OK) {
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!Getattr(n, "defaultargs")) {
         Replaceall(w->code, "$symname", symname);
         Wrapper_print(w, f_directors);

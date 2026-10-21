@@ -24,6 +24,7 @@
     {
       "name": "macOS",
       "includePath": [
+        "/usr/local/include/node",
         "${projectIncludePaths}",
         "${default}"
       ],

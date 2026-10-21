@@ -1155,7 +1155,7 @@ public:
     /* Substitute the cleanup code */
     Replaceall(f->code, "$cleanup", cleanup);
 
-    Replaceall(f->code, "$isvoid", is_void_return ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, is_void_return);
 
     /* Substitute the function name */
     Replaceall(f->code, "$symname", symname);
@@ -1322,13 +1322,14 @@ public:
       } else {
         if (symname && !Getattr(n, "unnamedinstance"))
           Printf(constants_code, "  // %s \n", symname);
-        // Translate and write javadoc comment for the enum itself if flagged
+        // Translate and write the comment for the enum itself if flagged. There is no equivalent Java declaration for the enum for a javadoc
+        // comment to attach to for simple enums, only the constants below, so emit it as a plain comment rather than a javadoc comment.
         if (doxygen && doxygenTranslator->hasDocumentation(n)) {
           String *doxygen_comments = doxygenTranslator->getDocumentation(n, "  ");
+          Replace(doxygen_comments, "/**", "/*", DOH_REPLACE_FIRST);
           if (comment_creation_chatter)
             Printf(constants_code, "/* This was generated from enumDeclaration() */\n");
-          Printf(constants_code, Char(doxygen_comments));
-          Printf(constants_code, "\n");
+          Printv(constants_code, doxygen_comments, NIL);
           Delete(doxygen_comments);
         }
       }
@@ -1451,14 +1452,12 @@ public:
     // Note that this is used in enumValue() amongst other places
     Setattr(n, "value", tmpValue);
 
-    // Deal with enum values that are not int
-    int swigtype = SwigType_type(Getattr(n, "type"));
-    if (swigtype == T_CHAR) {
-      if (Getattr(n, "enumstringval")) {
-        String *val = NewStringf("'%(escape)s'", Getattr(n, "enumstringval"));
-        Setattr(n, "enumvalue", val);
-        Delete(val);
-      }
+    // Convert a character literal, including a wide one, or an integer or boolean literal value into a Java literal
+    String *enumstringval = Getattr(n, "enumstringval");
+    if (enumstringval) {
+      String *val = NewStringf("'%(escape)s'", enumstringval);
+      Setattr(n, "enumvalue", val);
+      Delete(val);
     } else {
       String *numval = Getattr(n, "enumnumval");
       if (numval) {
@@ -1466,7 +1465,16 @@ public:
         if (isdigit(p[0])) {
           char *e;
           errno = 0;
+          // long long is not in C++98, but every compiler we support provides it as an
+          // extension and it is needed here for enum values which don't fit in 32 bits.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wlong-long"
+#endif
           unsigned long long value = strtoull(p, &e, 0);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
           if (errno != ERANGE && *e == '\0' && value >= 0x80000000) {
             // Use hex for larger unsigned integer constants in Java code since
             // Java allows implicit conversion to a signed integer value.
@@ -1652,6 +1660,11 @@ public:
       Swig_warning(WARN_JAVA_TYPEMAP_JSTYPE_UNDEF, input_file, line_number, "No jstype typemap defined for %s\n", SwigType_str(t, 0));
     }
 
+    // A literal cannot initialise a constant wrapped as a class, such as a wide string without typemaps for wchar_t *
+    String *stringval = Getattr(n, "stringval");
+    if (stringval && classname_substituted_flag)
+      const_feature_flag = 0;
+
     const String *methodmods = Getattr(n, "feature:java:methodmodifiers");
     methodmods = methodmods ? methodmods : (is_public(n) ? public_string : protected_string);
 
@@ -1692,7 +1705,13 @@ public:
       enum_constant_flag = false;
     } else {
       // Alternative constant handling will use the C syntax to make a true Java constant and hope that it compiles as Java code
-      if (Getattr(n, "wrappedasconstant")) {
+      int type = SwigType_type(t);
+      if (stringval && (type == T_STRING || type == T_WSTRING)) {
+        // Decoded from UTF-8, as JNI decodes a char * string. A wide string has no L prefix in Java
+        Printf(constants_code, "\"%(javaunicodeescape)s\";\n", stringval);
+      } else if (stringval && type == T_WCHAR) {
+        Printf(constants_code, "'%(javaunicodeescape)s';\n", stringval);
+      } else if (Getattr(n, "wrappedasconstant")) {
         Printf(constants_code, "%s;\n", Getattr(n, "staticmembervariableHandler:value"));
       } else {
         Printf(constants_code, "%s;\n", Getattr(n, "value"));
@@ -4720,7 +4739,7 @@ public:
       } else {
         Replaceall(w->code, "$null", "");
       }
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!GetFlag(n, "feature:ignore"))
         Printv(imclass_directors, callback_def, callback_code, NIL);
       if (!Getattr(n, "defaultargs")) {

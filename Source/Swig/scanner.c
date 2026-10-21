@@ -24,6 +24,7 @@ extern int cparse_start_line;
 
 struct Scanner {
   String *text;   /* Current token value */
+  int prefix;     /* Encoding prefix of the string or character literal just scanned, a SWIG_LITERAL_* value */
   List *scanobjs; /* Objects being scanned */
   String *str;    /* Current object being scanned */
   char *idstart;  /* Optional identifier start characters */
@@ -35,6 +36,10 @@ struct Scanner {
   int error_line;  /* Error line number */
   int freeze_line; /* Suspend line number updates */
   List *brackets;  /* Current level of < > brackets on each level */
+  /* An ordinary literal's text as a wide literal's, once it has a numeric escape above 0x7F, and the length of the text
+     already copied to it */
+  String *widetext;
+  int widetext_pos;
 };
 
 typedef struct Locator {
@@ -63,11 +68,14 @@ Scanner *NewScanner(void) {
   s->idstart = NULL;
   s->scanobjs = NewList();
   s->text = NewStringEmpty();
+  s->prefix = SWIG_LITERAL_ORDINARY;
   s->str = 0;
   s->error = 0;
   s->error_line = 0;
   s->freeze_line = 0;
   s->brackets = NewList();
+  s->widetext = 0;
+  s->widetext_pos = 0;
   brackets_push(s);
   return s;
 }
@@ -86,6 +94,7 @@ void DelScanner(Scanner *s) {
   Delete(s->error);
   Delete(s->str);
   Free(s->idstart);
+  Delete(s->widetext);
   Free(s);
 }
 
@@ -382,14 +391,45 @@ static void retract(Scanner *s, int n) {
 }
 
 /* -----------------------------------------------------------------------------
- * get_escape()
+ * put_escape_value()
  *
- * Get escape sequence.  Called when a backslash is found in a string
+ * Append the value of a numeric escape sequence. A value that is not ASCII, in a wide character or wide string literal
+ * or for a universal character name in any literal, is appended as its UTF-8 encoding by Swig_utf8_encode(), as a
+ * UTF-8 source character already is, rather than truncated. In a wide literal, this includes a value beyond Unicode, up
+ * to 0xFFFFFFFF. Otherwise the value is appended as a byte. For one that is not ASCII, the text before it and the value's
+ * UTF-8 encoding are also appended to the wide text for Scanner_literal_wide_text().
  * ----------------------------------------------------------------------------- */
 
-static void get_escape(Scanner *s) {
-  int result = 0;
+static void put_escape_value(Scanner *s, unsigned long value, int wide_char) {
+  if (wide_char && value > 0x7F) {
+    Swig_utf8_encode(s->text, value);
+  } else {
+    if (value > 0x7F) {
+      if (!s->widetext) {
+        s->widetext = NewStringEmpty();
+        s->widetext_pos = 0;
+      }
+      /* Write, not Append, as the text can hold a NUL */
+      Write(s->widetext, Char(s->text) + s->widetext_pos, Len(s->text) - s->widetext_pos);
+      Swig_utf8_encode(s->widetext, value);
+      s->widetext_pos = Len(s->text) + 1;
+    }
+    Putc((char)value, s->text);
+  }
+}
+
+/* -----------------------------------------------------------------------------
+ * get_escape()
+ *
+ * Get escape sequence.  Called when a backslash is found in a string or character literal, 'wide_char' being set for a
+ * wide character or wide string literal.
+ * ----------------------------------------------------------------------------- */
+
+static void get_escape(Scanner *s, int wide_char) {
+  unsigned long result = 0;
   int state = 0;
+  int ucn_digits = 0;
+  int ucn_start = 0;
   int c;
 
   while (1) {
@@ -467,6 +507,15 @@ static void get_escape(Scanner *s) {
       } else if (c == 'x') {
         state = 20;
         Delitem(s->text, DOH_END);
+      } else if (c == 'u' || c == 'U') {
+        /* Kept as text unless it is a universal character name, as a SWIG directive string can use '\u' and '\U' for
+           other purposes, such as case conversion in a %rename regex */
+        state = 30;
+        ucn_digits = c == 'u' ? 4 : 8;
+        Delitem(s->text, DOH_END);
+        ucn_start = Len(s->text);
+        Putc('\\', s->text);
+        Putc((char)c, s->text);
       } else {
         Delitem(s->text, DOH_END);
         Putc('\\', s->text);
@@ -478,15 +527,15 @@ static void get_escape(Scanner *s) {
     case 11:  // Third digit of octal escape sequence
       if (c < '0' || c > '7') {
         retract(s, 1);
-        Putc((char)result, s->text);
+        put_escape_value(s, result, wide_char);
         return;
       }
       result = (result << 3) + (c - '0');
       Delitem(s->text, DOH_END);
       if (state == 11) {
-        if (result > 255)
+        if (result > 255 && !wide_char)
           Swig_error(Scanner_file(s), Scanner_line(s), "octal escape sequence out of range\n");
-        Putc((char)result, s->text);
+        put_escape_value(s, result, wide_char);
         return;
       }
       state = 11;
@@ -494,18 +543,51 @@ static void get_escape(Scanner *s) {
     case 20:
       if (!isxdigit(c)) {
         retract(s, 1);
-        Putc((char)result, s->text);
+        put_escape_value(s, result, wide_char);
         return;
       }
-      if (isdigit(c))
-        result = (result << 4) + (c - '0');
-      else
-        result = (result << 4) + (10 + tolower(c) - 'a');
+      /* Only the low 32 bits of a value too big for a wchar_t are kept, as GCC does */
+      result = ((result << 4) + (isdigit(c) ? c - '0' : 10 + tolower(c) - 'a')) & 0xFFFFFFFFUL;
       Delitem(s->text, DOH_END);
+      break;
+    case 30:  // Universal character name of 4 or 8 hexadecimal digits
+      if (!isxdigit(c)) {
+        retract(s, 1);
+        return;
+      }
+      if (result <= 0x10FFFF)
+        result = (result << 4) + (isdigit(c) ? c - '0' : 10 + tolower(c) - 'a');
+      if (--ucn_digits == 0) {
+        if (result <= 0x10FFFF) {
+          Delslice(s->text, ucn_start, Len(s->text));
+          put_escape_value(s, result, 1);
+        }
+        return;
+      }
       break;
     }
   }
   return;
+}
+
+/* Classify the encoding prefix of the string or character literal whose opening quote has just been read, which is
+   whatever of the token text comes before that quote: none for "text", L for L"text", u8 and raw for u8R"(text)". */
+static void save_literal_prefix(Scanner *s) {
+  const char *text = Char(s->text);
+  int len = Len(s->text);
+
+  if (strstr(text, "u8"))
+    s->prefix = SWIG_LITERAL_UTF8;
+  else if (strchr(text, 'u'))
+    s->prefix = SWIG_LITERAL_UTF16;
+  else if (strchr(text, 'U'))
+    s->prefix = SWIG_LITERAL_UTF32;
+  else if (strchr(text, 'L'))
+    s->prefix = SWIG_LITERAL_WIDE;
+  else
+    s->prefix = SWIG_LITERAL_ORDINARY;
+  if (len >= 2 && text[len - 2] == 'R')
+    s->prefix |= SWIG_LITERAL_RAW;
 }
 
 /* -----------------------------------------------------------------------------
@@ -518,8 +600,11 @@ static int look(Scanner *s) {
   int state = 0;
   int c = 0;
   String *str_delimiter = 0;
+  int wide_raw_string = 0; /* LR"XXXX(value)XXXX" rather than R"XXXX(value)XXXX" */
 
   Clear(s->text);
+  Delete(s->widetext);
+  s->widetext = 0;
   s->start_line = s->line;
   Setfile(s->text, Getfile(s->str));
 
@@ -618,9 +703,11 @@ static int look(Scanner *s) {
       else if (c == '\"') {
         state = 2; /* A string constant */
         s->start_line = s->line;
+        save_literal_prefix(s);
         Clear(s->text);
       } else if (c == '\'') {
         s->start_line = s->line;
+        save_literal_prefix(s);
         Clear(s->text);
         state = 9; /* A character constant */
       }
@@ -725,7 +812,7 @@ static int look(Scanner *s) {
           return SWIG_TOKEN_STRING;
         } else if (c == '\\') {
           Delitem(s->text, DOH_END);
-          get_escape(s);
+          get_escape(s, 0);
         }
       } else { /* Custom delimiter string: R"XXXX(value)XXXX" */
         if (c == ')') {
@@ -743,7 +830,7 @@ static int look(Scanner *s) {
             Delete(end_delimiter);                                /* Correct end delimiter )XXXX" occurred */
             Delete(str_delimiter);
             str_delimiter = 0;
-            return SWIG_TOKEN_STRING;
+            return wide_raw_string ? SWIG_TOKEN_WSTRING : SWIG_TOKEN_STRING;
           } else { /* Incorrect end delimiter occurred */
             if (c == EOF) {
               Swig_error(
@@ -1043,12 +1130,17 @@ static int look(Scanner *s) {
         return SWIG_TOKEN_ID;
       else if (c == '\"') {
         s->start_line = s->line;
+        save_literal_prefix(s);
         Clear(s->text);
         state = 78;
       } else if (c == '\'') {
         s->start_line = s->line;
+        save_literal_prefix(s);
         Clear(s->text);
         state = 79;
+      } else if (c == 'R') { /* Possibly CUSTOM DELIMITER wide string */
+        wide_raw_string = 1;
+        state = 72;
       } else if (isalnum(c) || (c == '_') || (c == '$'))
         state = 7;
       else {
@@ -1067,7 +1159,7 @@ static int look(Scanner *s) {
         return SWIG_TOKEN_WSTRING;
       } else if (c == '\\') {
         Delitem(s->text, DOH_END);
-        get_escape(s);
+        get_escape(s, 1);
       }
       break;
 
@@ -1081,7 +1173,7 @@ static int look(Scanner *s) {
         return (SWIG_TOKEN_WCHAR);
       } else if (c == '\\') {
         Delitem(s->text, DOH_END);
-        get_escape(s);
+        get_escape(s, s->prefix != SWIG_LITERAL_UTF8);
       }
       break;
 
@@ -1325,7 +1417,7 @@ static int look(Scanner *s) {
         return (SWIG_TOKEN_CHAR);
       } else if (c == '\\') {
         Delitem(s->text, DOH_END);
-        get_escape(s);
+        get_escape(s, 0);
       }
       break;
 
@@ -1507,6 +1599,36 @@ String *Scanner_text(Scanner *s) {
 }
 
 /* -----------------------------------------------------------------------------
+ * Scanner_literal_prefix()
+ *
+ * Return the encoding prefix of the string or character literal last returned, a SWIG_LITERAL_* value.
+ * ----------------------------------------------------------------------------- */
+
+int Scanner_literal_prefix(Scanner *s) {
+  return s->prefix;
+}
+
+/* -----------------------------------------------------------------------------
+ * Scanner_literal_wide_text()
+ *
+ * The text of the ordinary string literal just scanned as the text of a wide string literal with the same characters,
+ * or 0 if it has no numeric escape sequence above 0x7F, which is the only difference. Such an escape sequence gives one
+ * byte in an ordinary literal, but one wide character in a wide literal, held as its UTF-8 encoding like any other
+ * character that is not ASCII. The parser needs it for an ordinary string literal joined to a wide one, which makes
+ * one wide literal. For example, L"a" "\xC3\xA9" holds three wide characters, as L"a\xC3\xA9" does, but its ordinary
+ * part's text is C3 A9, the UTF-8 encoding of one character, an e with an acute accent, while its wide text is
+ * C3 83 C2 A9, the encodings of the two characters 0xC3 and 0xA9.
+ * ----------------------------------------------------------------------------- */
+
+String *Scanner_literal_wide_text(Scanner *s) {
+  String *wide = s->widetext;
+  if (wide)
+    Write(wide, Char(s->text) + s->widetext_pos, Len(s->text) - s->widetext_pos);
+  s->widetext = 0;
+  return wide;
+}
+
+/* -----------------------------------------------------------------------------
  * Scanner_skip_line()
  *
  * Skips to the end of a line
@@ -1544,6 +1666,7 @@ int Scanner_skip_balanced(Scanner *s, int startchar, int endchar) {
   int num_levels = 1;
   int starttok = 0;
   int endtok = 0;
+  int pushed_back = 0;
   switch (endchar) {
   case '}':
     starttok = SWIG_TOKEN_LBRACE;
@@ -1575,8 +1698,11 @@ int Scanner_skip_balanced(Scanner *s, int startchar, int endchar) {
     } else if (tok == SWIG_TOKEN_RRBRACKET && endtok == SWIG_TOKEN_RBRACKET) {
       num_levels -= 2;
       if (num_levels <= 0) {
-        if (num_levels < 0)
+        /* The second ']' of the ']]' closes an enclosing group, so it is handed back and left out of the text. */
+        if (num_levels < 0) {
           Scanner_pushtoken(s, SWIG_TOKEN_RBRACKET, "]");
+          pushed_back = 1;
+        }
         break;
       }
     } else if (tok == SWIG_TOKEN_COMMENT) {
@@ -1590,7 +1716,7 @@ int Scanner_skip_balanced(Scanner *s, int startchar, int endchar) {
   }
 
   Delete(s->text);
-  s->text = NewStringWithSize(Char(s->str) + position - 1, Tell(s->str) - position + 1);
+  s->text = NewStringWithSize(Char(s->str) + position - 1, Tell(s->str) - position + 1 - pushed_back);
   Char(s->text)[0] = startchar;
   Setfile(s->text, Getfile(s->str));
   Setline(s->text, old_line);
@@ -1599,16 +1725,54 @@ int Scanner_skip_balanced(Scanner *s, int startchar, int endchar) {
 }
 
 /* -----------------------------------------------------------------------------
- * Scanner_get_raw_text_balanced()
+ * lookahead_begin()
  *
- * Returns raw text between 2 braces, does not change scanner state in any way
+ * Starts a lookahead over the rest of the text 's' is scanning.  Returns a private scanner that reads the same text
+ * in place from the current position, which is stored in 'start', or NULL if 's' has no text.  Finish the lookahead
+ * with lookahead_end().
+ *
+ * Scanning 's' itself and seeking back would work only as long as the lookahead stops within the text: reaching its
+ * end pops the text off the scanner's stack, leaving nothing to seek back to.  The private scanner pops the text off
+ * its own stack instead, and has its own '<' '>' bracket counting, so the counting used to split '>>' in 's' is not
+ * affected either.  The text is shared rather than copied: copying the rest of the input for every lookahead would
+ * make parsing quadratic in the size of the input.
  * ----------------------------------------------------------------------------- */
 
-String *Scanner_get_raw_text_balanced(Scanner *s, int startchar, int endchar) {
-  String *result = NULL;
-  int old_line = s->line;
-  String *old_text = Copy(s->text);
-  long position = Tell(s->str);
+static Scanner *lookahead_begin(Scanner *s, long *start) {
+  Scanner *lookahead;
+  if (!s->str)
+    return NULL;
+  *start = Tell(s->str);
+  lookahead = NewScanner();
+  Scanner_push(lookahead, s->str);
+  /* Scanner_push() takes the line number the text keeps, which can differ from the line 's' is on. */
+  lookahead->line = s->line;
+  return lookahead;
+}
+
+/* -----------------------------------------------------------------------------
+ * lookahead_end()
+ *
+ * Finishes a lookahead started by lookahead_begin(), moving the read position in the text of 's' back to 'start'.
+ * ----------------------------------------------------------------------------- */
+
+static void lookahead_end(Scanner *s, Scanner *lookahead, long start) {
+  DelScanner(lookahead);
+  Seek(s->str, start, SEEK_SET);
+}
+
+/* -----------------------------------------------------------------------------
+ * balanced_end()
+ *
+ * Looks ahead in the text of 's' for the 'endchar' closing a group whose opening bracket has just been scanned.
+ * Returns the position just after it, or -1 if the end of the text is reached first, and stores the position the
+ * lookahead started from in 'start'.  The state of 's' is not changed, as the lookahead runs on a private scanner, see
+ * lookahead_begin().
+ * ----------------------------------------------------------------------------- */
+
+static long balanced_end(Scanner *s, int endchar, long *start) {
+  long end = -1;
+  Scanner *lookahead;
 
   int num_levels = 1;
   int starttok = 0;
@@ -1633,35 +1797,161 @@ String *Scanner_get_raw_text_balanced(Scanner *s, int startchar, int endchar) {
   default:
     assert(0);
   }
+  lookahead = lookahead_begin(s, start);
+  if (!lookahead)
+    return -1;
 
   while (1) {
-    int tok = Scanner_token(s);
+    int tok = Scanner_token(lookahead);
     if (tok == starttok) {
       num_levels++;
     } else if (tok == endtok) {
       if (--num_levels == 0) {
-        result = NewStringWithSize(Char(s->str) + position - 1, Tell(s->str) - position + 1);
-        Char(result)[0] = startchar;
-        Setfile(result, Getfile(s->str));
-        Setline(result, old_line);
+        end = Tell(s->str);
         break;
       }
     } else if (tok == SWIG_TOKEN_COMMENT) {
-      char *loc = Char(s->text);
-      if (strncmp(loc, "/*@SWIG", 7) == 0 && loc[Len(s->text) - 3] == '@') {
-        Scanner_locator(s, s->text);
+      String *text = Scanner_text(lookahead);
+      char *loc = Char(text);
+      if (strncmp(loc, "/*@SWIG", 7) == 0 && loc[Len(text) - 3] == '@') {
+        /* The locator applies to 's', which is where the text will be scanned for real. */
+        Scanner_locator(s, text);
       }
     } else if (tok == 0) {
       break;
     }
   }
 
-  /* Reset the scanner state. */
-  Seek(s->str, position, SEEK_SET);
-  Delete(s->text);
-  s->text = old_text;
-  s->line = old_line;
+  lookahead_end(s, lookahead, *start);
 
+  return end;
+}
+
+/* -----------------------------------------------------------------------------
+ * Scanner_get_raw_text_balanced()
+ *
+ * Returns the raw text between 2 brackets, such as '{...}' or '(...)', including the brackets themselves, or NULL if
+ * the closing bracket is missing.  The state of 's' is not changed in either case, see balanced_end().
+ * ----------------------------------------------------------------------------- */
+
+String *Scanner_get_raw_text_balanced(Scanner *s, int startchar, int endchar) {
+  String *result = NULL;
+  long start;
+  int old_line = s->line;
+  long end = balanced_end(s, endchar, &start);
+
+  if (end >= 0) {
+    result = NewStringEmpty();
+    Putc(startchar, result);
+    Write(result, Char(s->str) + start, (int)(end - start));
+    Setfile(result, Getfile(s->str));
+    Setline(result, old_line);
+  }
+  return result;
+}
+
+/* -----------------------------------------------------------------------------
+ * Scanner_get_raw_text_to_semicolon()
+ *
+ * Returns the raw text from the current position up to, but not including, the next ';' that is not nested inside
+ * '(...)', '[...]' or '{...}'.  Returns NULL if there is no such ';' in the text currently being scanned.  The state of
+ * 's' is not changed, as the lookahead runs on a private scanner, see lookahead_begin().
+ * ----------------------------------------------------------------------------- */
+
+String *Scanner_get_raw_text_to_semicolon(Scanner *s) {
+  String *result = NULL;
+  long start;
+  int num_levels = 0;
+  Scanner *lookahead = lookahead_begin(s, &start);
+
+  if (!lookahead)
+    return NULL;
+
+  while (1) {
+    int tok = Scanner_token(lookahead);
+    int delta = Scanner_bracket_depth_delta(tok);
+    if (tok <= 0) {
+      break;
+    } else if (delta) {
+      num_levels += delta;
+      if (num_levels < 0)
+        break; /* A closing bracket at the outermost level - the declaration ended without a ';' */
+    } else if (tok == SWIG_TOKEN_SEMI && num_levels == 0) {
+      /* Tell() is positioned just after the ';', which is not wanted in the returned text. */
+      result = NewStringWithSize(Char(s->str) + start, Tell(s->str) - start - 1);
+      Setfile(result, Getfile(s->str));
+      Setline(result, Scanner_line(lookahead));
+      break;
+    }
+  }
+
+  lookahead_end(s, lookahead, start);
+
+  return result;
+}
+
+/* -----------------------------------------------------------------------------
+ * Scanner_skip_to_initializer_end()
+ *
+ * Skips the rest of an initializer or default argument, up to but not including the ',' or ';' that ends it or the
+ * ')' that closes the parameter list, and returns the raw text skipped.  One nested inside '(...)', '[...]' or '{...}'
+ * does not count, and nor does a ',' between a '<' and a '>' outside those brackets, which are taken to enclose a
+ * template argument list.  Each comment is replaced by a space in the text returned, and a locator comment the
+ * preprocessor put round a macro expansion is passed to Scanner_locator(), as it is when the text is parsed, so that
+ * line numbering resumes after the macro.  The token that ends the text is pushed back so that it is the next token.
+ * Returns NULL if the end of the text is reached first.
+ * ----------------------------------------------------------------------------- */
+
+String *Scanner_skip_to_initializer_end(Scanner *s) {
+  String *result;
+  long position; /* the start of the text not yet copied to 'result' */
+  int num_levels = 0;
+  int num_angles = 0;
+  int tok;
+
+  if (!s->str)
+    return NULL;
+  position = Tell(s->str);
+  result = NewStringEmpty();
+
+  while (1) {
+    long previous_end = Tell(s->str);
+    int delta;
+    tok = Scanner_token(s);
+    delta = Scanner_bracket_depth_delta(tok);
+    if (tok <= 0) {
+      Delete(result);
+      return NULL;
+    } else if (tok == SWIG_TOKEN_COMMENT) {
+      String *text = Scanner_text(s);
+      char *loc = Char(text);
+      Write(result, Char(s->str) + position, (int)(previous_end - position));
+      Putc(' ', result);
+      position = Tell(s->str);
+      if (strncmp(loc, "/*@SWIG", 7) == 0 && loc[Len(text) - 3] == '@')
+        Scanner_locator(s, text);
+    } else if (tok == SWIG_TOKEN_RPAREN && num_levels == 0) {
+      break;
+    } else if (delta) {
+      num_levels += delta;
+    } else if (num_levels == 0 && tok == SWIG_TOKEN_LESSTHAN) {
+      num_angles++;
+    } else if (num_levels == 0 && tok == SWIG_TOKEN_GREATERTHAN && num_angles > 0) {
+      num_angles--;
+    } else if (num_levels == 0 && tok == SWIG_TOKEN_RSHIFT && num_angles > 0) {
+      num_angles = num_angles > 1 ? num_angles - 2 : 0;
+    } else if (tok == SWIG_TOKEN_SEMI && num_levels == 0) {
+      break;
+    } else if (tok == SWIG_TOKEN_COMMA && num_levels == 0 && num_angles == 0) {
+      break;
+    }
+  }
+
+  /* The token ending the text is one character and Tell() is just past it, so it is left out of the text. */
+  Write(result, Char(s->str) + position, (int)(Tell(s->str) - 1 - position));
+  Setfile(result, Getfile(s->str));
+  Setline(result, s->line);
+  Scanner_pushtoken(s, tok, Scanner_text(s));
   return result;
 }
 
@@ -1676,6 +1966,32 @@ int Scanner_isoperator(int tokval) {
   if (tokval >= 100)
     return 1;
   return 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Scanner_bracket_depth_delta()
+ *
+ * Returns the change a token makes to the depth of nesting inside '(...)', '[...]' and '{...}': 1 for an opening
+ * bracket, -1 for a closing one, 2 for '[[', -2 for ']]' and 0 for any other token.
+ * ----------------------------------------------------------------------------- */
+
+int Scanner_bracket_depth_delta(int tok) {
+  switch (tok) {
+  case SWIG_TOKEN_LPAREN:
+  case SWIG_TOKEN_LBRACKET:
+  case SWIG_TOKEN_LBRACE:
+    return 1;
+  case SWIG_TOKEN_RPAREN:
+  case SWIG_TOKEN_RBRACKET:
+  case SWIG_TOKEN_RBRACE:
+    return -1;
+  case SWIG_TOKEN_LLBRACKET:
+    return 2;
+  case SWIG_TOKEN_RRBRACKET:
+    return -2;
+  default:
+    return 0;
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -1713,6 +2029,8 @@ void Scanner_locator(Scanner *s, String *loc) {
         Scanner_set_location(s, locs->filename, locs->line_number);
         cparse_file = locs->filename;
         cparse_line = locs->line_number;
+        /* The scanner now holds a reference to the filename */
+        Delete(locs->filename);
         l = locs->next;
         Free(locs);
         locs = l;
@@ -1720,25 +2038,25 @@ void Scanner_locator(Scanner *s, String *loc) {
       return;
     }
 
-    /* We're going to push a new location */
+    /* We're going to push a new location. Save the scanner's line as the last token's line (cparse_line) can be several lines earlier. */
     l = (Locator *)Malloc(sizeof(Locator));
     l->filename = cparse_file;
-    l->line_number = cparse_line;
+    /* Keep the filename alive as setting the new location below deletes it when the scanner holds the only reference */
+    DohIncref(l->filename);
+    l->line_number = s->line;
     l->next = locs;
     locs = l;
 
     /* Now, parse the new location out of the locator string */
     {
+      String *filename = NewStringEmpty();
       String *fn = NewStringEmpty();
-      /*      Putc(c, fn); */
 
       while ((c = Getc(loc)) != EOF) {
         if ((c == '@') || (c == ','))
           break;
-        Putc(c, fn);
+        Putc(c, filename);
       }
-      cparse_file = Swig_copy_string(Char(fn));
-      Clear(fn);
       cparse_line = 1;
       /* Get the line number */
       while ((c = Getc(loc)) != EOF) {
@@ -1756,7 +2074,10 @@ void Scanner_locator(Scanner *s, String *loc) {
         Putc(c, fn);
       }
       /*  Swig_diagnostic(cparse_file, cparse_line, "Scanner_set_location\n"); */
-      Scanner_set_location(s, cparse_file, cparse_line);
+      Scanner_set_location(s, filename, cparse_line);
+      /* The scanner holds the reference to the filename, as it does when cparse_file is set from Scanner_file() */
+      cparse_file = filename;
+      Delete(filename);
       Delete(fn);
     }
   }

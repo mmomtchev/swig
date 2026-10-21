@@ -166,6 +166,38 @@
  * exists, so for example, Struct is in the scope OuterNamespace::InnerNamespace
  * so sym:symtab points to this symbol table (0xa064cc0).
  *
+ * C symbol table, inheritance and lookup order:
+ *
+ * Each scope carries two parallel tables.  The "symtab" table is keyed by the
+ * target language name (and is affected by %rename), with overloads chained via
+ * "sym:nextSibling".  The "csymtab" table is keyed by the C/C++ name and is the
+ * table used for C++ type resolution; its overloads are chained via
+ * "csym:nextSibling".  All of the lookup functions below (Swig_symbol_clookup
+ * and friends) search the csymtab.
+ *
+ * A scope may also have an "inherit" list.  This holds the symbol tables of the
+ * scope's C++ base classes and of any 'using namespace' directives in effect (it
+ * is not used for 'using X::y' declarations).  A separate global hash, "symtabs",
+ * maps every fully qualified C scope name (for example "OuterNamespace::Class")
+ * to its symbol table; this is how a qualified name is resolved to a scope.
+ *
+ * A name is resolved (see _symbol_lookup() and Swig_symbol_clookup()) in this
+ * order: first the scope's own csymtab, then each inherited scope recursively,
+ * and only if neither matches does the caller climb to the enclosing scopes
+ * (via parentNode).  Note that the inherited scopes are therefore searched
+ * before the enclosing scopes, which matters for names that exist in both.
+ *
+ * Injected-class-name:
+ *
+ * The C++ injected-class-name ([class]/2) makes a class' own name a public
+ * member of that class, so a base class' name is a member of the base.  By
+ * ordinary inheritance and member name lookup ([class.member.lookup], and
+ * [class.qual] for the qualified form) that inherited member is visible from
+ * within a derived class, so the base can be named there either unqualified
+ * ('Base') or scope qualified through the derived class ('Derived::Base').
+ * SWIG models this visibility in Swig_symbol_inherit(): when a class inherits
+ * a base, the base class' name is added to the derived class' csymtab, pointing
+ * at the base class node.
  * ----------------------------------------------------------------------------- */
 
 static Hash *current = 0;        /* The current symbol table hash */
@@ -495,6 +527,13 @@ void Swig_symbol_alias(const_String_or_char_ptr aliasname, Symtab *s) {
  * Inherit symbols from another scope. Primarily for C++ inheritance and
  * for using directives, such as 'using namespace X;'
  * but not for using declarations, such as 'using X::A;'.
+ *
+ * For C++ inheritance the base class' own name is also added to the current
+ * (derived) scope's C symbol table, so the base named from within the derived class
+ * - unqualified ('Base') or scope qualified ('Derived::Base') - resolves to the
+ * base class (the C++ injected class name, visible as an inherited member). The
+ * node added is the base's entry in its enclosing scope, where every class is
+ * registered.
  * ----------------------------------------------------------------------------- */
 
 void Swig_symbol_inherit(Symtab *s) {
@@ -518,7 +557,27 @@ void Swig_symbol_inherit(Symtab *s) {
       return; /* Already inherited */
   }
   Append(inherit, s);
+
+  /* Add the base class' own name to the derived (current) scope's C symbol table so
+     it resolves to the base class from within the derived class (the C++ injected
+     class name, visible as an inherited member). The base class node is the entry
+     for the base's name in the base's enclosing scope, where every class is
+     registered. A 'using namespace' target is a namespace, not a class, and is
+     skipped, as is a null scope (an unresolved 'using namespace'). */
+  {
+    String *bname = s ? Getattr(s, "name") : 0;
+    Symtab *parent = s ? Getattr(s, "parentNode") : 0;
+    Hash *parent_csymtab = parent ? Getattr(parent, "csymtab") : 0;
+    Node *baseclass = (bname && parent_csymtab) ? Getattr(parent_csymtab, bname) : 0;
+    if (baseclass && Getattr(baseclass, "symtab") == s && (Checkattr(baseclass, "nodeType", "class") || Checkattr(baseclass, "nodeType", "template"))) {
+      Hash *csymtab = Getattr(current_symtab, "csymtab");
+      if (csymtab && !Getattr(csymtab, bname))
+        Setattr(csymtab, bname, baseclass);
+    }
+  }
 }
+
+static Node *symbol_no_constructor(Node *n);
 
 /* -----------------------------------------------------------------------------
  * Swig_symbol_cadd()
@@ -607,6 +666,10 @@ void Swig_symbol_cadd(const_String_or_char_ptr name, Node *n) {
     Swig_error(Getfile(n), Getline(n), "Declaration of '%s' shadows template parameter,\n", name);
     Swig_error(Getfile(cn), Getline(cn), "previous template parameter declaration '%s'.\n", name);
     return;
+  } else if (cn && Checkattr(cn, "nodeType", "using") && Checkattr(n, "nodeType", "using") && Equal(Getattr(cn, "uname"), Getattr(n, "uname"))) {
+    /* Duplicate using declaration - skip to avoid creating a spurious csym:nextSibling chain
+     * that would cause Swig_symbol_clookup to bail out without resolving the using declaration. */
+    return;
   } else if (cn) {
     append = n;
   } else if (!cn) {
@@ -651,7 +714,7 @@ void Swig_symbol_cadd(const_String_or_char_ptr name, Node *n) {
       int using_not_typedef = Equal(nodeType(td), "using");
       type = Copy(Getattr(td, using_not_typedef ? "uname" : "type"));
       SwigType_push(type, Getattr(td, "decl"));
-      td1 = Swig_symbol_clookup(type, 0);
+      td1 = Swig_symbol_clookup_check(type, 0, symbol_no_constructor);
 
       /* Fix pathetic case #1214313:
 
@@ -680,7 +743,7 @@ void Swig_symbol_cadd(const_String_or_char_ptr name, Node *n) {
         if (st && sn && Equal(st, sn)) {
           Symtab *sc = Getattr(current_symtab, "parentNode");
           if (sc)
-            td1 = Swig_symbol_clookup(type, sc);
+            td1 = Swig_symbol_clookup_check(type, sc, symbol_no_constructor);
         }
       }
 
@@ -905,7 +968,11 @@ static Node *symbol_add(const_String_or_char_ptr symname, Node *n) {
             String *cnt = Getattr(cn, "nodeType");
             int cn_template = Equal(cnt, "template") && Checkattr(cn, "templatetype", "cdecl");
             int cn_plain_cdecl = Equal(cnt, "cdecl");
-            if (!((n_template && cn_plain_cdecl) || (cn_template && n_plain_cdecl))) {
+            /* A requires-clause and a template parameter's type-constraint are part of a function
+             * template's signature ([temp.over.link]), so two function templates whose constraints
+             * differ are distinct overloads rather than a redeclaration. */
+            int constraints_differ = n_template && cn_template && !Constraint_signatures_equal(n, cn);
+            if (!((n_template && cn_plain_cdecl) || (cn_template && n_plain_cdecl)) && !constraints_differ) {
               /* found a conflict */
               return cn;
             }
@@ -967,27 +1034,38 @@ void Swig_symbol_conflict_warn(Node *n, Node *c, const String *symname, int incl
   String *n_name_stripped = SwigType_templateprefix(Getattr(n, "name"));
   String *c_name_stripped = SwigType_templateprefix(Getattr(c, "name"));
   int redefined = Swig_need_redefined_warn(n, c, inclass);
+  int constrained = Constraint_differently_constrained(n, c);
   String *n_name_decl = Swig_name_decl(n);
   String *c_name_decl = Swig_name_decl(c);
-  if (redefined) {
-    Printf(en, "Redefinition of identifier '%s'", symname_stripped);
-    Printf(ec, "previous definition of '%s'", symname_stripped);
+  if (constrained) {
+    /* Two declarations differing by their constraints are distinct C++ overloads, but SWIG does not evaluate a
+     * constraint and so cannot tell which one an instantiation selects. */
+    Printf(en, "Declaration of '%s' as %s differing only by a constraint is ignored,", symname_stripped, n_name_decl);
+    Printf(ec, "previous declaration of '%s' as %s is used instead.", symname_stripped, c_name_decl);
   } else {
-    Printf(en, "Redundant redeclaration of identifier '%s'", symname_stripped);
-    Printf(ec, "previous declaration of '%s'", symname_stripped);
+    if (redefined) {
+      Printf(en, "Redefinition of identifier '%s'", symname_stripped);
+      Printf(ec, "previous definition of '%s'", symname_stripped);
+    } else {
+      Printf(en, "Redundant redeclaration of identifier '%s'", symname_stripped);
+      Printf(ec, "previous declaration of '%s'", symname_stripped);
+    }
+    if (!Equal(symname_stripped, n_name_stripped))
+      Printf(en, " (Renamed from '%s')", SwigType_namestr(n_name_stripped));
+    if (!Equal(symname_stripped, c_name_stripped))
+      Printf(ec, " (Renamed from '%s')", SwigType_namestr(c_name_stripped));
+    if (!Equal(n_name_stripped, n_name_decl))
+      Printf(en, " as %s", n_name_decl);
+    if (!Equal(c_name_stripped, c_name_decl))
+      Printf(ec, " as %s", c_name_decl);
+    Printf(en, " ignored,");
+    Printf(ec, ".");
   }
-  if (!Equal(symname_stripped, n_name_stripped))
-    Printf(en, " (Renamed from '%s')", SwigType_namestr(n_name_stripped));
-  if (!Equal(symname_stripped, c_name_stripped))
-    Printf(ec, " (Renamed from '%s')", SwigType_namestr(c_name_stripped));
-  if (!Equal(n_name_stripped, n_name_decl))
-    Printf(en, " as %s", n_name_decl);
-  if (!Equal(c_name_stripped, c_name_decl))
-    Printf(ec, " as %s", c_name_decl);
-  Printf(en, " ignored,");
-  Printf(ec, ".");
   SWIG_WARN_NODE_BEGIN(n);
-  if (redefined) {
+  if (constrained) {
+    Swig_warning(WARN_PARSE_CONSTRAINED_REDECLARATION, Getfile(n), Getline(n), "%s\n", en);
+    Swig_warning(WARN_PARSE_CONSTRAINED_REDECLARATION, Getfile(c), Getline(c), "%s\n", ec);
+  } else if (redefined) {
     Swig_warning(WARN_PARSE_REDEFINED, Getfile(n), Getline(n), "%s\n", en);
     Swig_warning(WARN_PARSE_REDEFINED, Getfile(c), Getline(c), "%s\n", ec);
   } else if (!Strstr(Getattr(n, "storage"), "friend") && !Strstr(Getattr(c, "storage"), "friend")) {
@@ -1010,15 +1088,25 @@ void Swig_symbol_conflict_warn(Node *n, Node *c, const String *symname, int incl
 /* -----------------------------------------------------------------------------
  * symbol_lookup()
  *
- * Internal function to handle fully qualified symbol table lookups.  This
- * works from the symbol table supplied in symtab and unwinds its way out
- * towards the global scope.
+ * Internal function to look up a name in the symbol table supplied in symtab.
+ * It searches that scope's own csymtab and then, recursively, each inherited
+ * scope; it does not climb to the enclosing scopes.  Climbing to the enclosing
+ * scopes is the caller's responsibility (see the parentNode loop in
+ * Swig_symbol_clookup()), so inherited scopes are searched before enclosing ones.
  *
  * This function operates in the C namespace, not the target namespace.
  *
  * The checkfunc function is an optional callback that can be used to verify a particular
  * symbol match.   This is only used in some of the more exotic parts of SWIG. For instance,
- * verifying that a class hierarchy implements all pure virtual methods.
+ * verifying that a class hierarchy implements all pure virtual methods.  A checkfunc may
+ * return a node further down the csym:nextSibling chain than the one passed to it.
+ *
+ * A checkfunc tests the target symbol named by 'name', so it must not be passed when 'name'
+ * is a scope qualifier rather than the target.  A namespace or class naming an enclosing or
+ * inherited scope is never the target, and a checkfunc such as symbol_is_template would
+ * reject it and the lookup would wrongly fail.  When resolving a qualified name, resolve the
+ * scope qualifier with a null checkfunc and only apply the checkfunc to the final target
+ * symbol - see symbol_lookup_qualified().
  * ----------------------------------------------------------------------------- */
 
 static Node *_symbol_lookup(const String *name, Symtab *symtab, Node *(*checkfunc)(Node *n)) {
@@ -1156,7 +1244,9 @@ static Node *symbol_lookup_qualified(const_String_or_char_ptr name, Symtab *symt
             int i, len;
             len = Len(inherit);
             for (i = 0; i < len; i++) {
-              Node *prefix_node = symbol_lookup(prefix, Getitem(inherit, i), checkfunc);
+              /* The prefix is a scope qualifier, so resolve it without checkfunc. checkfunc filters the
+                 target symbol name, but name is not part of the prefix. The checkfunc is applied to name below. */
+              Node *prefix_node = symbol_lookup(prefix, Getitem(inherit, i), 0);
               if (prefix_node) {
                 Node *prefix_symtab = Getattr(prefix_node, "symtab");
                 if (prefix_symtab) {
@@ -1176,90 +1266,134 @@ static Node *symbol_lookup_qualified(const_String_or_char_ptr name, Symtab *symt
 }
 
 /* -----------------------------------------------------------------------------
- * Swig_symbol_clookup()
+ * symbol_scope_lookup()
  *
- * Look up a symbol in the symbol table.   This uses the C name, not scripting
- * names.   Note: If we come across a using declaration, we follow it to
- * to get the real node. Any using directives are also followed (but this is
- * implemented in symbol_lookup()).
+ * Resolve a scope qualifier that may contain typedefs naming a class/struct
+ * scope and return the resolved scope's symbol table. For example, given the
+ * qualifier 'UBC::Me' where both UBC and Me are typedefs for a class, this
+ * returns that class's symbol table. Returns 0 if the qualifier cannot be
+ * resolved to a scope.
  * ----------------------------------------------------------------------------- */
 
-Node *Swig_symbol_clookup(const_String_or_char_ptr name, Symtab *n) {
-  Hash *hsym = 0;
-  Node *s = 0;
-
-  if (!n) {
-    hsym = current_symtab;
-  } else {
-    if (!Checkattr(n, "nodeType", "symboltable")) {
-      n = Getattr(n, "sym:symtab");
-    }
-    assert(n);
-    if (n) {
-      hsym = n;
-    }
-  }
-
-  if (Swig_scopename_check(name)) {
-    char *cname = Char(name);
-    if (strncmp(cname, "::", 2) == 0) {
-      String *nname = NewString(cname + 2);
-      if (Swig_scopename_check(nname)) {
-        s = symbol_lookup_qualified(nname, global_scope, 0, 0, 0);
-      } else {
-        s = symbol_lookup(nname, global_scope, 0);
-      }
-      Delete(nname);
-    } else {
-      String *prefix = Swig_scopename_prefix(name);
-      if (prefix) {
-        s = symbol_lookup_qualified(name, hsym, 0, 0, 0);
-        Delete(prefix);
-        if (!s) {
-          return 0;
+static Symtab *symbol_scope_lookup(const String *qualifier, Symtab *symtab) {
+  Node *n = Swig_symbol_clookup(qualifier, symtab);
+  int via_typedef = 0;
+  while (n) {
+    Symtab *st = Getattr(n, "symtab");
+    if (st)
+      /* Only resolve a qualifier that is reached through a typedef. A qualifier that resolves
+         directly to a class or namespace scope (for example a namespace made visible by a using
+         namespace directive) is left to the normal lookup - resolving it here would produce a
+         non-canonical scope name that does not match the type's registered name at runtime. */
+      return via_typedef ? st : 0;
+    /* Not a scope itself - if it is a typedef to a class/struct, follow the typedef target */
+    if (Checkattr(n, "nodeType", "cdecl") && Checkattr(n, "storage", "typedef")) {
+      SwigType *type = Getattr(n, "type");
+      if (type && SwigType_issimple(type)) {
+        Symtab *ntab = Getattr(n, "sym:symtab");
+        Node *nn = Swig_symbol_clookup(type, ntab);
+        if (!nn && SwigType_istemplate(type)) {
+          /* Reduce and fully qualify the template instantiation (eg 'TBase<(IntAlias)>' to
+             'TBase<(int)>', or qualify a template name imported by a using declaration). The
+             %template instantiation scope is registered under its fully qualified name, so this
+             lets the lookup below find it. */
+          SwigType *reduced = Swig_symbol_typedef_reduce(type, ntab);
+          SwigType *qualified = Swig_symbol_type_qualify(reduced, ntab);
+          nn = Swig_symbol_clookup(qualified, ntab);
+          Delete(qualified);
+          Delete(reduced);
+        }
+        if (nn && nn != n) {
+          n = nn;
+          via_typedef = 1;
+          continue;
         }
       }
     }
+    break;
   }
-  if (!s) {
-    while (hsym) {
-      s = symbol_lookup(name, hsym, 0);
-      if (s)
-        break;
-      hsym = Getattr(hsym, "parentNode");
-      if (!hsym)
-        break;
-    }
-  }
+  return 0;
+}
 
-  /* Check if s is a 'using' node */
-  while (s && Checkattr(s, "nodeType", "using")) {
-    if (Getattr(s, "csym:nextSibling")) {
-      /* overloaded using declarations and method declarations - don't chase the using declarations up the inheritance hierarchy  */
-      break;
-    } else {
-      String *uname = Getattr(s, "uname");
-      Symtab *un = Getattr(s, "sym:symtab");
-      Node *ss = (!Equal(name, uname) || (un != n)) ? Swig_symbol_clookup(uname, un) : 0; /* avoid infinity loop */
-      if (!ss) {
-        SWIG_WARN_NODE_BEGIN(s);
-        Swig_warning(WARN_PARSE_USING_UNDEF, Getfile(s), Getline(s), "Nothing known about '%s'.\n", SwigType_namestr(uname));
-        SWIG_WARN_NODE_END(s);
-      }
-      s = ss;
+/* -----------------------------------------------------------------------------
+ * symbol_clookup_typedef_scope()
+ *
+ * Fallback lookup for a qualified name whose scope qualifier contains typedefs,
+ * such as the member 'Integer' in 'UBC::Me::Integer' where UBC and Me are
+ * typedefs for a class. symbol_lookup_qualified() only matches scope qualifiers
+ * against registered scope names, so it does not resolve typedefs that appear as
+ * a scope qualifier. Here the qualifier is resolved to its real scope first and
+ * the base name is then looked up in that scope.
+ * ----------------------------------------------------------------------------- */
+
+static Node *symbol_clookup_typedef_scope(const String *name, Symtab *symtab, Node *(*checkfunc)(Node *n)) {
+  Node *n = 0;
+  String *prefix = Swig_scopename_prefix(name);
+  if (prefix && !SwigType_istemplate(prefix)) {
+    String *base = Swig_scopename_last(name);
+    String *prefixbase = Swig_scopename_last(prefix);
+    /* Only resolve a typedef or namespace scope qualifier here. Skip:
+       - a template instantiation qualifier (eg 'Base<T>::member'), handled elsewhere;
+       - an inheriting-constructor using declaration (eg 'using Base::Base'), where the member
+         name matches the qualifier.  Resolving the qualifier scope of such a declaration would
+         follow the constructor using declaration back to itself; it is handled by the
+         constructor logic, not as a member. */
+    if (!Equal(base, prefixbase)) {
+      Symtab *scope = symbol_scope_lookup(prefix, symtab);
+      if (scope)
+        n = symbol_lookup(base, scope, checkfunc);
     }
+    Delete(prefixbase);
+    Delete(base);
+  }
+  Delete(prefix);
+  return n;
+}
+
+/* -----------------------------------------------------------------------------
+ * Swig_symbol_clookup_resolve_typedef()
+ *
+ * This function is identical to Swig_symbol_clookup() except that it
+ * additionally follows any chain of typedef declarations to the node the name
+ * ultimately refers to.
+ * ----------------------------------------------------------------------------- */
+
+Node *Swig_symbol_clookup_resolve_typedef(const_String_or_char_ptr name, Symtab *n) {
+  Node *s = Swig_symbol_clookup(name, n);
+  while (s && Equal(nodeType(s), "cdecl")) {
+    if (Checkattr(s, "storage", "typedef")) {
+      Node *next = Swig_symbol_clookup(Getattr(s, "type"), Getattr(s, "sym:symtab"));
+      if (next == s)
+        break; /* A self-referential typedef such as 'typedef struct foo foo;'. */
+      s = next;
+    } else
+      break;
   }
   return s;
 }
 
 /* -----------------------------------------------------------------------------
+ * Swig_symbol_clookup()
+ *
+ * Convenience wrapper around Swig_symbol_clookup_check() with no checkfunc
+ * callback.
+ * ----------------------------------------------------------------------------- */
+
+Node *Swig_symbol_clookup(const_String_or_char_ptr name, Symtab *n) {
+  return Swig_symbol_clookup_check(name, n, 0);
+}
+
+/* -----------------------------------------------------------------------------
  * Swig_symbol_clookup_check()
  *
- * This function is identical to Swig_symbol_clookup() except that it
- * accepts a callback function that is invoked to determine a symbol match.
- * The purpose of this function is to support complicated algorithms that need
- * to examine multiple definitions of the same symbol that might appear in an
- * inheritance hierarchy.
+ * Look up a symbol in the symbol table. This uses the C name, not scripting
+ * names. Note: If we come across a using declaration, we follow it to get the
+ * real node. Any using directives are also followed (but this is implemented in
+ * symbol_lookup()).
+ *
+ * A checkfunc callback may be supplied to determine a symbol match. The purpose
+ * is to support complicated algorithms that need to examine multiple definitions
+ * of the same symbol that might appear in an inheritance hierarchy.
  * ----------------------------------------------------------------------------- */
 
 Node *Swig_symbol_clookup_check(const_String_or_char_ptr name, Symtab *n, Node *(*checkfunc)(Node *n)) {
@@ -1292,6 +1426,8 @@ Node *Swig_symbol_clookup_check(const_String_or_char_ptr name, Symtab *n, Node *
       String *prefix = Swig_scopename_prefix(name);
       if (prefix) {
         s = symbol_lookup_qualified(name, hsym, 0, 0, checkfunc);
+        if (!s)
+          s = symbol_clookup_typedef_scope(name, hsym, checkfunc);
         Delete(prefix);
         if (!s) {
           return 0;
@@ -1318,7 +1454,7 @@ Node *Swig_symbol_clookup_check(const_String_or_char_ptr name, Symtab *n, Node *
     } else {
       String *uname = Getattr(s, "uname");
       Symtab *un = Getattr(s, "sym:symtab");
-      Node *ss = Swig_symbol_clookup_check(uname, un, checkfunc);
+      Node *ss = (!Equal(name, uname) || (un != n)) ? Swig_symbol_clookup_check(uname, un, checkfunc) : 0; /* avoid infinity loop */
       if (!ss && !checkfunc) {
         SWIG_WARN_NODE_BEGIN(s);
         Swig_warning(WARN_PARSE_USING_UNDEF, Getfile(s), Getline(s), "Nothing known about '%s'.\n", SwigType_namestr(uname));
@@ -1333,64 +1469,19 @@ Node *Swig_symbol_clookup_check(const_String_or_char_ptr name, Symtab *n, Node *
 /* -----------------------------------------------------------------------------
  * Swig_symbol_clookup_local()
  *
- * Same as Swig_symbol_clookup but parent nodes are not searched, that is, just
- * this symbol table is searched.
+ * Convenience wrapper around Swig_symbol_clookup_local_check() with no checkfunc
+ * callback.
  * ----------------------------------------------------------------------------- */
 
 Node *Swig_symbol_clookup_local(const_String_or_char_ptr name, Symtab *n) {
-  Hash *hsym;
-  Node *s = 0;
-
-  if (!n) {
-    hsym = current_symtab;
-  } else {
-    if (!Checkattr(n, "nodeType", "symboltable")) {
-      n = Getattr(n, "sym:symtab");
-    }
-    assert(n);
-    hsym = n;
-  }
-
-  if (Swig_scopename_check(name)) {
-    char *cname = Char(name);
-    if (strncmp(cname, "::", 2) == 0) {
-      String *nname = NewString(cname + 2);
-      if (Swig_scopename_check(nname)) {
-        s = symbol_lookup_qualified(nname, global_scope, 0, 0, 0);
-      } else {
-        s = symbol_lookup(nname, global_scope, 0);
-      }
-      Delete(nname);
-    } else {
-      s = symbol_lookup_qualified(name, hsym, 0, 0, 0);
-    }
-  }
-  if (!s) {
-    s = symbol_lookup(name, hsym, 0);
-  }
-
-  /* Check if s is a 'using' node */
-  while (s && Checkattr(s, "nodeType", "using")) {
-    if (Getattr(s, "csym:nextSibling")) {
-      /* overloaded using declarations and method declarations - don't chase the using declarations up the inheritance hierarchy  */
-      break;
-    } else {
-      String *uname = Getattr(s, "uname");
-      Symtab *un = Getattr(s, "sym:symtab");
-      Node *ss = Swig_symbol_clookup_local(uname, un);
-      if (!ss) {
-        SWIG_WARN_NODE_BEGIN(s);
-        Swig_warning(WARN_PARSE_USING_UNDEF, Getfile(s), Getline(s), "Nothing known about '%s'.\n", SwigType_namestr(uname));
-        SWIG_WARN_NODE_END(s);
-      }
-      s = ss;
-    }
-  }
-  return s;
+  return Swig_symbol_clookup_local_check(name, n, 0);
 }
 
 /* -----------------------------------------------------------------------------
  * Swig_symbol_clookup_local_check()
+ *
+ * Same as Swig_symbol_clookup_check but parent nodes are not searched, that is,
+ * just this symbol table is searched.
  * ----------------------------------------------------------------------------- */
 
 Node *Swig_symbol_clookup_local_check(const_String_or_char_ptr name, Symtab *n, Node *(*checkfunc)(Node *)) {
@@ -1585,6 +1676,27 @@ String *Swig_symbol_qualified(Node *n) {
 }
 
 /* -----------------------------------------------------------------------------
+ * symbol_qualified_name()
+ *
+ * Return a copy of a symbol's name, qualified with the symbol's scope.  TypePass patches a class name
+ * with its enclosing scope once the class contents have been traversed, so the name may or may not be
+ * qualified already and the scope must not be added a second time (eg 'Space::Space::Point').
+ * ----------------------------------------------------------------------------- */
+
+static String *symbol_qualified_name(Node *n) {
+  String *name = Copy(Getattr(n, "name"));
+  if (!Swig_scopename_check(name)) {
+    String *qname = Swig_symbol_qualified(n);
+    if (qname && Len(qname)) {
+      Insert(name, 0, "::");
+      Insert(name, 0, qname);
+    }
+    Delete(qname);
+  }
+  return name;
+}
+
+/* -----------------------------------------------------------------------------
  * Swig_symbol_isoverloaded()
  *
  * Check if a symbol is overloaded.  Returns the first symbol if so.
@@ -1670,8 +1782,17 @@ static SwigType *symbol_template_qualify(const SwigType *e, Symtab *st) {
   return qprefix;
 }
 
+/* Symbol lookup check function that rejects constructor nodes, including the using
+ * declaration nodes that inherit base constructors (which carry the class name).
+ *
+ * A constructor shares its enclosing class' name and occupies that name's slot in
+ * the class' own csymtab.  A type lookup of the class name from within that scope
+ * therefore finds the constructor; rejecting it lets the lookup fall through to the
+ * class itself (found by climbing to the enclosing scope, or as a base class name
+ * added to a derived scope by Swig_symbol_inherit()), which is what a type qualifier
+ * names. */
 static Node *symbol_no_constructor(Node *n) {
-  return Checkattr(n, "nodeType", "constructor") ? 0 : n;
+  return (Checkattr(n, "nodeType", "constructor") || (Checkattr(n, "nodeType", "using") && GetFlag(n, "usingctor"))) ? 0 : n;
 }
 
 static Node *symbol_is_template(Node *n) {
@@ -1701,26 +1822,50 @@ SwigType *Swig_symbol_type_qualify(const SwigType *t, Symtab *st) {
   for (i = 0; i < len; i++) {
     String *e = Getitem(elements, i);
     if (SwigType_issimple(e)) {
-      /* Note: the unary scope operator (::) is being removed from the template parameters here. */
-      Node *n = Swig_symbol_clookup_check(e, st, symbol_no_constructor);
-      if (n) {
-        String *name = Getattr(n, "name");
-        Clear(e);
-        Append(e, name);
-#ifdef SWIG_DEBUG
-        Printf(stderr, "symbol_qual_ei %d %s %s %p\n", i, name, e, st);
-#endif
-        if (!Swig_scopename_check(name)) {
-          String *qname = Swig_symbol_qualified(n);
-          if (qname && Len(qname)) {
-            Insert(e, 0, "::");
-            Insert(e, 0, qname);
+      Node *n = 0;
+      /* A scope qualifier that is a typedef resolving to a template instantiation must keep its
+         template arguments during qualification.  For the C++11 alias 'using NodeIT = NodeI<LinksT>;'
+         used as the qualifier in 'NodeIT::owners', rewrite it to the template-id 'NodeI<(LinksT)>::owners'
+         so the template handling below preserves the arguments; otherwise the qualifier is reduced to the
+         bare template name 'NodeI' and the arguments are lost, leaving template parameters unexpanded in
+         the wrapped member's type. */
+      String *eprefix = Swig_scopename_check(e) && !SwigType_istemplate(e) ? Swig_scopename_prefix(e) : 0;
+      if (eprefix) {
+        String *elast = Swig_scopename_last(e);
+        String *eprefixlast = Swig_scopename_last(eprefix);
+        /* Skip an inheriting-constructor using declaration (using Base::Base), where the unqualified-id
+           matches the qualifier's last component.  That is handled by the constructor logic, not here. */
+        if (!Equal(elast, eprefixlast)) {
+          Node *pn = Swig_symbol_clookup(eprefix, st);
+          if (pn && Checkattr(pn, "storage", "typedef")) {
+            SwigType *pt = Getattr(pn, "type");
+            if (pt && SwigType_istemplate(pt)) {
+              /* Reduce typedefs in the template arguments so the qualifier names the registered
+                 instantiation scope (eg 'TBase<(IntAlias)>' becomes 'TBase<(int)>').  The template-id
+                 itself is kept rather than fully qualified - qualifying a bare template-id collapses it
+                 back to the template name and loses the arguments again. */
+              Symtab *ptab = Getattr(pn, "sym:symtab");
+              SwigType *reduced = Swig_symbol_typedef_reduce(pt, ptab);
+              Clear(e);
+              Printf(e, "%s::%s", reduced, elast);
+              Delete(reduced);
+            }
           }
-#ifdef SWIG_DEBUG
-          Printf(stderr, "symbol_qual_sc %d %s %s %p\n", i, qname, e, st);
-#endif
-          Delete(qname);
         }
+        Delete(eprefixlast);
+        Delete(elast);
+        Delete(eprefix);
+      }
+      /* Note: the unary scope operator (::) is being removed from the template parameters here. */
+      n = Swig_symbol_clookup_check(e, st, symbol_no_constructor);
+      if (n) {
+        String *qname = symbol_qualified_name(n);
+        Clear(e);
+        Append(e, qname);
+        Delete(qname);
+#ifdef SWIG_DEBUG
+        Printf(stderr, "symbol_qual_ei %d %s %s %p\n", i, Getattr(n, "name"), e, st);
+#endif
       } else if (SwigType_istemplate(e)) {
         SwigType *ty = symbol_template_qualify(e, st);
         Clear(e);
@@ -1788,15 +1933,9 @@ static SwigType *Swig_symbol_template_reduce(SwigType *qt, Symtab *ntab) {
     String *qp = Swig_symbol_type_qualify(tp, ntab);
     Node *n = Swig_symbol_clookup(qp, ntab);
     if (n) {
-      String *qual = Swig_symbol_qualified(n);
-      np = Copy(Getattr(n, "name"));
+      np = symbol_qualified_name(n);
       Delete(tp);
       tp = np;
-      if (qual && Len(qual)) {
-        Insert(np, 0, "::");
-        Insert(np, 0, qual);
-      }
-      Delete(qual);
     } else {
       np = qp;
     }

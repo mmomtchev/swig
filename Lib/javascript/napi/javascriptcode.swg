@@ -440,7 +440,7 @@ fail:
     Napi::Value value;
     NAPI_CHECK_RESULT(f.Call(0, NULL), value);
     Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Value("$jsname", value,
-      static_cast<napi_property_attributes>(napi_writable | napi_enumerable | napi_configurable));
+      static_cast<napi_property_attributes>(napi_enumerable | napi_configurable));
     NAPI_CHECK_MAYBE($jsparent.DefineProperty(pd));
   } while (0);
 %}

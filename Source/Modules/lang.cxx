@@ -753,15 +753,23 @@ Doc/Manual/Typemaps.html for complete details.\n");
     }
   }
 
+  if (code && Strcmp(code, "pass") == 0) {
+    Swig_warning(WARN_DEPRECATED_TYPEMAP_PASS, Getfile(n), Getline(n), "Typemap code \"pass\" is deprecated.\n");
+  }
+
   if (Strcmp(method, "except") == 0) {
     Swig_error(Getfile(n), Getline(n), "%%typemap(except) is no longer supported. Use the %%exception directive.\n");
   }
 
   if (Strcmp(method, "in") == 0) {
-    Hash *k;
-    k = kwargs;
+    Hash *k = kwargs;
     while (k) {
       if (checkAttribute(k, "name", "numinputs")) {
+        String *value = Getattr(k, "value");
+        if (!is_non_negative_integer(value)) {
+          Swig_error(Getfile(n), Getline(n), "Invalid numinputs value '%s' in the in typemap. It must be a non-negative integer.\n", value);
+          return SWIG_ERROR;
+        }
         if (!multiinput && (GetInt(k, "value") > 1)) {
           Swig_error(Getfile(n), Getline(n), "Multiple-input typemaps (numinputs > 1) not supported by this target language module.\n");
           return SWIG_ERROR;
@@ -773,6 +781,33 @@ Doc/Manual/Typemaps.html for complete details.\n");
     if (!k) {
       k = NewHash();
       Setattr(k, "name", "numinputs");
+      Setattr(k, "value", "1");
+      set_nextSibling(k, kwargs);
+      Setattr(n, "kwargs", k);
+      kwargs = k;
+    }
+  }
+
+  if ((Strcmp(method, "out") == 0) || (Strcmp(method, "argout") == 0)) {
+    Hash *k = kwargs;
+    while (k) {
+      if (checkAttribute(k, "name", "numoutputs")) {
+        String *value = Getattr(k, "value");
+        if (!is_non_negative_integer(value)) {
+          Swig_error(Getfile(n), Getline(n), "Invalid numoutputs value '%s' in the %s typemap. It must be a non-negative integer.\n", value, method);
+          return SWIG_ERROR;
+        }
+        if (GetInt(k, "value") > 1) {
+          Swig_error(Getfile(n), Getline(n), "Only numoutputs=0 and numoutputs=1 are supported in the %s typemap.\n", method);
+          return SWIG_ERROR;
+        }
+        break;
+      }
+      k = nextSibling(k);
+    }
+    if (!k) {
+      k = NewHash();
+      Setattr(k, "name", "numoutputs");
       Setattr(k, "value", "1");
       set_nextSibling(k, kwargs);
       Setattr(n, "kwargs", k);
@@ -947,6 +982,29 @@ int Language::cDeclaration(Node *n) {
     return SWIG_NOWRAP;
   }
 
+  /* Class template argument deduction (CTAD): a variable whose declared type is a bare class
+     template name, e.g. the C++17 'std::vector v{1, 2, 3};' (deduced from a constructor) or the
+     C++20 aggregate form 'Overloaded ov{...};'.  SWIG performs no template argument deduction, so
+     the instantiated type is unknown - warn and skip rather than emit a wrapper that names the
+     template without arguments and fails to compile. */
+  if (Len(decl) == 0) {
+    SwigType *base = SwigType_strip_qualifiers(type);
+    if (!SwigType_istemplate(base)) {
+      Node *tn = Swig_symbol_clookup(base, Getattr(n, "sym:symtab"));
+      if (tn && Equal(nodeType(tn), "template") && Equal(Getattr(tn, "templatetype"), "class")) {
+        Swig_warning(WARN_CPP17_CLASS_TEMPLATE_ARGUMENT_DEDUCTION,
+                     input_file,
+                     line_number,
+                     "Unable to deduce class template arguments for variable '%s' of type '%s' (ignored).\n",
+                     SwigType_namestr(symname),
+                     SwigType_namestr(base));
+        Delete(base);
+        return SWIG_NOWRAP;
+      }
+    }
+    Delete(base);
+  }
+
   ty = NewString(type);
   SwigType_push(ty, decl);
   fullty = SwigType_typedef_resolve_all(ty);
@@ -955,8 +1013,12 @@ int Language::cDeclaration(Node *n) {
       Delete(ty);
       ty = fullty;
       fullty = 0;
-      ParmList *parms = SwigType_function_parms(ty, n);
+      /* Skip a leading ref-qualifier or cv-qualifier, such as the reference in 'Fn &fnref = f;' where 'Fn' is a function typedef */
+      SwigType *fty = Copy(ty);
+      Delete(SwigType_pop_function_qualifiers(fty));
+      ParmList *parms = SwigType_function_parms(fty, n);
       Setattr(n, "parms", parms);
+      Delete(fty);
     }
     /* Transform the node into a 'function' node and emit */
     if (!CurrentClass) {
@@ -1474,6 +1536,11 @@ int Language::membervariableHandler(Node *n) {
         // otherwise qualification is done on the parameter name for the setter function
         Parm *nin = NewParm(type, name, n);
         tm = Swig_typemap_lookup("memberin", nin, target, 0);
+        // Keep the typemap attributes, such as canthrow, for the setter, as for the globalin typemap of a global variable
+        for (Iterator ki = First(nin); ki.key; ki = Next(ki)) {
+          if (Strncmp(ki.key, "tmap:memberin:", 14) == 0)
+            Setattr(n, ki.key, ki.item);
+        }
         Delete(nin);
       }
 
@@ -1487,10 +1554,12 @@ int Language::membervariableHandler(Node *n) {
         /* Check for a member in typemap here */
 
         if (!tm) {
-          if (SwigType_isarray(type)) {
+          SwigType *vartype = SwigType_remove_reference(Copy(type));
+          if (SwigType_isarray(vartype)) {
             Swig_warning(WARN_TYPEMAP_VARIN_UNDEF, input_file, line_number, "Unable to set variable of type %s.\n", SwigType_str(type, 0));
             make_set_wrapper = 0;
           }
+          Delete(vartype);
         } else {
           String *pname0 = Swig_cparm_name(0, 0);
           String *pname1 = Swig_cparm_name(0, 1);
@@ -1863,11 +1932,29 @@ static String *vtable_method_id(Node *n) {
  * Language::unrollOneVirtualMethod()
  * ---------------------------------------------------------------------- */
 
+/* Drop the director vtable entry for the virtual method 'n', if there is one.  Used when a declaration of it is
+   final, which leaves the entry an overridden base declaration added no longer overridable. */
+static void remove_vtable_entry(List *vm, Node *n) {
+  String *method_id = vtable_method_id(n);
+  int len = Len(vm);
+  if (!method_id)
+    return;
+  for (int i = 0; i < len; i++) {
+    if (Strcmp(method_id, Getattr(Getitem(vm, i), "vmid")) == 0) {
+      Delitem(vm, i);
+      break;
+    }
+  }
+  Delete(method_id);
+}
+
 void Language::unrollOneVirtualMethod(String *classname, Node *n, Node *parent, List *vm, int &virtual_destructor, int protectedbase) {
   if (!checkAttribute(n, "storage", "virtual"))
     return;
-  if (GetFlag(n, "final"))
+  if (GetFlag(n, "final")) {
+    remove_vtable_entry(vm, n);
     return;
+  }
 
   String *nodeType = Getattr(n, "nodeType");
 
@@ -1899,12 +1986,7 @@ void Language::unrollOneVirtualMethod(String *classname, Node *n, Node *parent, 
       Node *m = Copy(n);
 
       /* Store the complete return type - needed for non-simple return types (pointers, references etc.) */
-      SwigType *ty = NewString(Getattr(m, "type"));
-      SwigType_push(ty, decl);
-      if (SwigType_isqualifier(ty)) {
-        Delete(SwigType_pop(ty));
-      }
-      Delete(SwigType_pop_function(ty));
+      SwigType *ty = Swig_function_return_type(m);
       Setattr(m, "returntype", ty);
 
       String *mname = NewStringf("%s::%s", Getattr(parent, "name"), name);
@@ -2933,10 +3015,12 @@ int Language::variableWrapper(Node *n) {
     Delete(sname);
 
     if (!tm) {
-      if (SwigType_isarray(type)) {
+      SwigType *vartype = SwigType_remove_reference(Copy(type));
+      if (SwigType_isarray(vartype)) {
         Swig_warning(WARN_TYPEMAP_VARIN_UNDEF, input_file, line_number, "Unable to set variable of type %s.\n", SwigType_str(type, 0));
         make_set_wrapper = 0;
       }
+      Delete(vartype);
     } else {
       String *pname0 = Swig_cparm_name(0, 0);
       Replace(tm, "$input", pname0, DOH_REPLACE_ANY);
@@ -3777,6 +3861,37 @@ void Language::replaceSpecialVariables(String *method, String *tm, Parm *parm) {
   (void)method;
   (void)tm;
   (void)parm;
+}
+
+/* ----------------------------------------------------------------------
+ * Language::composeOutputType()
+ *
+ * Compose the target language type for everything a wrapped function returns.
+ * 'types' holds one type string per returned value in the order the values are
+ * returned, as worked out by emit_output_summary(): the function return value
+ * first when it survives, then one per matched 'argout' typemap.
+ *
+ * Only target languages that generate return type information, such as the Python
+ * PEP 484 annotations, need to override this. An override provides full support for
+ * 'argout' typemaps in the return type:
+ *   - each value an 'argout' typemap adds is included in the type,
+ *   - any number of values can be returned,
+ *   - the values can be returned in any container.
+ * The default implementation copes with a single returned value only.
+ *
+ * How the entries combine is language specific and follows whatever that
+ * language's SWIG_AppendOutput builds. Python aggregates two or more values into
+ * a list, so it composes "typing.List[typing.Union[...]]", while a language whose
+ * helper builds a fixed size sequence composes a tuple type. The 'container'
+ * attribute on the 'argout' typemap says which of these the typemap builds and is
+ * available as the wrap:outputcontainer attribute on n.
+ *
+ * Returns a new string owned by the caller, or NULL if no type can be composed.
+ * ---------------------------------------------------------------------- */
+
+String *Language::composeOutputType(Node *n, List *types) {
+  (void)n;
+  return Len(types) == 1 ? Copy(Getitem(types, 0)) : 0;
 }
 
 Language *Language::instance() {

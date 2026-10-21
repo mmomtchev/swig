@@ -11,11 +11,14 @@
       'defines': [
         'BUILDING_NODE_EXTENSION=1',
       ],
+      "xcode_settings": {
+        "MACOSX_DEPLOYMENT_TARGET": "14.0",
+      },
       'conditions': [
         ['OS=="mac"',
           {
             'xcode_settings': {
-              'OTHER_CPLUSPLUSFLAGS': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", "-Wno-unused-private-field", "-Wno-self-assign", $cxxflags, $cflags ],
+              'OTHER_CPLUSPLUSFLAGS': [ "-Wno-unused-variable", "-Wno-unused-but-set-variable", "-Wno-unused-but-set-parameter", "-Wno-uninitialized", "-Wno-unused-function", "-Wno-unused-private-field", "-Wno-self-assign", "-Wno-cast-function-type-mismatch", $cxxflags, $cflags ],
               'GCC_ENABLE_CPP_RTTI': 'YES',
               'GCC_ENABLE_CPP_EXCEPTIONS' : 'YES'
             }

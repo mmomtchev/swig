@@ -251,6 +251,148 @@ int emit_num_arguments(ParmList *parms) {
 }
 
 /* -----------------------------------------------------------------------------
+ * emit_output_summary()
+ *
+ * Works out which values a wrapped function returns to the target language.
+ *
+ * The first is the function's own return value, unless the 'out' typemap declares
+ * numoutputs=0 to suppress it. Each matched 'argout' typemap then does one of three
+ * things, according to its attributes:
+ *
+ *   numoutputs=1   - appends one value to those returned so far. This is the default
+ *                    and what the typemaps.i OUTPUT family does.
+ *   numoutputs=0   - returns nothing. Used by a typemap that writes back through the
+ *                    parameter, or that only turns an error code into an exception.
+ *   overwrite=1    - returns one value, discarding everything returned before it,
+ *                    including the function return value. Used by a typemap that
+ *                    assigns $result rather than appending to it. A 'container'
+ *                    attribute on it names the container it assigns, which the argout
+ *                    typemaps after it then append into.
+ *
+ * The parameter list to analyse is passed in so that a caller working on a copy of
+ * the parameters, such as one that has attached its own typemaps to the copy, gets
+ * back parameters from that same copy.
+ *
+ * 'warn_container_mismatch' says whether to warn when the 'argout' typemaps do not
+ * all build the same container. A target language passes false when the interface
+ * has supplied the type of the values returned by hand, as it then already knows
+ * what the warning would be telling it.
+ *
+ * Sets the following attributes on n:
+ *
+ *   wrap:returnsurvives  - set when the function return value is one of the values
+ *                          returned to the target language
+ *   wrap:outputparms     - List of the parameters contributing a returned value, in
+ *                          the order the values are returned
+ *   wrap:outputcontainer - the container the argout typemaps append into, from their
+ *                          'container' attribute, or "unknown" when they disagree
+ *   wrap:outputcontainerbuilt
+ *                        - set when an overwriting argout typemap builds the container
+ *                          itself, so that a single value is in it too. A container
+ *                          that is only appended into holds a single value bare.
+ * ----------------------------------------------------------------------------- */
+
+void emit_output_summary(Node *n, ParmList *parms, bool warn_container_mismatch) {
+  Parm *p;
+  List *outputs = NewList();
+  String *container = 0;
+  String *clashing_container = 0;
+  int container_built = 0;
+  int returnsurvives;
+
+  /* A void function has no return value to return and an 'out' typemap declaring
+     numoutputs=0 says not to return the one there is. */
+  returnsurvives = !Equal(Getattr(n, "type"), "void");
+  if (returnsurvives && Getattr(n, "tmap:out:numoutputs"))
+    returnsurvives = GetInt(n, "tmap:out:numoutputs") > 0;
+
+  for (p = parms; p; p = nextSibling(p)) {
+    int numoutputs;
+    if (!Getattr(p, "tmap:argout:match_type"))
+      continue;
+
+    numoutputs = Getattr(p, "tmap:argout:numoutputs") ? GetInt(p, "tmap:argout:numoutputs") : 1;
+
+    String *tm_container = Getattr(p, "tmap:argout:container");
+
+    if (GetFlag(p, "tmap:argout:overwrite")) {
+      /* Everything returned so far is thrown away by this typemap. */
+      Clear(outputs);
+      returnsurvives = 0;
+      Delete(container);
+      container = numoutputs > 0 ? Copy(tm_container) : 0;
+      container_built = container ? 1 : 0;
+      Delete(clashing_container);
+      clashing_container = 0;
+    } else if (numoutputs > 0) {
+      const char *want = tm_container ? Char(tm_container) : "list";
+      if (!container) {
+        container = NewString(want);
+      } else if (!Equal(container, want) && !clashing_container) {
+        clashing_container = NewString(want);
+      }
+    }
+
+    if (numoutputs > 0)
+      Append(outputs, p);
+  }
+
+  if (returnsurvives)
+    SetFlag(n, "wrap:returnsurvives");
+  else
+    Delattr(n, "wrap:returnsurvives");
+
+  Setattr(n, "wrap:outputparms", outputs);
+  Delete(outputs);
+
+  if (clashing_container) {
+    if (warn_container_mismatch)
+      Swig_warning(WARN_TYPEMAP_ARGOUT_CONTAINER_MISMATCH,
+                   Getfile(n),
+                   Getline(n),
+                   "The argout typemaps for '%s' append into different containers, '%s' and '%s', so the type of the values returned cannot be worked out "
+                   "and a catch-all type is used for the return type instead. "
+                   "Check the container attribute in each argout typemap used by this function, noting that it defaults to 'list'.\n",
+                   SwigType_namestr(Getattr(n, "name")),
+                   container,
+                   clashing_container);
+    Setattr(n, "wrap:outputcontainer", "unknown");
+  } else if (container) {
+    Setattr(n, "wrap:outputcontainer", container);
+  } else {
+    Delattr(n, "wrap:outputcontainer");
+  }
+
+  if (container_built && !clashing_container)
+    SetFlag(n, "wrap:outputcontainerbuilt");
+  else
+    Delattr(n, "wrap:outputcontainerbuilt");
+
+  Delete(container);
+  Delete(clashing_container);
+}
+
+/* -----------------------------------------------------------------------------
+ * emit_isvoid_special_variables()
+ *
+ * Substitutes the $isvoid and $isvoidresult special variables in the wrapper code.
+ *
+ * $isvoid says whether the C++ return type is void. $isvoidresult says whether the
+ * wrapper has a return value for the 'argout' typemaps to append to, which a void
+ * return does not and neither does a return value that an 'out' typemap has
+ * suppressed with numoutputs=0.
+ *
+ * Pass n as 0 where there is no 'out' typemap to consult, such as a director
+ * method, and $isvoidresult is then the same as $isvoid.
+ * ----------------------------------------------------------------------------- */
+
+void emit_isvoid_special_variables(Node *n, String *code, bool isvoid) {
+  bool isvoidresult = isvoid || (n && checkAttribute(n, "tmap:out:numoutputs", "0"));
+  Replaceall(code, "$isvoidresult", isvoidresult ? "1" : "0");
+  Replaceall(code, "$isvoid", isvoid ? "1" : "0");
+}
+
+/* -----------------------------------------------------------------------------
  * emit_num_required()
  *
  * Computes the number of required arguments.  This function is safe for

@@ -7,7 +7,7 @@
 </head>
 <body>
 
-<H1><a name="Javascript">28 SWIG and Javascript</a></H1>
+<H1><a name="Javascript">30 SWIG and Javascript</a></H1>
 <!-- INDEX -->
 <div class="sectiontoc">
 <ul>
@@ -85,7 +85,7 @@
 
 <p>This chapter describes SWIG's support of Javascript. It does not cover SWIG basics, but only information that is specific to this module.</p>
 
-<H2><a name="Javascript_overview">28.1 Overview</a></H2>
+<H2><a name="Javascript_overview">30.1 Overview</a></H2>
 
 
 <p>Javascript is a prototype-based scripting language that is dynamic, weakly typed and has first-class functions. Its arguably the most popular language for web development.
@@ -101,10 +101,10 @@ Javascript has gone beyond being a browser-based scripting language and can be u
 <a href="https://github.com/nwjs/nw.js">NW.jst</a> provides an app runtime which uses Google's Chromium as Web-Browser widget and node.js for javascript extensions.
 </p>
 
-<H2><a name="Javascript_preliminaries">28.2 Preliminaries</a></H2>
+<H2><a name="Javascript_preliminaries">30.2 Preliminaries</a></H2>
 
 
-<H3><a name="Javascript_running_swig">28.2.1 Running SWIG</a></H3>
+<H3><a name="Javascript_running_swig">30.2.1 Running SWIG</a></H3>
 
 
 <p>Suppose that you defined a SWIG module such as the following:</p>
@@ -147,7 +147,7 @@ void example_initialize(v8::Handle&lt;v8::Object&gt; exports)</pre>
 <b>Note</b>: be aware that <code>v8</code> has a C++ API, and thus, the generated modules must be compiled as C++.
 </p>
 
-<H3><a name="Javascript_running_tests_examples">28.2.2 Running Tests and Examples</a></H3>
+<H3><a name="Javascript_running_tests_examples">30.2.2 Running Tests and Examples</a></H3>
 
 
 <p>The configuration for tests and examples currently supports Linux and Mac only and not MinGW (Windows) yet.</p>
@@ -179,7 +179,7 @@ $ make check-javascript-examples ENGINE=jsc</pre>
 $ make check-javascript-test-suite ENGINE=jsc</pre>
 </div>
 
-<H3><a name="Javascript_known_issues">28.2.3 Known Issues</a></H3>
+<H3><a name="Javascript_known_issues">30.2.3 Known Issues</a></H3>
 
 
 <p>At the moment, the Javascript generators pass all tests syntactically, i.e., the generated source code compiles. However, there are still remaining runtime issues.</p>
@@ -195,12 +195,12 @@ $ make check-javascript-test-suite ENGINE=jsc</pre>
 
 <p>The primary development environment has been Linux (Ubuntu 22.04). Windows and Mac OS X have been tested sporadically. Therefore, the generators might have more issues on those platforms. Please report back any problem you observe to help us improving this module quickly.</p>
 
-<H2><a name="Javascript_integration">28.3 Integration</a></H2>
+<H2><a name="Javascript_integration">30.3 Integration</a></H2>
 
 
 <p>This chapter gives a short introduction how to use a native Javascript extension: as a <code>node.js</code> module, and as an extension for an embedded Webkit.</p>
 
-<H3><a name="Javascript_node_extensions">28.3.1 Creating node.js Extensions</a></H3>
+<H3><a name="Javascript_node_extensions">30.3.1 Creating node.js Extensions</a></H3>
 
 
 <p>To install <code>node.js</code> you can download an installer from their <a href="https://launchpad.net/~chris-lea/+archive/node.js">web-site</a> for Mac OS X and Windows. For Linux you can either build the source yourself and run <code>sudo checkinstall</code> or keep to the (probably stone-age) packaged version. For Ubuntu there is a <a href="https://launchpad.net/~chris-lea/+archive/ubuntu/node.js/">PPA</a> available.</p>
@@ -258,7 +258,7 @@ require("./build/Release/example")</pre>
 
 <p>Starting from Node.js versions v21.6.0 / v20.12.0 / v18.20.0, Node-API has experimental support for a very important performance optimization called Basic Finalizers. Basic Finalizers allow to deallocate C++ objects directly from the context of the garbage collector without waiting for JavaScript. Without this, C++ objects must be deallocated on the Node.js event loop, which means that in fully synchronous code, they are never deallocated. Code produced by SWIG JSE supports using this feature. The support is still considered experimental and the generated module must be compiled with <code>-DSWIG_NAPI_USE_BASIC_FINALIZERS</code>. Basic finalizers require building with <code>node-addon-api</code> version 8.5.0 or later and compiling in C++20 mode.</p>
 
-<H4><a name="Javascript_using_yeoman">28.3.1.1 Using <code>yeoman</code> to generate a Node-API skeleton</a></H4>
+<H4><a name="Javascript_using_yeoman">30.3.1.1 Using <code>yeoman</code> to generate a Node-API skeleton</a></H4>
 
 
 <p>If targeting Node-API, the easiest way to bootstrap a project is by using the <code>yeoman</code> generator: </p>
@@ -277,7 +277,7 @@ $ node-gyp build</pre>
 <p>There is also the <a href="https://github.com/mmomtchev/node-magickwand"><code>node-magickwand</code></a> project that can be used as a tutorial for building and publishing a complex C++ library to
   npm as a ready-to-use real-world binary module.</p>
 
-<H4><a name="Javascript_exports_file">28.3.1.2 Generating an exports file</a></H4>
+<H4><a name="Javascript_exports_file">30.3.1.2 Generating an exports file</a></H4>
 
 <p>The Node-API generator can also automatically generate an exports file with named exports that will be compatible with both CommonJS and ECMAScript 6. This file follows the syntax guidelines set by <a href="https://github.com/nodejs/cjs-module-lexer/">cjs-module-lexer</a>. In order to generate the file, add the <code>-exports</code> CLI option, followed by the path to the compiled shared library - usually <code>../build/Release/<em>module_name</em>.node</code> when using <code>node-gyp</code>. In order to generate this name dynamically, a small JS wrapper may be used. For example when using <code>node-pre-gyp</code>, the following wrapper will load the shared library:</p>
 
@@ -290,7 +290,7 @@ module.exports = require(binding_path);</pre>
 
 <p>In this case, it will the filename of this wrapper that will have to be specified to <code>-exports</code>.</p>
 
-<H4><a name="Javascript_troubleshooting">28.3.1.3 Troubleshooting</a></H4>
+<H4><a name="Javascript_troubleshooting">30.3.1.3 Troubleshooting</a></H4>
 
 
 <ul>
@@ -302,12 +302,12 @@ module.exports = require(binding_path);</pre>
 $ sudo apt-get remove gyp</pre>
 </div>
 
-<H3><a name="Javascript_embedded_webkit">28.3.2 Embedded Webkit</a></H3>
+<H3><a name="Javascript_embedded_webkit">30.3.2 Embedded Webkit</a></H3>
 
 
 <p>Webkit is pre-installed on Mac OS X and available as a library for GTK.</p>
 
-<H4><a name="Javascript_osx">28.3.2.1 Mac OS X</a></H4>
+<H4><a name="Javascript_osx">30.3.2.1 Mac OS X</a></H4>
 
 
 <p>There is general information about programming with WebKit on <a href="https://developer.apple.com/library/mac/documentation/cocoa/conceptual/DisplayWebContent/DisplayWebContent.html">Apple Developer Documentation</a>. Details about <code>Cocoa</code> programming are not covered here.</p>
@@ -355,7 +355,7 @@ extern bool example_initialize(JSGlobalContextRef context, JSObjectRef* exports)
 @end</pre>
 </div>
 
-<H4><a name="Javascript_gtk">28.3.2.2 GTK</a></H4>
+<H4><a name="Javascript_gtk">30.3.2.2 GTK</a></H4>
 
 
 <p>There is general information about programming GTK at <a href="https://developer.gnome.org/gtk2/">GTK documentation</a> and in the <a href="https://developer.gnome.org/gtk-tutorial/">GTK tutorial</a>, and for Webkit there is a <a href="https://webkitgtk.org/reference/webkitgtk/stable/index.html">Webkit GTK+ API Reference</a>.</p>
@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
 }</pre>
 </div>
 
-<H3><a name="Javascript_applications_webkit">28.3.3 Creating Applications with node-webkit</a></H3>
+<H3><a name="Javascript_applications_webkit">30.3.3 Creating Applications with node-webkit</a></H3>
 
 
 <p>To get started with <code>node-webkit</code> there is a very informative set of <a href="https://github.com/rogerwang/node-webkit/wiki">wiki pages</a>.</p>
@@ -490,12 +490,12 @@ open new windows, and many more things.
 };</pre>
 </div>
 
-<H2><a name="Javascript_examples">28.4 Examples</a></H2>
+<H2><a name="Javascript_examples">30.4 Examples</a></H2>
 
 
 <p>Some basic examples are shown here in more detail.</p>
 
-<H3><a name="Javascript_simple_example">28.4.1 Simple</a></H3>
+<H3><a name="Javascript_simple_example">30.4.1 Simple</a></H3>
 
 
 <p>The common example <code>simple</code> looks like this:</p>
@@ -545,7 +545,7 @@ example.Foo = 3.1415926;</pre>
 
 <p><b>Note</b>: ECMAScript 5, the currently implemented Javascript standard, does not have modules. <code>node.js</code> and other implementations provide this mechanism defined by the <a href="https://wiki.commonjs.org/wiki/CommonJS">CommonJS</a> group. For browsers this is provided by <a href="https://browserify.org">Browserify</a>, for instance.</p>
 
-<H3><a name="Javascript_class_example">28.4.2 Class</a></H3>
+<H3><a name="Javascript_class_example">30.4.2 Class</a></H3>
 
 
 <p>The common example <code>class</code> defines three classes, <code>Shape</code>, <code>Circle</code>, and <code>Square</code>:</p>
@@ -675,7 +675,7 @@ at emitKey (readline.js:1095:12)</pre>
 <b>Note</b>: In ECMAScript 5 there is no concept for classes. Instead each function can be used as a constructor function which is executed by the 'new' operator. Furthermore, during construction the key property <code>prototype</code> of the constructor function is used to attach a prototype instance to the created object. A prototype is essentially an object itself that is the first-class delegate of a class used whenever the access to a property of an object fails. The very same prototype instance is shared among all instances of one type. Prototypal inheritance is explained in more detail on in <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain">Inheritance and the prototype chain</a>, for instance.
 </p>
 
-<H3><a name="Javascript_STL_example">28.4.3 STL Containers</a></H3>
+<H3><a name="Javascript_STL_example">30.4.3 STL Containers</a></H3>
 <p>There are two strategies when dealing with STL containers:</p>
 <ul>
   <li>
@@ -757,7 +757,7 @@ let last2 = vec2[vec2.length - 1];</pre>
 </li>
 </ul>
 
-<H3><a name="Javascript_Buffer_example">28.4.4 <code>Buffer</code> and <code>ArrayBuffer</code></a></H3>
+<H3><a name="Javascript_Buffer_example">30.4.4 <code>Buffer</code> and <code>ArrayBuffer</code></a></H3>
 <p>SWIG Node-API includes built-in typemaps for working with <code>Buffer</code> and <code>ArrayBuffer</code>. Note that the <code>Buffer</code> type is specific to Node.js and should be avoided when
   targeting browsers and WASM. In recent versions of Node.js <code>Buffer</code> is simply a wrapper around an <code>ArrayBuffer</code> and can be converted without copying the underlying data. The built-in typemaps reference special argument names - <code>buffer</code> and <code>arraybuffer</code> that can be applied to any other argument names - or simply to the raw types.</p>
 <p>When dealing with raw buffers, three distinctive scenarios should be considered:</p>
@@ -812,7 +812,7 @@ let last2 = vec2[vec2.length - 1];</pre>
   </li>
 </ul>
 
-<H4><a>28.4.4.1 Zero-copy <code>ArrayBuffer</code></a></H4>
+<H4><a>30.4.4.1 Zero-copy <code>ArrayBuffer</code></a></H4>
 
 <p>For applications requiring high efficiency or access to shared memory, a zero-copy <code>ArrayBuffer</code> can be used. This should be avoided when possible because it is error-prone and it is not compatible with WASM or some alternative Node-API implementations which define <a href="https://github.com/nodejs/node-addon-api/blob/main/doc/external_buffer.md"><code>NODE_API_NO_EXTERNAL_BUFFERS_ALLOWED</code></a> such as Electron.</p>
 
@@ -853,7 +853,7 @@ let last2 = vec2[vec2.length - 1];</pre>
   }</pre>
   </div>
 
-<H3><a name="Javascript_C_arrays_example">28.4.5 <code>C</code> (flat pointer) arrays</a></H3>
+<H3><a name="Javascript_C_arrays_example">30.4.5 <code>C</code> (flat pointer) arrays</a></H3>
 <p>Just like with STL containers, there are two approaches to handling C (flat pointer) arrays depending on whether C will use the JavaScript structure or JavaScript will use the C structure.</p>
 <p>The language-independnant SWIG feature <code>%array_class</code> allows to wrap any array structure as an object, providing a constructor and methods for setting and retrieving data.
   This method allows for zero-copy sharing of a memory buffer between C and JavaScript but it is less practical as the array is not a JavaScript array but rather a SWIG object can must be accessed through its own methods.</p>
@@ -889,13 +889,13 @@ This allows for more seamless integration at the price of copying the array at e
 </div>
 <p>By default, these typemaps are available for <code>int</code> and <code>double</code> - check <code>arrays_javascript.i</code> to see how to add more types.</p>
 
-<H3><a name="Javascript_smart_pointer_example">28.4.6 Smart pointers</a></H3>
+<H3><a name="Javascript_smart_pointer_example">30.4.6 Smart pointers</a></H3>
 
 <p>SWIG for JavaScript supports natively smart pointers with the usual <a href="CPlusPlus11.html#CPlusPlus11_general_purpose_smart_pointers">SWIG semantics</a>. Support for <code>std::shared_ptr</code> is complete, while <code>std::unique_ptr</code> has some caveats since in JavaScript it is impossible to express the fact the a function can take the ownership of a passed object, leaving the original object in an inconsistent state.</p>
 
 <p>Additionally, SWIG Node-API is the only engine which provides an integration of the reference counting of a <code>std::shared_ptr</code> with the reference counting of the GC. This means that Node-API allows C++ to keep a copy of a passed <code>std::shared_ptr</code> and the GC won't destroy this object until C++ has deleted its last copy.</p>
 
-<H3><a name="Javascript_function_example">28.4.7 <code>std::function</code> and plain C functions pointers</a></H3>
+<H3><a name="Javascript_function_example">30.4.7 <code>std::function</code> and plain C functions pointers</a></H3>
 
 <p>At the moment, only SWIG Node-API supports function.</p>
 
@@ -1082,7 +1082,7 @@ struct CWrappedFuncPtr {
 
 <p>The first parameter is the name of the type as it will appear in JavaScript, the second one is the return type and the rest are the function arguments.</p>
 
-<H3><a name="Javascript_argout_example">28.4.8 Return values in arguments</a></H3>
+<H3><a name="Javascript_argout_example">30.4.8 Return values in arguments</a></H3>
 
 <p>A very common design pattern in C and C++ is to use function arguments to return multiple values - typically by using a raw pointer in C or a reference in C++. In languages such as JavaScript, this is usually done by returning an array or an object with named fields.</p>
 
@@ -1151,9 +1151,9 @@ struct CWrappedFuncPtr {
 
 <p>In this case, the original return value of the function will be placed in a field named <code>result</code> with <code>buffer</code> being a second field. If the original return value is <code>void</code>, then only <code>buffer</code> will be present. In order to use a different name for the original return value of the function, an <code>out</code> typemap with the function return type and eventually its name should use the same macro to preprocess its return value. Refer to the <a href="#Typescript">TypeScript section</a> for more information on handling the TypeScript types in this case.</p>
 
-<H2><a name="Javascript_exceptions">28.5 Exceptions</a></H2>
+<H2><a name="Javascript_exceptions">30.5 Exceptions</a></H2>
 
-<H3><a name="Javascript_jsc_exceptions">28.5.1 Handling Exceptions in JavascriptCore</a></H3>
+<H3><a name="Javascript_jsc_exceptions">30.5.1 Handling Exceptions in JavascriptCore</a></H3>
 <p>Applications with an embedded JavascriptCore should be able to present detailed exception messages that occur in the Javascript engine. Below is an example derived from code provided by Brian
         Barnes on how these exception details can be extracted.</p>
 <div class="code">
@@ -1230,7 +1230,7 @@ if(js_exception)
   printf("Compile error is %s", return_error_string);
 }</pre>
 </div>
-<H3><a name="Javascript_napi_exceptions">28.5.2 Handling Exceptions in Node-API</a></H3>
+<H3><a name="Javascript_napi_exceptions">30.5.2 Handling Exceptions in Node-API</a></H3>
 <p>Node-API is the only generator that provides fully automatic conversion of C++ exceptions to JavaScript exceptions when building with C++ exceptions enabled in <code>binding.gyp</code>.</p>
 <p>By default <code>node-gyp</code> builds with exceptions disabled and does so by tweaking a number of compiler options. The <code>node-addon-api</code> npm package includes a file that contains all the options needed to enable exceptions across the three officially supported compilers - g++, clang and MSVC.
 <p><strong>It is highly recommended to enable exceptions using this file, especially when using MSVC which, unless the right options and macros are used, will happily produce a mostly working binary with some very subtle memory allocation/alignement errors.</strong></p>
@@ -1245,7 +1245,7 @@ if(js_exception)
 <p>In this case, nothing else is needed for the C++ exceptions to be passed to JavaScript.</p>
 <p>Support for building Node-API modules without enabling C++ exceptions (<code>-fno-exceptions</code> compiler option) is currently incomplete and not unit tested.</p>
 
-<H2><a name="Javascript_async">28.6 Asynchronous Execution</a></H2>
+<H2><a name="Javascript_async">30.6 Asynchronous Execution</a></H2>
 <p>The Node-API generator supports generating asynchronous wrappers. This feature is tightly linked to Node.js and libuv and mimics the semantics of the built-in class library. An asynchronous version of a function parses its arguments on the main thread and then queues the execution of the underlying C/C++ method in one of the existing background threads of the libuv pool. It then returns a <code>Promise</code> that resolves or rejects with the return value of the C/C++ function. The JavaScript code can continue its execution while the operation is running. This also allows launching multiple parallel instances of the C/C++ methods when these are reentrant. Otherwise, special locking must be implemented. By default, Node.js launches 4 worker threads which are also used by the internal class library for performing asynchronous file I/O (ie <code>fs.readFile()</code>). This behaviour can be adjusted via the environment variable <code>UV_THREADPOOL_SIZE</code>. For best results, this should be equal to the number of physical CPU cores.</p>
 
 <p>Generation of asynchronous wrappers can be globally enabled from the CLI by passing <code>-async</code> option or by using <code>%feature</code>:</p>
@@ -1272,7 +1272,7 @@ if(js_exception)
 <code>Examples/javascript/async/native_async.i</code> contains an example of a hand-written async wrapper included with <code>%native</code>.
 </p>
 
-<H3><a name="Javascript_async_persistence">28.6.1 Persistence</a></H3>
+<H3><a name="Javascript_async_persistence">30.6.1 Persistence</a></H3>
 
 <p>Asynchronous wrappers must manage persistence of the objects they will access. Consider the following example:</p>
 <div class="code">
@@ -1285,7 +1285,7 @@ function fn() {
 <p><code>fn()</code> will potentially exit before the asynchronous operation has completed. There is nothing guaranteeing that <code>obj</code> won't be collected by the GC right after the synchronous parsing of the input arguments of <code>asyncMethod()</code> - as this is the last reference to the JS object. Destroying the JS object will also destroy the underlying wrapped C/C++ object. In order to prevent this, an asynchronous wrapper must acquire persistent references to all objects that it will access. Persistence is fully automatic, SWIG will generate a <code>SWIG_Persist</code> method in all asynchronous tasklets that will acquire persistent references to all objects present in the input arguments of the function for the duration of the asynchronous execution.
 </p>
 
-<H3><a name="Javascript_async_locking">28.6.2 Locking</a></H3>
+<H3><a name="Javascript_async_locking">30.6.2 Locking</a></H3>
 
 <p>
 Asynchornous wrappers allow access to concurrent programming, meaning that multiple instances of the same method on the same object can potentially be running at the same time. Whether this is supported or not, and under what conditions, will depend on the wrapped C/C++ code. Most of the time, some sort of locking mecanism will have to be provided. SWIG supports an additional typemap, specific to Node-API async mode, <code>lock</code> which allows to register locking primitives for a given object. The locking primitives must be two lambdas without arguments that will be executed in the background thread without being allowed to access V8. Additionally, all C/C++ objects wrapped by SWIG now contain a mutex that can be used to implement locking. <code>javascriptasync.swg</code> contains a default implementation that automatically locks all wrapped objects. When wrapping objects that support natively being accessed simultaneously from multiple threads - because they are read-only or becase they implement their own synchronisation - these typemaps can be overriden with empty ones for no locking at all, or with a custom locking implementation. 
@@ -1342,7 +1342,7 @@ This will enable the inclusion of the async locking typemaps in both synchronous
 
 <p>The built-in locking has only one major drawback - it locks the SWIG proxy instead of the underlying object. This means that it is not compatible with typemaps that create multiple proxies for one object - such as the <code>DISOWN</code> typemaps or typemaps that clear <code>SWIG_POINTER_OWN</code></p>.
 
-<H4><a name="Javascript_async_sync_locking">28.6.2.1 Creating Wrappers that Support Mixing Synchronous and Asynchronous Execution</H3>
+<H4><a name="Javascript_async_sync_locking">30.6.2.1 Creating Wrappers that Support Mixing Synchronous and Asynchronous Execution</H3>
 
 <p>Special care must be taken when designing a wrapper that supports mixing of synchronous and asynchronous access. In this case one must never synchronously access objects that have been locked by an asynchronous operation. Trying to lock such object will result synchronous blocking of the event loop, effectively freezing the main thread - and the program - until the asynchronous operation completes. This is something that should be made clear to the end user of the wrapper. For example: </p>
 <div class="code">
@@ -1355,13 +1355,13 @@ const x = obj.x;           // Use a getter to access a member</pre>
 If locking for <code>SwigObj</code> is enabled, the last operation will have to lock <code>obj</code> - which has already been locked by the background operation. This will effectively block the main thread until the background operation completes. This can cause network buffer overflows in server code and UI freezing in desktop applications.
 </p>
 
-<H4><a name="Javascript_async_locking_starvation">28.6.2.2 Avoiding Thread Starvation</H3>
+<H4><a name="Javascript_async_locking_starvation">30.6.2.2 Avoiding Thread Starvation</H3>
 
 <p>
 Another potential weakness of the async framework is thread starvation due to the limited number of threads in the thread pool. With 4 threads, if an end user program launches 4 operations on the same object - then all 4 threads will pick one of them - and then they will sequentially wait for the object to become available - locking out other operations that could have executed in parallel. Asynchronous operations are not preemptible. This weakness is inherent to the Node.js asynchronous framework and does not have an easy workaround. For example, in order to partially alleviate the starvation problem, the internal <code>fs.readFile()</code> method schedules its work in small 64Kb chunks to allow other tasks to run. This problem can also be partially alleviated by simply raising the number of threads in the pool.
 </p>
 
-<H4><a name="Javascript_async_shared_locking">28.6.2.3 Custom Locking Example</H3>
+<H4><a name="Javascript_async_shared_locking">30.6.2.3 Custom Locking Example</H3>
 
 <p>Suppose we have a <code>Klass</code> that natively supports being called from multiple threads with complex locking semantics. We have to call <code>Klass::rolock()</code> to obtain a shared lock and <code>Klass::wrlock()</code> to obtain an exclusive lock. Methods that expect a shared lock have their arguments called <code>inp</code> and methods that expect an exclusive lock have their arguments called <code>out</code>. Here are two example typemaps that implement these semantics:</p>
 
@@ -1398,7 +1398,7 @@ Another potential weakness of the async framework is thread starvation due to th
 
 <p><code>SWIG_locks</code> is the list of locks that have to be acquired for the operation. SWIG will take care of acquiring them in the correct order. Each lock consists of a unique identifier of type <code>void *</code> and two lambdas used for locking and unlocking.</p>
 
-<H3><a name="Javascript_async_reject">28.6.3 Rejecting a <code>Promise</code> from a Typemap</H3>
+<H3><a name="Javascript_async_reject">30.6.3 Rejecting a <code>Promise</code> from a Typemap</H3>
 
 <p>The usual Node.js convention is that functions that return a <code>Promise</code> should never throw synchronously, because this forces the end user to catch eventual errors in two distrinct ways. Throwing a C++ exception in a wrapped function will automatically result in a rejected <code>Promise</code>.</p>
   
@@ -1415,7 +1415,7 @@ Another potential weakness of the async framework is thread starvation due to th
 }</pre>
 </div>
 
-<H2><a name="Typescript">28.7 Typescript</a></H2>
+<H2><a name="Typescript">30.7 Typescript</a></H2>
 
 <p>SWIG can automatically generate TypeScript declarations - <code>.d.ts</code> files - so that the generated wrappers can be used from TypeScript with full type information. TypeScript support is enabled with the <code>-typescript</code> command line option. This will have the effect of producing an additional file with the module name and a <code>.d.ts</code> extension in the output directory. TypeScript can be used with all JavaScript engines. </p>
 
@@ -1475,16 +1475,16 @@ export type MyNumber = number;
 </pre>
 </div>
 
-<H2><a name="Javascript_WASM">28.8 Compiling to WASM</a></H2>
+<H2><a name="Javascript_WASM">30.8 Compiling to WASM</a></H2>
 
-<H3><a name="Javascript_WASM_intro">28.8.1 Introduction</a></H3>
+<H3><a name="Javascript_WASM_intro">30.8.1 Introduction</a></H3>
 
 <p>WASM is a standard for a virtual machine that runs a low-level bytecode and it is well-supported by most modern browsers and Node.js. It allows to run existing C/C++ code for POSIX - generally the work to port an existing POSIX-compatible project to WASM should be expected to be similar to the work for porting a Linux project to macOS. WASM inherits from a project called <code>asm.js</code> which allowed to interpret x86 assembler. JavaScript engines with WASM support implement this virtual machine directly in the engine itself for an increased performance.</p>
 <p>The various data, text, heap and stack memory mappings of a WASM subroutines are stored in JavaScript <code>ArrayBuffer</code>s. WASM code remains subject to all the security restrictions of the underlying JavaScript engine. In particular, using multi-threading in browsers requires enabling <a href="https://web.dev/articles/coop-coep">COOP/COEP</a> as it relies on creating memory mappings in <code>SharedArrayBuffer</code>s.</p>
 
 <p>Although the WASM virtual machines itself is well-specified, its environment ABI is not part of the standard. Currently, there are two competing ABIs for interacting with WASM code - the older de facto standard imposed by the <code>emscripten</code> compiler in which a WASM binary consists of a WASM blob and a generated JavaScript wrapper, and the newer official industry standard called WASI which specifies a common ABI interface. WASI is supported by recent versions of the <code>clang</code> compiler.</p>
 
-<H3><a name="Javascript_WASM_building">28.8.2 Building SWIG Node-API generated wrappers to WASM</a></H3>
+<H3><a name="Javascript_WASM_building">30.8.2 Building SWIG Node-API generated wrappers to WASM</a></H3>
 
 <p>Code produced by the Node-API generator, including the asynchronous wrappers, is unit-tested to be fully compatible with the <code><a href="https://emnapi-docs.vercel.app/">emnapi</a></code> project. This means that wrappers produced by SWIG can be built to WASM by modifying only the build process.</p>
 
@@ -1594,7 +1594,7 @@ emnapi/packages/emnapi/src/uv/unix/core.c</pre>
 
 </ul>
 
-<H3><a name="Javascript_WASM_importing">28.8.3 Importing SWIG Node-API generated wrappers built to WASM</a></H3>
+<H3><a name="Javascript_WASM_importing">30.8.3 Importing SWIG Node-API generated wrappers built to WASM</a></H3>
 
 <p>The WASM specification imposes an asynchronous interface for Javascript code loading a WASM blob. As browsers are highly asynchronous, this is usually not a problem, but when importing a WASM module in Node.js, it must be <code>await</code>ed before it can be used. This means that WASM cannot be used in a fully synchronous Node.js program and it is best used in ECMAScript mode.</p>
 
@@ -1616,7 +1616,7 @@ declare const <em>module_name</em>: Promise&lt;typeof import(&#39;<em>module_nam
 export default <em>module_name</em>;</pre>
 </div>
 
-<H3><a name="Javascript_WASM_async">28.8.4 Using asynchronous wrappers with WASM</code></a></H3>
+<H3><a name="Javascript_WASM_async">30.8.4 Using asynchronous wrappers with WASM</code></a></H3>
 
 <p>The WASM builds support using the same asynchonous wrappers as the native Node.js builds. This feature is provided by <code>emnapi</code> which re-implements the <code>libuv</code> API. Upon loading the WASM bundle, the <code>emnapi</code> runtime will spawn 4 threads (<em>this is the meaning of the compilation option</em>) that will use <code>SharedArrayBuffer</code>s to communicate with the WASM code in the main thread. When calling an asynchronous method, a WASM stub in the main thread will queue its arguments to be executed by a worker from the pool. All C++/WASM objects live in a <code>SharedArrayBuffer</code> accessible to all threads. This mimics the Node.js asynchronous model. The use of <code>SharedArrayBuffer</code> imposes the requirement that the web server hosting the web page supports <a href="https://web.dev/articles/coop-coep">COOP/COEP</a>. Trying to load a WASM bundle compiled for COOP/COEP from a web server that does not enable it, will fail. Currently there is no built-in mechanism to enable automatic fallback to a non-COOP/COEP build as this build won't have the same API.</p>
 
@@ -1630,13 +1630,13 @@ export default <em>module_name</em>;</pre>
 
 <p>In the future, there might be a third option for I/O heavy code that will run the WASM code in the main thread, but it will behave as JavaScript asynchronous code for I/O - using <code>Asyncify</code>.</p>
 
-<H3><a name="Javascript_WASM_differences">28.8.5 Incompatibilities between <code>node-addon-api</code> and <code>emnapi</code></a></H3>
+<H3><a name="Javascript_WASM_differences">30.8.5 Incompatibilities between <code>node-addon-api</code> and <code>emnapi</code></a></H3>
 
 <p>There are some minor incompatibilities between the two platforms, mostly pertaining to the fact that WASM uses a separate heap from JavaScript which places additional restrictions on using <code>ArrayBuffer</code> objects. These cannot always be transparently shared between JavaScript and C++ and must be copied. This is not a problem for functions that expect an <code>ArrayBuffer</code> as argument or that return a new <code>ArrayBuffer</code> as a result - in these cases <code>emnapi</code> will automatically handle the copying. However functions that expect an <code>ArrayBuffer</code> argument and modify it, will need an additional step for these modifications to be copied back to the JavaScript copy.</p>
 
 <p>The built-in typemaps for handling a writable <code>ArrayBuffer</code> in <code>arraybuffer.i</code> takes this into account and can be used as an example for implementing similar typemaps.</p>
 
-<H2><a name="Javascript_code_splitting">28.9 Code Spltting</a></H2>
+<H2><a name="Javascript_code_splitting">30.9 Code Spltting</a></H2>
 
 <p>The JavaScript generator includes support for splitting the generated wrapper code into multiple compilation unit. This allows to greatly reduce the memory requirements, especially when using templated C++ code. At the moment only the Node-API generator supports it. Code splitting is enabled with the <code>-split</code> command-line option. In this mode, SWIG will produce a single header file and a number of C++ source files that include it. Each class will be placed a in a separate file and there will be one file with all the global functions.</p>
 
@@ -1669,7 +1669,7 @@ int add(int a, int b) { return a + b; }
 %}</pre>
 </div>
 
-<H2><a name="Javascript_context">28.10 Storing and Using a Context per JavaScript Isolate</a></H2>
+<H2><a name="Javascript_context">30.10 Storing and Using a Context per JavaScript Isolate</a></H2>
 
 <p>SWIG Node-API allows modules to store and access a user data structure for each JavaScript worker thread (often called an isolate in the JavaScript world - <code>WebWorker</code> in the browser or <code>worker_thread</code> in Node.js). As code in <code>%init</code> sections will be run for each worker thread, it is the ideal place to initialize this structure:</p>
 
@@ -1705,12 +1705,12 @@ auto instance_data = static_cast<my_instance_data *>(SWIG_NAPI_GetInstanceData(e
 
 <p>Never use the Node-API built-in <code>Env::SetInstanceData</code> as this pointer is used internally by SWIG. The <code>env</code> variable is automatically available in every context.</p>
 
-<H2><a name="Javascript_implementation">28.11 Implementation</a></H2>
+<H2><a name="Javascript_implementation">30.11 Implementation</a></H2>
 
 
 <p>The Javascript Module implementation has taken a very different approach compared to other language modules in order to support different JavaScript interpreters.</p>
 
-<H3><a name="Javascript_source_code">28.11.1 Source Code</a></H3>
+<H3><a name="Javascript_source_code">30.11.1 Source Code</a></H3>
 
 
 <p>The Javascript module is implemented in <code>Source/Modules/javascript.cxx</code>. It dispatches the code generation to a <code>JSEmitter</code> instance, <code>V8Emitter</code>, <code>JSCEmitter</code> or <code>NAPIEmitter</code>. Additionally there are some helpers: <code>Template</code>, for templated code generation, and <code>JSEmitterState</code>, which is used to manage state information during AST traversal. This rough map shall make it easier to find a way through this huge source file:</p>
@@ -1776,7 +1776,8 @@ class JSCEmitter: public JSEmitter { ... };
 
 JSCEmitter::JSCEmitter() { ... }
 
-void JSCEmitter::marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper, MarshallingMode mode, bool is_member, bool is_static) { ... }
+void JSCEmitter::marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper,
+                                  MarshallingMode mode, bool is_member, bool is_static) { ... }
 ...
 
 // JSCEmitter factory
@@ -1812,7 +1813,7 @@ Template::Template(const String *code_) { ... }
 ...</pre>
 </div>
 
-<H3><a name="Javascript_code_templates">28.11.2 Code Templates</a></H3>
+<H3><a name="Javascript_code_templates">30.11.2 Code Templates</a></H3>
 
 
 <p>All generated code is created on the basis of code templates. The templates for <em>JavascriptCore</em> can be found in <code>Lib/javascript/jsc/javascriptcode.swg</code>, for <em>v8</em> in <code>Lib/javascript/v8/javascriptcode.swg</code> and for <em>Node-API</em> in <code>Lib/javascript/napi/javascriptcode.swg</code>.</p>
@@ -1851,7 +1852,7 @@ t_register.replace("$jsparent", state.clazz(NAME_MANGLED))
 </div>
 <p><code>Template</code> creates a copy of that string and <code>Template::replace</code> uses Swig's <code>Replaceall</code> to replace variables in the template. <code>Template::trim</code> can be used to eliminate leading and trailing whitespaces. <code>Template::print</code> is used to write the final template string to a Swig <code>DOH</code> (based on <code>Printv</code>). All methods allow chaining.</p>
 
-<H3><a name="Javascript_emitter">28.11.3 Emitter</a></H3>
+<H3><a name="Javascript_emitter">30.11.3 Emitter</a></H3>
 
 
 <p>The Javascript module delegates code generation to a <code>JSEmitter</code> instance. The following extract shows the essential interface:</p>
@@ -1970,7 +1971,7 @@ int JAVASCRIPT::classHandler(Node *n) {
 </div>
 <p>In <code>enterClass</code> the emitter stores state information that is necessary when processing class members. In <code>exitClass</code> the wrapper code for the whole class is generated.</p>
 
-<H3><a name="Javascript_emitter_states">28.11.4 Emitter states</a></H3>
+<H3><a name="Javascript_emitter_states">30.11.4 Emitter states</a></H3>
 
 
 <p>For storing information during the AST traversal the emitter provides a <code>JSEmitterState</code> with different slots to store data representing the scopes global, class, function, and variable.</p>
