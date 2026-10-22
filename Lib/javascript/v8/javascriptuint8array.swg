@@ -1,11 +1,15 @@
-
 /* ------------------------------------------------------------
  *  utility methods for Uint8Array
  * ------------------------------------------------------------ */
 
 #define SWIGV8_UINT8ARRAY v8::Local<v8::Uint8Array>
 
-%fragment("SWIG_FromUint8Array", "header") {
+%fragment("SWIG_FromUint8Array", "header", fragment="SWIG_FromUint8Array_body") {
+SWIGINTERN int
+SWIG_FromUint8Array(SWIGV8_VALUE valRef, void** cptr, size_t* psize, int *alloc);
+}
+
+%fragment("SWIG_FromUint8Array_body", SWIG_SPLIT_BODY_SECTION) {
 SWIGINTERN int
 SWIG_FromUint8Array(SWIGV8_VALUE valRef, void** cptr, size_t* psize, int *alloc)
 {
@@ -37,7 +41,11 @@ SWIG_FromUint8Array(SWIGV8_VALUE valRef, void** cptr, size_t* psize, int *alloc)
 }
 }
 
-%fragment("SWIG_ToUint8Array", "header") {
+%fragment("SWIG_ToUint8Array", "header", fragment="SWIG_ToUint8Array_body") {
+SWIGINTERN SWIGV8_VALUE SWIG_ToUint8Array(void* buf, size_t len);
+}
+
+%fragment("SWIG_ToUint8Array_body", SWIG_SPLIT_BODY_SECTION) {
 SWIGINTERN SWIGV8_VALUE SWIG_ToUint8Array(void* buf, size_t len)
 {
   if (buf != NULL && len > 0) {

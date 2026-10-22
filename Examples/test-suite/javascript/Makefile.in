@@ -211,6 +211,11 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
   SWIGOPT += -DBUILDING_NODE_EXTENSION=1
   
   # shut up some warnings
+  # this test is meant to test the syntax parser and it is illogical
+  cpp14_generic_lambda.cpptest: GYP_CFLAGS += \"-Wno-ignored-qualifiers\",
+  # these tests have superfluous virtual specifiers that emit a warning with recent clang
+  cpp11_final_override.cpptest: GYP_CFLAGS += \"-Wno-unnecessary-virtual-specifier\"
+  cpp11_final_directors.cpptest: GYP_CFLAGS += \"-Wno-unnecessary-virtual-specifier\"
 
   # dunno... ignoring generously
   apply_signed_char.cpptest: GYP_CFLAGS += \"-Wno-ignored-qualifiers\",
@@ -233,7 +238,7 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		LSAN_OPTIONS = suppressions=$(srcdir)/node_template/napi-leaks-suppression.txt
 		EXPOSE_GC = -expose-gc
 	endif
-  ifneq (, $(DEBUG))
+	ifneq (, $(DEBUG))
 		GYP_OPTS = --debug
 		BUILD = Debug
 		ifeq (emcc, $(CC))
@@ -258,12 +263,12 @@ ifeq ($(JSENGINE), $(filter $(JSENGINE), node napi))
 		SWIGOPT += -typescript
 	endif
         ifneq (,$(findstring typescript,$(SWIG_FEATURES)))
-                TYPESCRIPT = 1
+		TYPESCRIPT = 1
         endif
         SOURCES = "../$*_wrap.cxx"
         ifneq (,$(findstring split,$(SWIG_FEATURES)))
-                SPLIT = 1		
-                SOURCES = "<@(source_glob)"
+		SPLIT = 1
+		SOURCES = "<@(source_glob)"
         endif
 
 	setup_node = \

@@ -1817,6 +1817,9 @@ static void default_arguments(Node *n) {
 	String *cvalue = Copy(Getattr(function,"value"));
 	SwigType *ctype = Copy(Getattr(function,"type"));
 	String *cthrow = Copy(Getattr(function,"throw"));
+	String *attribute = 0;
+        if (Getattr(function, "attribute"))
+          attribute = Copy(Getattr(function,"attribute"));
 
         Setattr(new_function,"name", Getattr(function,"name"));
         Setattr(new_function,"code", ccode);
@@ -1827,6 +1830,8 @@ static void default_arguments(Node *n) {
         Setattr(new_function,"value", cvalue);
         Setattr(new_function,"type", ctype);
         Setattr(new_function,"throw", cthrow);
+        if (attribute)
+          Setattr(new_function,"attribute", attribute);
 
 	Delete(ccode);
 	Delete(cstorage);
@@ -5079,10 +5084,6 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
 		  String *type = Copy($type);
 		  Setattr(n,"type",type);
 		  Setattr(n,"storage",$storage_class);
-                  if ($decl_attr)
-                    Setattr($$, "attribute", $decl_attr);
-                  if ($type_attr)
-                    Setattr($type, "attribute", $type_attr);
 		  n = nextSibling(n);
 		  Delete(type);
 		}
@@ -5243,8 +5244,6 @@ c_decl  : attribute[decl_attr] storage_class type declarator cpp_const attribute
                   String *type = Copy($trailing_rettype);
 		  Setattr(n,"type",type);
 		  Setattr(n,"storage",$storage_class);
-                  if ($attribute)
-                    Setattr($$, "attribute", $attribute);
 		  n = nextSibling(n);
 		  Delete(type);
 		}

@@ -13,14 +13,6 @@
 //
 //#define SWIG_PRESERVE_CARRAY_SIZE
 
-#ifdef SWIGCODESPLIT
-%define STRINGS_BODY_SECTION "wrapper"
-%enddef
-#else
-%define STRINGS_BODY_SECTION "header"
-%enddef
-#endif
-
 /* ------------------------------------------------------------
  *  String typemaps for type Char (char or wchar_t)
  * ------------------------------------------------------------ */
@@ -611,7 +603,7 @@ SWIG_As##CharName##Array(SWIG_Object obj, Char *val, size_t size);
 #endif
 }
 
-%fragment("SWIG_As" #CharName "Array_Body",STRINGS_BODY_SECTION,fragment=#SWIG_AsCharPtrAndSize) {
+%fragment("SWIG_As" #CharName "Array_Body",SWIG_SPLIT_BODY_SECTION,fragment=#SWIG_AsCharPtrAndSize) {
 SWIGCLINKAGE SWIGINTERN int
 SWIG_As##CharName##Array(SWIG_Object obj, Char *val, size_t size)
 {
@@ -655,7 +647,7 @@ SWIG_AsVal_dec(Char)(SWIG_Object obj, Char *val);
 #endif
 }
 
-%fragment(SWIG_AsVal_body(Char),STRINGS_BODY_SECTION,
+%fragment(SWIG_AsVal_body(Char),SWIG_SPLIT_BODY_SECTION,
 	  fragment="SWIG_As"#CharName"Array",
 	  fragment=FragLimits,
 	  fragment=SWIG_AsVal_frag(long)) {

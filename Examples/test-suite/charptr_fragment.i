@@ -14,7 +14,7 @@
 
 #if defined(SWIGUTL) && !defined(SWIGGUILE)
 
-%wrapper %{
+%header %{
 /* Code inserted verbatim like this is not macro expanded by SWIG either, so
    SWIG_FromCharPtrAndSize has to be usable by the C compiler.  The typemaps go
    through these aliases so that %set_output can still be used - %set_output is
@@ -31,7 +31,7 @@
 
 #if defined(SWIGUTL) && !defined(SWIGGUILE) && !defined(SWIGTCL) && !defined(SWIGSCILAB) && !defined(SWIGJAVASCRIPT)
 
-%wrapper %{
+%header %{
 #define swig_charbuf_from_binary(b) SWIG_FromBinaryCharPtrAndSize((b).str, (b).len, 0)
 %}
 

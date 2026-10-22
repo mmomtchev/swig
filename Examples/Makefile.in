@@ -868,8 +868,8 @@ ifeq (napi, $(ENGINE))
 	echo "Engine: napi"
 	echo "Node.js: `($(NODEJS) --version)`"
 	echo "node-gyp: `($(NODEGYP) --version)`"
-	@echo -n node-addon-api:\ 
-	@if [ -n "@NODENAPI_DIR@" ]; then echo "@NODENAPI_DIR@"; else echo "not found"; fi
+	@echo -n node-addon-api include:\ 
+	@if [ -n "@NAPI_INCLUDE@" ]; then echo "@NAPI_INCLUDE@"; else echo "not found"; fi
 	@echo -n TypeScript:\ 
 	@if [ -n "@TSC@" ]; then @TSC@ --version; else echo "not found"; fi
 	@echo -n @types/node:\ 

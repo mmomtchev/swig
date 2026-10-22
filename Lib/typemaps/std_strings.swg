@@ -1,12 +1,5 @@
 
 /* defining the String asptr/from methods */
-#ifdef SWIGCODESPLIT
-%define STD_STRINGS_BODY_SECTION "wrapper"
-%enddef
-#else
-%define STD_STRINGS_BODY_SECTION "header"
-%enddef
-#endif
 
 %define %std_string_asptr(String, Char, SWIG_AsCharPtrAndSize, Frag)
 %fragment(SWIG_AsPtr_frag(String),"header",
@@ -15,7 +8,7 @@
 SWIGCLINKAGE int SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val);
 #endif
 }
-%fragment("run_" SWIG_AsPtr_frag(String),STD_STRINGS_BODY_SECTION,fragment=Frag) {
+%fragment("run_" SWIG_AsPtr_frag(String),SWIG_SPLIT_BODY_SECTION,fragment=Frag) {
 SWIGCLINKAGE int
 SWIG_AsPtr_dec(String)(SWIG_Object obj, String **val) 
 {
@@ -71,7 +64,7 @@ SWIG_From_dec(String)(const String& s)
 SWIGCLINKAGE int SWIG_AsVal_dec(String)(SWIG_Object obj, String *val);
 #endif
 }
-%fragment("run_" SWIG_AsVal_frag(String),STD_STRINGS_BODY_SECTION, fragment=SWIG_AsPtr_frag(String)) {
+%fragment("run_" SWIG_AsVal_frag(String),SWIG_SPLIT_BODY_SECTION, fragment=SWIG_AsPtr_frag(String)) {
 SWIGCLINKAGE int
 SWIG_AsVal_dec(String)(SWIG_Object obj, String *val)
 {

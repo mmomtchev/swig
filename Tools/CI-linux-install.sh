@@ -13,8 +13,8 @@ elif [[ "$compiler" = 'emscripten' ]]; then
 	(
 		cd emsdk
 		git pull
-		sh ./emsdk install latest
-		sh ./emsdk activate latest
+		sh ./emsdk install 4.0.23
+		sh ./emsdk activate 4.0.23
 	)
 	source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
 	echo EMSDK=$EMSDK >> $GITHUB_ENV

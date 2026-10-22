@@ -1,10 +1,14 @@
-
 /* ------------------------------------------------------------
  *  utility methods for Uint8Array
  * ------------------------------------------------------------ */
 
-%fragment("SWIG_FromUint8Array", "header") {
+%fragment("SWIG_FromUint8Array", "header", fragment="SWIG_FromUint8Array_body") {
 %#define SWIG_FromUint8Array(valRef, cptr, psize, alloc) SWIG_ContextFromUint8Array(context, valRef, cptr, psize, alloc)
+SWIGINTERN int
+SWIG_ContextFromUint8Array(JSContextRef context, JSValueRef valRef, void** cptr, size_t* psize, int *alloc);
+}
+
+%fragment("SWIG_FromUint8Array_body", SWIG_SPLIT_BODY_SECTION) {
 SWIGINTERN int
 SWIG_ContextFromUint8Array(JSContextRef context, JSValueRef valRef, void** cptr, size_t* psize, int *alloc)
 {
@@ -36,8 +40,12 @@ SWIG_ContextFromUint8Array(JSContextRef context, JSValueRef valRef, void** cptr,
 }
 }
 
-%fragment("SWIG_ToUint8Array", "header") {
+%fragment("SWIG_ToUint8Array", "header", fragment="SWIG_ToUint8Array_body") {
 %#define SWIG_ToUint8Array(buf, len) SWIG_ContextToUint8Array(context, buf, len)
+SWIGINTERN JSValueRef SWIG_ContextToUint8Array(JSContextRef context, void* buf, size_t len);
+}
+
+%fragment("SWIG_ToUint8Array_body", SWIG_SPLIT_BODY_SECTION) {
 SWIGINTERN JSValueRef SWIG_ContextToUint8Array(JSContextRef context, void* buf, size_t len)
 {
   if (buf != NULL && len > 0) {

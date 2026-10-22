@@ -159,6 +159,15 @@
 %}
 %enddef
 
+/* Section to use for the internal methods definitions */
+#ifdef SWIGCODESPLIT
+%define SWIG_SPLIT_BODY_SECTION "wrapper"
+%enddef
+#else
+%define SWIG_SPLIT_BODY_SECTION "header"
+%enddef
+#endif
+
 /* aggregation support */
 /*
   This macro performs constant aggregation.  Basically the idea of

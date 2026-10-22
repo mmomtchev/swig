@@ -10,7 +10,7 @@
 /* Include JavaScript Uint8Array functions */
 %include <javascriptuint8array.swg>
 
-%wrapper %{
+%header %{
 /* Code inserted verbatim like this is not macro expanded by SWIG, so
    SWIG_FromUint8Array and SWIG_ToUint8Array have to be usable by the C compiler.
    The typemaps go through these aliases so that %set_output and other SWIG macros
