@@ -64,6 +64,9 @@ struct [[nodiscard, gnu::aligned(16)]] S {
   [[gnu::visibility("default")]] virtual int visible(int a) { return a + 1; }
   [[gnu::visibility("hidden")]] int hiddenWithString(const int &n = int()) { return 4; }
   [[gnu::visibility("hidden")]] static int hidden(int a) { return a + 2; }
+  [[gnu::visibility("hidden")]] int overloaded(int &n) { return n; }
+  [[gnu::visibility("default")]] int overloaded() { return 4; }
+  int overloaded(bool b) { return b ? 1 : 0; }
   int x;
   virtual ~S() = default;
 };

@@ -8,13 +8,15 @@ HAVE_CXX11   = @HAVE_CXX11@
 HAVE_CXX14   = @HAVE_CXX14@
 HAVE_CXX17   = @HAVE_CXX17@
 HAVE_CXX20   = @HAVE_CXX20@
+HAVE_CXX23   = @HAVE_CXX23@
+HAVE_CXX26   = @HAVE_CXX26@
 srcdir       = @srcdir@
 top_srcdir   = ../@top_srcdir@
 top_builddir = ../@top_builddir@
 
 CPP_TEST_CASES = \
 	d_nativepointers \
-	exception_partial_info
+	exception_partial_info \
 
 CPP11_TEST_CASES = \
 

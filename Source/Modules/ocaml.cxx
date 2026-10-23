@@ -455,9 +455,10 @@ public:
     } else {
       Printf(f_class_ctors,
              "    \"[%s]\", (fun args -> "
-             "if args = (C_list [ raw_ptr ]) then _%s args else C_void) ;\n",
+             "if args = (C_list [ raw_ptr ]) then _%s args else failwith \"Unable to set '%s', as it is read only\") ;\n",
              symname,
-             mangled_getname);
+             mangled_getname,
+             symname);
     }
     Delete(mangled_getname);
     Delete(mname);
@@ -725,7 +726,7 @@ public:
     Printv(f->code, "}\n", NIL);
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     /* Substitute the function name */
     Replaceall(f->code, "$symname", iname);
@@ -885,6 +886,10 @@ public:
         throw_unhandled_ocaml_type_error(t, "varin/in");
       }
       Printf(f->code, "}\n");
+    } else {
+      Printf(f->code, "if (args != Val_int(0)) {\n");
+      Printf(f->code, "caml_failwith(\"Unable to set '%s', as it is read only\");\n", iname);
+      Printf(f->code, "}\n");
     }
     // Now return the value of the variable (regardless
     // of evaluating or setting)
@@ -954,7 +959,11 @@ public:
       value = qname;
 
     if (!name) {
-      name = mangleNameForCaml(Getattr(n, "name"));
+      /* The name of a member of a class template instance includes the template arguments, and the quotes of a
+         character literal argument, which mangleNameForCaml() leaves, cannot be in the C variable name either. */
+      String *caml_name = mangleNameForCaml(Getattr(n, "name"));
+      name = Swig_name_mangle_string(caml_name);
+      Delete(caml_name);
       Insert(name, 0, "_swig_wrap_");
       Setattr(n, "feature:symname", name);
     }
@@ -1007,7 +1016,7 @@ public:
     return ret;
   }
 
-  /**
+  /*
    * A simple, somewhat general purpose function for writing to multiple
    * streams from a source template.  This allows the user to define the
    * class definition in ways different from the one I have here if they
@@ -1254,6 +1263,8 @@ public:
     Replaceall(out, ")", "_xx_rparen");
     Replaceall(out, "[", "_xx_lbrace");
     Replaceall(out, "]", "_xx_rbrace");
+    Replaceall(out, "{", "_xx_lcbrace");
+    Replaceall(out, "}", "_xx_rcbrace");
     Replaceall(out, "~", "_xx_bnot");
     Replaceall(out, "=", "_xx_equals");
     Replaceall(out, "/", "_xx_slash");
@@ -1575,7 +1586,7 @@ public:
           if (SwigType_ispointer(ptype) || SwigType_isreference(ptype)) {
             Node *module = Getattr(parent, "module");
             Node *target = Swig_directormap(module, ptype);
-            sprintf(source, "obj%d", idx++);
+            snprintf(source, sizeof(source), "obj%d", idx++);
             String *nonconst = 0;
             /* strip pointer/reference --- should move to Swig/stype.c */
             String *nptype = NewString(Char(ptype) + 2);
@@ -1747,7 +1758,7 @@ public:
 
     /* emit the director method */
     if (status == SWIG_OK) {
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!Getattr(n, "defaultargs")) {
         Replaceall(w->code, "$symname", symname);
         Wrapper_print(w, f_directors);

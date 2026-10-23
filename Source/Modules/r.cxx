@@ -54,13 +54,15 @@ static String *getRTypeName(SwigType *t, int *outCount = NULL) {
 /* --------------------------------------------------------------
  * Tries to get the resolved name, with options of adding
  * or removing a layer of references. Take care not
- * to request both
+ * to request both. Removing a layer from an array gives
+ * the element type.
  * --------------------------------------------------------------*/
 
 static String *getRClassName(String *retType, int deRef = 0, int upRef = 0) {
   SwigType *resolved = SwigType_typedef_resolve_all(retType);
   int ispointer = SwigType_ispointer(resolved);
   int isreference = SwigType_isreference(resolved);
+  int isarray = SwigType_isarray(resolved);
   if (upRef) {
     SwigType_add_pointer(resolved);
   }
@@ -70,6 +72,9 @@ static String *getRClassName(String *retType, int deRef = 0, int upRef = 0) {
     }
     if (isreference) {
       SwigType_del_reference(resolved);
+    }
+    if (isarray) {
+      SwigType_del_array(resolved);
     }
   }
   String *tmp = NewString("");
@@ -110,6 +115,22 @@ static String *getRClassNameCopyStruct(String *retType, int addRef) {
   }
 
   return tmp;
+}
+
+/* -------------------------------------------------------------
+ * The name the enum is registered under in the generated R code.
+ * %rename of the enum is honoured by using sym:name for the final
+ * name component, keeping any C++ scope (namespace or enclosing class).
+ * --------------------------------------------------------------*/
+
+static String *getEnumRClassName(Node *n) {
+  String *symname = Getattr(n, "sym:name");
+  String *scope = Swig_scopename_prefix(Getattr(n, "name"));
+  String *qname = scope ? NewStringf("%s::%s", scope, symname) : Copy(symname);
+  String *ename = getRClassName(qname);
+  Delete(qname);
+  Delete(scope);
+  return ename;
 }
 
 /* -------------------------------------------------------------
@@ -178,6 +199,24 @@ static void replaceRClass(String *tm, SwigType *type) {
   String *tmp = getRClassName(type, 0, 0);
   String *tmp_base = getRClassName(type, 1, 0);
   String *tmp_ref = getRClassName(type, 0, 1);
+  // Honour %rename of an enum: the mangled type uses the C++ enum name, but the
+  // enum is registered in R under its renamed sym:name, so substitute it in.
+  // enumLookup only matches a simple enum type, so reduce any pointer/reference
+  // or qualified type to its base enum type first.
+  SwigType *base = SwigType_base(type);
+  Node *enumnode = Language::enumLookup(base);
+  if (enumnode && Getattr(enumnode, "sym:name")) {
+    String *orig = getRClassName(Getattr(enumnode, "name"));
+    String *renamed = getEnumRClassName(enumnode);
+    if (!Equal(orig, renamed)) {
+      Replaceall(tmp, orig, renamed);
+      Replaceall(tmp_base, orig, renamed);
+      Replaceall(tmp_ref, orig, renamed);
+    }
+    Delete(orig);
+    Delete(renamed);
+  }
+  Delete(base);
   Replaceall(tm, "$R_class", tmp);
   Replaceall(tm, "$*R_class", tmp_base);
   Replaceall(tm, "$&R_class", tmp_ref);
@@ -1042,7 +1081,7 @@ int R::OutputMemberReferenceMethod(String *className, int isSet, List *memberLis
   }
 
   Printv(f->code, ";", tab8, "idx = pmatch(name, names(accessorFuns));\n", tab8, "if(is.na(idx)) \n", tab8, tab4, NIL);
-  Printf(f->code, "return(callNextMethod(x, name%s));\n", isSet ? ", value" : "");
+  Printf(f->code, "return(callNextMethod(x, name%s));\n", isSet ? ", value = value" : "");
   Printv(f->code, tab8, "f = accessorFuns[[idx]];\n", NIL);
   if (isSet) {
     Printv(f->code, tab8, "f(x, value);\n", NIL);
@@ -1103,17 +1142,16 @@ int R::enumDeclaration(Node *n) {
     String *nspace = Getattr(n, "sym:nspace");  // NSpace/getNSpace() only works during Language::enumDeclaration call
     String *ename;
 
-    String *name = Getattr(n, "name");
-    ename = getRClassName(name);
+    // Use sym:name so that %rename of the enum is honoured.
+    ename = getEnumRClassName(n);
     if (debugMode) {
       Node *current_class = getCurrentClass();
       String *cl = NewString("");
       if (current_class) {
         cl = getEnumClassPrefix();
       }
-      Printf(stdout, "enumDeclaration: %s, %s, %s, %s, %s\n", name, symname, nspace, ename, cl);
+      Printf(stdout, "enumDeclaration: %s, %s, %s, %s, %s\n", Getattr(n, "name"), symname, nspace, ename, cl);
     }
-    Delete(name);
     // set up a call to create the R enum structure. The list of
     // individual elements will be built in enum_code
     enum_values = 0;
@@ -1136,13 +1174,12 @@ int R::enumvalueDeclaration(Node *n) {
     return SWIG_NOWRAP;
   }
 
-  Swig_require("enumvalueDeclaration", n, "*name", "?value", NIL);
+  Swig_require("enumvalueDeclaration", n, "*name", "*sym:name", "?value", NIL);
   String *symname = Getattr(n, "sym:name");
   String *value = Getattr(n, "value");
   String *name = Getattr(n, "name");
   Node *parent = parentNode(n);
   String *parent_name = Getattr(parent, "name");
-  String *newsymname = 0;
   String *tmpValue;
 
   // Strange hack from parent method
@@ -1152,25 +1189,6 @@ int R::enumvalueDeclaration(Node *n) {
     tmpValue = NewString(name);
   // Note that this is used in enumValue() amongst other places
   Setattr(n, "value", tmpValue);
-
-  // Deal with enum values that are not int
-  int swigtype = SwigType_type(Getattr(n, "type"));
-  if (swigtype == T_CHAR) {
-    if (Getattr(n, "enumstringval")) {
-      String *val = NewStringf("'%(escape)s'", Getattr(n, "enumstringval"));
-      Setattr(n, "enumvalue", val);
-      Delete(val);
-    }
-  } else {
-    String *numval = Getattr(n, "enumnumval");
-    if (numval)
-      Setattr(n, "enumvalue", numval);
-  }
-
-  if (GetFlag(parent, "scopedenum")) {
-    newsymname = Swig_name_member(0, Getattr(parent, "sym:name"), symname);
-    symname = newsymname;
-  }
 
   {
     // Wrap C/C++ enums with constant integers or use the typesafe enum pattern
@@ -1186,15 +1204,16 @@ int R::enumvalueDeclaration(Node *n) {
 
     String *value = enumValue(n);
     if (enum_values) {
-      Printf(enum_values, ",\n\"%s\" = %s", name, value);
+      Printf(enum_values, ",\n\"%s\" = %s", symname, value);
     } else {
       enum_values = NewString("");
-      Printf(enum_values, "\"%s\" = %s", name, value);
+      Printf(enum_values, "\"%s\" = %s", symname, value);
     }
 
     Delete(value);
   }
 
+  Swig_restore(n);
   return SWIG_OK;
 }
 
@@ -2002,14 +2021,15 @@ int R::functionWrapper(Node *n) {
     Swig_warning(WARN_TYPEMAP_OUT_UNDEF, input_file, line_number, "Unable to use return type %s in function %s.\n", SwigType_str(returntype, 0), fname);
   }
 
-  if (Len(outargs)) {
+  bool hasOutputs = Len(outargs) > 0;
+  if (hasOutputs) {
     Wrapper_add_local(f, "R_OutputValues", "SEXP R_OutputValues");
 
     String *tmp = NewString("");
     if (!isVoidReturnType)
       Printf(tmp, "Rf_protect(r_ans);\n");
 
-    Printf(tmp, "Rf_protect(R_OutputValues = Rf_allocVector(VECSXP,%d));\nr_nprotect += %d;\n", numOutArgs + !isVoidReturnType, isVoidReturnType ? 1 : 2);
+    Printf(tmp, "Rf_protect(R_OutputValues = Rf_allocVector(VECSXP,%d));\nr_nprotect += %d;\n", numOutArgs + 1, isVoidReturnType ? 1 : 2);
 
     if (!isVoidReturnType)
       Printf(tmp, "SET_VECTOR_ELT(R_OutputValues, 0, r_ans);\n");
@@ -2055,12 +2075,18 @@ int R::functionWrapper(Node *n) {
 
   Printv(sfun->code, ";", (Len(tm) ? "ans = " : ""), ".Call('", wname, "', ", sargs, "PACKAGE='", Rpackage, "');\n", NIL);
   if (Len(tm)) {
+    // With output parameters the return value is the first element of the list returned
+    bool convertFirst = hasOutputs && !isVoidReturnType;
+    if (convertFirst)
+      Printf(sfun->code, "swig_outputs = ans;\nans = swig_outputs[[1]];\n");
     Printf(sfun->code, "%s\n\n", tm);
     if (constructor) {
       String *finalizer = NewString(iname);
       Replace(finalizer, "new_", "", DOH_REPLACE_FIRST);
       Printf(sfun->code, "reg.finalizer(ans@ref, delete_%s);\n", finalizer);
     }
+    if (convertFirst)
+      Printf(sfun->code, "swig_outputs[1] = list(ans);\nans = swig_outputs;\n");
     Printf(sfun->code, "ans\n");
   }
 
@@ -2084,7 +2110,7 @@ int R::functionWrapper(Node *n) {
   Printv(sfun->code, "\n}", NIL);
 
   bool isvoid = !Cmp(returntype, "void");
-  Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+  emit_isvoid_special_variables(n, f->code, isvoid);
 
   /* Substitute the function name */
   Replaceall(f->code, "$symname", iname);
@@ -2466,7 +2492,8 @@ int R::generateCopyRoutines(Node *n) {
 
   Printf(sfile, "# Start definition of copy methods for %s\n", rclassName);
   Printf(sfile, "setMethod('copyToR', '_p%s', CopyToR%s);\n", mangledName, mangledName);
-  Printf(sfile, "setMethod('copyToC', '%s', CopyToC%s);\n\n", rclassName, mangledName);
+  /* Double quotes, as for setClass(), since a character literal template argument puts single quotes in the name. */
+  Printf(sfile, "setMethod('copyToC', \"%s\", CopyToC%s);\n\n", rclassName, mangledName);
 
   Printf(sfile, "# End definition of copy methods for %s\n", rclassName);
   Printf(sfile, "# End definition of copy functions & methods for %s\n", rclassName);
@@ -2592,12 +2619,12 @@ void R::main(int argc, char *argv[]) {
       Swig_mark_arg(i);
       i++;
       Swig_mark_arg(i);
-      Rpackage = argv[i];
+      Rpackage = NewString(argv[i]);
     } else if (strcmp(argv[i], "-dll") == 0) {
       Swig_mark_arg(i);
       i++;
       Swig_mark_arg(i);
-      DllName = argv[i];
+      DllName = NewString(argv[i]);
     } else if (strcmp(argv[i], "-help") == 0) {
       showUsage();
     } else if (strcmp(argv[i], "-namespace") == 0) {
@@ -2749,7 +2776,10 @@ String *R::enumValue(Node *n) {
     newsymname = Swig_name_member(0, Getattr(parent, "sym:name"), symname);
     // Strange hack to change the name
     Setattr(n, "name", Getattr(n, "value"));
-    Setattr(n, "sym:name", newsymname);
+    // Language::variableWrapper() adds the EnumClassPrefix for a scoped enum
+    // outside of a class, so don't prefix sym:name here as well.
+    if (!GetFlag(parent, "scopedenum"))
+      Setattr(n, "sym:name", newsymname);
     variableWrapper(n);
     value = Swig_name_get(NSPACE_TODO, newsymname);
   } else {

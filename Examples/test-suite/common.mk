@@ -94,11 +94,12 @@ CPP_TEST_BROKEN += \
 	extend_variable \
 	li_boost_shared_ptr_template \
 	nested_private \
-	template_default_pointer \
 	$(CPP11_TEST_BROKEN) \
 	$(CPP14_TEST_BROKEN) \
 	$(CPP17_TEST_BROKEN) \
-	$(CPP20_TEST_BROKEN)
+	$(CPP20_TEST_BROKEN) \
+	$(CPP23_TEST_BROKEN) \
+	$(CPP26_TEST_BROKEN)
 
 
 # Broken C test cases. (Can be run individually using: make testcase.ctest)
@@ -134,6 +135,7 @@ CPP_TEST_CASES += \
 	arrays_dimensionless \
 	arrays_global \
 	arrays_global_twodim \
+	arrays_null \
 	arrays_scope \
 	assign_const \
 	assign_reference \
@@ -179,6 +181,7 @@ CPP_TEST_CASES += \
 	cpp_basic \
 	cpp_enum \
 	cpp_namespace \
+	cpp_new_expression \
 	cpp_nodefault \
 	cpp_parameters \
 	cpp_static \
@@ -198,6 +201,7 @@ CPP_TEST_CASES += \
 	director_basic \
 	director_binary_string \
 	director_binary_string_rev_len \
+	director_char_array \
 	director_classes \
 	director_classic \
 	director_constructor \
@@ -213,6 +217,7 @@ CPP_TEST_CASES += \
 	director_finalizer \
 	director_frob \
 	director_ignore \
+	director_langobj \
 	director_minimal \
 	director_multiple_inheritance \
 	director_namespace_clash \
@@ -296,6 +301,7 @@ CPP_TEST_CASES += \
 	inherit_same_name \
 	inherit_target_language \
 	inherit_void_arg \
+	injecting_base_class \
 	inline_initializer \
 	inout_typemaps \
 	insert_directive \
@@ -312,6 +318,7 @@ CPP_TEST_CASES += \
 	li_boost_shared_ptr_template \
 	li_carrays_cpp \
 	li_cdata_cpp \
+	li_cdata_bytes_cpp \
 	li_cpointer_cpp \
 	li_std_auto_ptr \
 	li_stdint \
@@ -322,6 +329,7 @@ CPP_TEST_CASES += \
 	long_long_apply \
 	memberin_extend \
 	member_funcptr_galore \
+	member_immutable_vars \
 	member_pointer \
 	member_pointer_const \
 	member_template \
@@ -359,6 +367,7 @@ CPP_TEST_CASES += \
 	nested_ignore \
 	nested_inheritance_interface \
 	nested_in_template \
+	nested_scope \
 	nested_scope_flat \
 	nested_template_base \
 	nested_workaround \
@@ -457,6 +466,7 @@ CPP_TEST_CASES += \
 	string_constants \
 	struct_initialization_cpp \
 	struct_value \
+	swig_catch_stdexcept \
 	swig_exception \
 	symbol_clash \
 	sym \
@@ -482,6 +492,7 @@ CPP_TEST_CASES += \
 	template_default_class_parms \
 	template_default_class_parms_typedef \
 	template_default_inherit \
+	template_default_pointer \
 	template_default_qualify \
 	template_default_vw \
 	template_duplicate \
@@ -563,6 +574,7 @@ CPP_TEST_CASES += \
 	typedef_classforward_same_name \
 	typedef_funcptr \
 	typedef_inherit \
+	typedef_inherit_using \
 	typedef_mptr \
 	typedef_reference \
 	typedef_scope \
@@ -586,6 +598,7 @@ CPP_TEST_CASES += \
 	typemap_template_typedef \
 	typemap_out_optimal \
 	typemap_qualifier_strip \
+	typemap_string_alloc \
 	typemap_variables \
 	typemap_various \
 	typename \
@@ -598,14 +611,20 @@ CPP_TEST_CASES += \
 	using_composition \
 	using_directive_and_declaration \
 	using_directive_and_declaration_forward \
+	using_duplicates \
 	using_extend \
 	using_extend_flatten \
 	using_inherit \
 	using_member \
 	using_member_multiple_inherit \
 	using_member_scopes \
+	using_member_typedef \
+	using_member_typedef_overload \
+	using_member_typedef_template \
+	using_method_typedefs \
 	using_namespace \
 	using_namespace_loop \
+	using_nested_member_typedef \
 	using_pointers \
 	using_private \
 	using_protected \
@@ -627,17 +646,24 @@ CPP_TEST_CASES += \
 # C++11 test cases.
 CPP11_TEST_CASES += \
 	cpp11_alias_nested_template_scoping \
+	cpp11_alias_template_inheritance \
+	cpp11_alias_templates \
 	cpp11_alignment \
 	cpp11_alternate_function_syntax \
 	cpp11_assign_delete \
 	cpp11_assign_rvalue_reference \
 	cpp11_attribute_specifiers \
 	cpp11_auto_variable \
+	cpp11_auto_variable_decorated \
+	cpp11_auto_variable_list \
+	cpp11_auto_variable_new_expression \
+	cpp11_auto_variable_template_parameter \
 	cpp11_brackets_expression \
 	cpp11_constexpr \
 	cpp11_constexpr_friend \
 	cpp11_copyctor_delete \
 	cpp11_decltype \
+	cpp11_decltype_nontype_template_parameter \
 	cpp11_default_delete \
 	cpp11_delegating_constructors \
 	cpp11_director_enums \
@@ -649,6 +675,7 @@ CPP11_TEST_CASES += \
 	cpp11_final_override \
 	cpp11_function_objects \
 	cpp11_inheriting_constructors \
+	cpp11_inheriting_constructors_typedef \
 	cpp11_initializer_list \
 	cpp11_initializer_list_extend \
 	cpp11_lambda_functions \
@@ -665,6 +692,7 @@ CPP11_TEST_CASES += \
 	cpp11_rvalue_reference \
 	cpp11_rvalue_reference2 \
 	cpp11_rvalue_reference3 \
+	cpp11_rvalue_reference_array \
 	cpp11_rvalue_reference_move \
 	cpp11_shared_ptr_const \
 	cpp11_shared_ptr_crtp_upcast \
@@ -686,13 +714,18 @@ CPP11_TEST_CASES += \
 	cpp11_template_parameters_decltype \
 	cpp11_template_templated_methods \
 	cpp11_template_typedefs \
+	cpp11_this_member_initializer \
 	cpp11_type_traits \
 	cpp11_type_aliasing \
 	cpp11_uniform_initialization \
 	cpp11_unrestricted_unions \
 	cpp11_userdefined_literals \
+	cpp11_template_using_base \
 	cpp11_using_constructor \
+	cpp11_using_functor \
+	cpp11_using_member_template \
 	cpp11_using_typedef_struct \
+	cpp11_using_typedef_template_member \
 	cpp11_variadic_function_templates \
 	cpp11_variadic_templates \
 	cpp11_ignore_attributes
@@ -705,6 +738,7 @@ CPP11_TEST_BROKEN = \
 CPP14_TEST_CASES += \
 	cpp14_auto_return_type \
 	cpp14_binary_integer_literals \
+	cpp14_decltype_auto \
 	cpp14_generic_lambda \
 	cpp14_variable_templates \
 
@@ -713,14 +747,23 @@ CPP14_TEST_BROKEN = \
 
 # C++17 test cases.
 CPP17_TEST_CASES += \
+	cpp17_auto_nontype_template_parameter \
+	cpp17_auto_variable_braced \
+	cpp17_class_template_argument_deduction \
 	cpp17_director_string_view \
 	cpp17_enable_if_t \
 	cpp17_hex_floating_literals \
+	cpp17_inheriting_constructors_pack \
 	cpp17_map_no_default_ctor \
 	cpp17_nested_namespaces \
+	cpp17_noexcept_function_type_alias \
 	cpp17_nspace_nested_namespaces \
 	cpp17_string_view \
+	cpp17_structured_bindings \
 	cpp17_u8_char_literals \
+	cpp17_using_pack_alias_template \
+	cpp17_using_pack_expansion \
+	cpp17_using_typename_pack \
 	cpp17_attribute_specifiers
 
 # Broken C++17 test cases.
@@ -730,21 +773,46 @@ CPP17_TEST_BROKEN = \
 CPP20_TEST_CASES += \
 	cpp20_abbreviated_template \
 	cpp20_abbreviated_template_decorated \
+	cpp20_abbreviated_template_directives \
 	cpp20_abbreviated_template_mixed \
+	cpp20_abbreviated_template_overloads \
+	cpp20_alias_template \
+	cpp20_auto_variable_new_expression \
+	cpp20_class_nontype_template_parameter \
 	cpp20_concepts \
 	cpp20_concepts_class_methods \
 	cpp20_concepts_classes \
 	cpp20_concepts_constrained_param \
+	cpp20_concepts_directors \
 	cpp20_concepts_extra \
 	cpp20_concepts_lambda \
 	cpp20_concepts_overloads \
 	cpp20_constexpr_destructor \
+	cpp20_constrained_template_directives \
 	cpp20_lambda_template \
 	cpp20_spaceship_operator \
+	cpp20_structured_bindings \
 	cpp20_variable_templates \
 
 # Broken C++20 test cases.
 CPP20_TEST_BROKEN = \
+
+# C++23 test cases.
+CPP23_TEST_CASES += \
+	cpp23_explicit_object_parameter \
+
+# Broken C++23 test cases.
+CPP23_TEST_BROKEN = \
+
+# C++26 test cases. C++26 is still a draft standard, so configure does not detect it, HAVE_CXX26
+# defaults to 0 and these test cases are not part of a normal test suite run. Run them deliberately
+# with a compiler supporting C++26, for example:
+#   make CXX=g++-16 CXXFLAGS=-std=c++26 check-cpp26
+CPP26_TEST_CASES += \
+	cpp26_deleted_function_reason \
+
+# Broken C++26 test cases.
+CPP26_TEST_BROKEN = \
 
 # Doxygen support test cases: can only be used with languages supporting
 # Doxygen comment translation (currently a subset of languages) and only if not
@@ -766,6 +834,7 @@ DOXYGEN_TEST_CASES += \
 	doxygen_basic_translate_style2 \
 	doxygen_basic_translate_style3 \
 	doxygen_code_blocks \
+	doxygen_constructors \
 	doxygen_ignore \
 	doxygen_interface \
 	doxygen_misc_constructs \
@@ -829,13 +898,24 @@ ifeq (1,$(HAVE_CXX20))
 CPP_TEST_CASES += $(CPP20_TEST_CASES)
 endif
 
+ifeq (1,$(HAVE_CXX23))
+CPP_TEST_CASES += $(CPP23_TEST_CASES)
+endif
+
+ifeq (1,$(HAVE_CXX26))
+CPP_TEST_CASES += $(CPP26_TEST_CASES)
+endif
+
 # C test cases. (Can be run individually using: make testcase.ctest)
 C_TEST_CASES += \
 	arrays \
+	arrays_dimension_expression \
 	bom_utf8 \
 	c_delete \
 	c_delete_function \
+	c_this_identifier \
 	char_constant \
+	charptr_fragment \
 	command_line_define \
 	const_const \
 	constant_expr_c \
@@ -860,12 +940,14 @@ C_TEST_CASES += \
 	lextype \
 	li_carrays \
 	li_cdata \
+	li_cdata_bytes \
 	li_cmalloc \
 	li_constraints \
 	li_cpointer \
 	li_math \
 	long_long \
 	memberin_extend_c \
+	multichar_constant \
 	name \
 	nested \
 	nested_extend_c \
@@ -891,6 +973,7 @@ C_TEST_CASES += \
 	string_simple \
 	struct_rename \
 	struct_initialization \
+	swig_exception_default \
 	typedef_classforward_same_name \
 	typedef_struct \
 	typemap_subst \
@@ -924,6 +1007,8 @@ CPP11_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP11_TEST_CASES))
 CPP14_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP14_TEST_CASES))
 CPP17_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP17_TEST_CASES))
 CPP20_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP20_TEST_CASES))
+CPP23_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP23_TEST_CASES))
+CPP26_TEST_CASES := $(filter-out $(FAILING_CPP_TESTS),$(CPP26_TEST_CASES))
 MULTI_CPP_TEST_CASES := $(filter-out $(FAILING_MULTI_CPP_TESTS),$(MULTI_CPP_TEST_CASES))
 
 
@@ -940,6 +1025,8 @@ ALL_CLEAN = 		$(CPP_TEST_CASES:=.clean) \
 			$(CPP14_TEST_CASES:=.clean) \
 			$(CPP17_TEST_CASES:=.clean) \
 			$(CPP20_TEST_CASES:=.clean) \
+			$(CPP23_TEST_CASES:=.clean) \
+			$(CPP26_TEST_CASES:=.clean) \
 			$(C_TEST_CASES:=.clean) \
 			$(MULTI_CPP_TEST_CASES:=.clean) \
 			$(CPP_TEST_BROKEN:=.clean) \
@@ -973,6 +1060,10 @@ check-cpp14: $(CPP14_TEST_CASES:=.cpptest)
 check-cpp17: $(CPP17_TEST_CASES:=.cpptest)
 
 check-cpp20: $(CPP20_TEST_CASES:=.cpptest)
+
+check-cpp23: $(CPP23_TEST_CASES:=.cpptest)
+
+check-cpp26: $(CPP26_TEST_CASES:=.cpptest)
 
 check-multicpp: $(MULTI_CPP_TEST_CASES:=.multicpptest)
 

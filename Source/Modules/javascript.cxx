@@ -14,23 +14,23 @@
 #include "swigmod.h"
 #include "cparse.h"
 
-/**
+/*
  * Enables extra debugging information in typemaps.
  */
 static bool js_template_enable_debug = false;
 
-/**
+/*
  * Create async wrappers by default (NAPI only)
  */
 static bool js_napi_default_is_async = false;
 static bool js_napi_default_is_locked = false;
 
-/**
+/*
  * Generate an exports file (NAPI only)
  */
 static String *js_napi_generate_exports = NULL;
 
-/**
+/*
  * Enable debug
  */
 static bool js_debug_tstypes = false;
@@ -76,7 +76,7 @@ static bool js_debug_tstypes = false;
 // the global wrappers
 #define GLOBAL_WRAPPERS                "global"
 
-/**
+/*
  * A convenience class to manage state variables for emitters.
  * The implementation delegates to SWIG Hash DOHs and provides
  * named sub-hashes for class, variable, and function states.
@@ -104,7 +104,7 @@ private:
   Hash *typesHash;
 };
 
-/**
+/*
  * A convenience class that wraps a code snippet used as template
  * for code generation.
  */
@@ -127,7 +127,7 @@ private:
   String *templateName;
 };
 
-/**
+/*
  * JSEmitter represents an abstraction of javascript code generators
  * for different javascript engines.
  **/
@@ -146,22 +146,22 @@ public:
 
   virtual ~JSEmitter();
 
-  /**
+  /*
    * Opens output files and temporary output DOHs.
    */
   virtual int initialize(Node *n);
 
-  /**
+  /*
    * Writes all collected code into the output file(s).
    */
   virtual int dump(Node *n) = 0;
 
-  /**
+  /*
    * Cleans up all open output DOHs.
    */
   virtual int close() = 0;
 
-  /**
+  /*
    * Switches the context for code generation.
    *
    * Classes, global variables and global functions may need to
@@ -170,58 +170,58 @@ public:
    */
   virtual int switchNamespace(Node *);
 
-  /**
+  /*
    * Invoked at the beginning of the classHandler.
    */
   virtual int enterClass(Node *);
 
-  /**
+  /*
    * Invoked at the end of the classHandler.
    */
   virtual int exitClass(Node *) {
     return SWIG_OK;
   }
 
-  /**
+  /*
    * Invoked at the beginning of the variableHandler.
    */
   virtual int enterVariable(Node *);
 
-  /**
+  /*
    * Invoked at the end of the variableHandler.
    */
   virtual int exitVariable(Node *) {
     return SWIG_OK;
   }
 
-  /**
+  /*
    * Invoked at the beginning of the functionHandler.
    */
   virtual int enterFunction(Node *);
 
-  /**
+  /*
    * Invoked at the end of the functionHandler.
    */
   virtual int exitFunction(Node *) {
     return SWIG_OK;
   }
 
-  /**
+  /*
    * Invoked by functionWrapper callback after call to Language::functionWrapper.
    */
   virtual int emitWrapperFunction(Node *n);
 
-  /**
+  /*
    * Invoked by nativeWrapper callback
    */
   virtual int emitNativeFunction(Node *n);
 
-  /**
+  /*
    * Invoked from constantWrapper after call to Language::constantWrapper.
    **/
   virtual int emitConstant(Node *n);
 
-  /**
+  /*
    * Registers a given code snippet for a given key name.
    *
    * This method is called by the fragmentDirective handler
@@ -229,7 +229,7 @@ public:
    **/
   int registerTemplate(const String *name, const String *code);
 
-  /**
+  /*
    * Retrieve the code template registered for a given name.
    */
   Template getTemplate(const String *name);
@@ -237,40 +237,40 @@ public:
   State &getState();
 
 protected:
-  /**
+  /*
    * Helper function for detecting if the constructor Node does not use a name that matches
    * the expected name for a constructor. Occurs when %rename is used for just a constructor
    * or %template instantiates a templated constructor with a different name to the class.
    */
   bool isRenamedConstructor(Node *n);
 
-  /**
+  /*
    * Generates code for a constructor function.
    */
   virtual int emitCtor(Node *n);
 
-  /**
+  /*
    * Generates code for a destructor function.
    */
   virtual int emitDtor(Node *n);
 
-  /**
+  /*
    * Identifies if a node represents a function
    */
   virtual bool isFunction(Node *);
-  /**
+  /*
    * Generates code for a function.
    */
   virtual int emitFunction(Node *n, bool is_member, bool is_static);
 
   virtual int emitFunctionDispatcher(Node *n, bool /*is_member */);
 
-  /**
+  /*
    * Generates code for a getter function.
    */
   virtual int emitGetter(Node *n, bool is_member, bool is_static);
 
-  /**
+  /*
    * Generates code for a setter function.
    */
   virtual int emitSetter(Node *n, bool is_member, bool is_static);
@@ -285,7 +285,7 @@ protected:
 
   virtual String *emitCleanupCode(Node *n, ParmList *params);
 
-  /**
+  /*
    * Helper function to retrieve the first parent class node.
    */
   Node *getBaseClass(Node *n);
@@ -296,7 +296,7 @@ protected:
 
   virtual int emitNamespaces() = 0;
 
-  /**
+  /*
    * Return the full JS prefix of the current namespace
    * ie "Outer.Inner." or "" if it is the global one
    */
@@ -304,7 +304,7 @@ protected:
 
   virtual const char *getGetterTemplate(bool);
 
-  /**
+  /*
    * Identify if an argument is optional or not
    */
   bool isArgOptional(Node *, Parm *);
@@ -399,7 +399,7 @@ int TYPESCRIPT::initialize(Node *n) {
   return SWIG_OK;
 }
 
-/**
+/*
  * Normalize a type so that it can be compared and searched for
  *
  * Works for both SwigType and String (thus the conditional parse)
@@ -427,7 +427,7 @@ String *TYPESCRIPT::normalizeType(SwigType *type, bool mangle) {
   return ret;
 }
 
-/**
+/*
  * Expand the TS-specific typemap special variables
  * $jstype - the wrapped symbol name
  */
@@ -484,7 +484,7 @@ String *TYPESCRIPT::expandTSvars(String *tm, DOH *target) {
   return r;
 }
 
-/**
+/*
  * Return a new type that is a Promise of the given type
  */
 String *TYPESCRIPT::promisify(String *type) {
@@ -985,7 +985,7 @@ public:
   virtual int top(Node *n);
   virtual void replaceSpecialVariables(String *method, String *tm, Parm *parm);
 
-  /**
+  /*
    *  Registers all %fragments assigned to section "templates".
    **/
   virtual int fragmentDirective(Node *n);
@@ -999,7 +999,7 @@ private:
   TYPESCRIPT *ts_emitter;
 };
 
-/**
+/*
  * Transform the ParmList arguments to a string
  * of TypeScript typed arguments using the "ts" typemaps
  */
@@ -1671,10 +1671,13 @@ int JSEmitter::emitWrapperFunction(Node *n) {
   int ret = SWIG_OK;
 
   String *kind = Getattr(n, "kind");
+  String *view = Getattr(n, "view");
 
   if (kind) {
 
-    if (isFunction(n)) {
+    if (isFunction(n)
+        // HACK: functions declared through a function typedef (see sneaky.ctest) keep kind 'variable', so detect them via 'view'
+        || (Equal(kind, "variable") && (Equal(view, "globalfunctionHandler") || Equal(view, "memberfunctionHandler")))) {
       bool is_member = GetFlag(n, "ismember") != 0 || GetFlag(n, "feature:extend") != 0;
       bool is_static = GetFlag(state.function(), IS_STATIC) != 0;
       ret = emitFunction(n, is_member, is_static);
@@ -1694,8 +1697,6 @@ int JSEmitter::emitWrapperFunction(Node *n) {
       ret = SWIG_ERROR;
     }
   } else {
-    String *view = Getattr(n, "view");
-
     if (Cmp(view, "constructorHandler") == 0) {
       ret = emitCtor(n);
     } else if (Cmp(view, "destructorHandler") == 0) {
@@ -1852,6 +1853,9 @@ int JSEmitter::emitCtor(Node *n) {
   String *cleanup = emitCleanupCode(n, params);
 
   bool isvoid = !Cmp(returntype, "void");
+  emit_isvoid_special_variables(n, wrapper->code, isvoid);
+
+  Replaceall(wrapper->code, "$symname", iname);
 
   t_ctor.replace("$jsmangledname", state.clazz(NAME_MANGLED))
     .replace("$jswrapper", wrap_name)
@@ -1862,7 +1866,6 @@ int JSEmitter::emitCtor(Node *n) {
     .replace("$jsparent", state.clazz(PARENT_MANGLED))
     .replace("$jsargrequired", Getattr(n, ARGREQUIRED))
     .replace("$jscleanup", cleanup)
-    .replace("$isvoid", isvoid ? "1" : "0")
     .replace("$symname", iname)
     .pretty_print(f_wrappers);
 
@@ -2189,6 +2192,10 @@ int JSEmitter::emitFunction(Node *n, bool is_member, bool is_static) {
   String *cleanup = emitCleanupCode(n, params);
 
   bool isvoid = !Cmp(returntype, "void");
+  emit_isvoid_special_variables(n, wrapper->code, isvoid);
+  emit_isvoid_special_variables(n, cleanup, isvoid);
+
+  Replaceall(wrapper->code, "$symname", iname);
 
   t_function.replace("$jsmangledname", state.clazz(NAME_MANGLED))
     .replace("$jswrapper", wrap_name)
@@ -2198,7 +2205,6 @@ int JSEmitter::emitFunction(Node *n, bool is_member, bool is_static) {
     .replace("$jsargcount", Getattr(n, ARGCOUNT))
     .replace("$jsargrequired", Getattr(n, ARGREQUIRED))
     .replace("$jscleanup", cleanup)
-    .replace("$isvoid", isvoid ? "1" : "0")
     .replace("$symname", iname)
     .pretty_print(f_wrappers);
 
@@ -3266,7 +3272,7 @@ void V8Emitter::marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper, Mar
     case Getter:
       if (is_member && i == 0) {
         if (!is_static) {
-          Printv(arg, "info.Holder()", 0);
+          Printv(arg, "SWIGV8_INFO_HOLDER(info)", 0);
         }
         i++;
       } else {
@@ -3277,7 +3283,7 @@ void V8Emitter::marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper, Mar
       break;
     case Function:
       if (is_member && !is_static && i == 0) {
-        Printv(arg, "args.Holder()", 0);
+        Printv(arg, "SWIGV8_ARGS_THIS(args)", 0);
         i++;
       } else {
         Printf(arg, "args[%d]", i - startIdx);
@@ -3287,7 +3293,7 @@ void V8Emitter::marshalInputArgs(Node *n, ParmList *parms, Wrapper *wrapper, Mar
       break;
     case Setter:
       if (is_member && !is_static && i == 0) {
-        Printv(arg, "info.Holder()", 0);
+        Printv(arg, "SWIGV8_INFO_HOLDER(info)", 0);
         i++;
       } else {
         Printv(arg, "value", 0);
@@ -4104,6 +4110,18 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
 
   SwigType *returntype = Getattr(n, "type");
   bool isvoid = !Cmp(returntype, "void");
+  emit_isvoid_special_variables(n, input, isvoid);
+  emit_isvoid_special_variables(n, checks, isvoid);
+  emit_isvoid_special_variables(n, guard, isvoid);
+  emit_isvoid_special_variables(n, locking, isvoid);
+  emit_isvoid_special_variables(n, rethrow, isvoid);
+  emit_isvoid_special_variables(n, output, isvoid);
+  emit_isvoid_special_variables(n, cleanup, isvoid);
+  emit_isvoid_special_variables(n, Getattr(action, "preaction"), isvoid);
+  emit_isvoid_special_variables(n, Getattr(action, "action"), isvoid);
+  emit_isvoid_special_variables(n, Getattr(action, "postaction"), isvoid);
+  emit_isvoid_special_variables(n, Getattr(action, "try"), isvoid);
+  emit_isvoid_special_variables(n, Getattr(action, "catch"), isvoid);
 
   String *result = NewString("");
   t_function.replace("$jsasyncworker", jsasyncworker)
@@ -4124,8 +4142,7 @@ int NAPIEmitter::emitFunctionDefinition(Node *n, bool is_member, bool is_static,
     .replace("$jscleanup", cleanup)
     .replace("$symname", iname)
     .replace("$jsargcount", Getattr(n, ARGCOUNT))
-    .replace("$jsargrequired", Getattr(n, ARGREQUIRED))
-    .replace("$isvoid", isvoid ? "1" : "0");
+    .replace("$jsargrequired", Getattr(n, ARGREQUIRED));
 
   t_function.pretty_print(result);
   Append(is_member ? f_template_definitions : GetClassUnit(GLOBAL_WRAPPERS), result);

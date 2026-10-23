@@ -1015,6 +1015,12 @@ public:
       }
       String *actioncode = emit_action(n);
 
+      // The action of a variable setter is the memberin or globalin typemap
+      if (Getattr(n, "memberset"))
+        canThrow(n, "memberin", n);
+      else if (Getattr(n, "varset"))
+        canThrow(n, "globalin", n);
+
       /* Return value if necessary  */
       if ((tm = Swig_typemap_lookup_out("out", n, Swig_cresult_name(), f, actioncode))) {
         canThrow(n, "out", n);
@@ -1071,7 +1077,7 @@ public:
     /* Substitute the cleanup code */
     Replaceall(f->code, "$cleanup", cleanup);
 
-    Replaceall(f->code, "$isvoid", is_void_return ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, is_void_return);
 
     /* Substitute the function name */
     Replaceall(f->code, "$symname", symname);
@@ -1405,16 +1411,13 @@ public:
     // Note that this is used in enumValue() amongst other places
     Setattr(n, "value", tmpValue);
 
-    // Deal with enum values that are not int
-    int swigtype = SwigType_type(Getattr(n, "type"));
-    if (swigtype == T_CHAR) {
-      String *enumstringval = Getattr(n, "enumstringval");
-      if (enumstringval) {
-        // Escape character literal for C#.
-        String *val = NewStringf("'%(csharpescape)s'", enumstringval);
-        Setattr(n, "enumvalue", val);
-        Delete(val);
-      }
+    // Convert a character literal, including a wide one, or an integer or boolean literal value into a C# literal
+    String *enumstringval = Getattr(n, "enumstringval");
+    if (enumstringval) {
+      // Escape character literal for C#.
+      String *val = NewStringf("'%(csharpescape)s'", enumstringval);
+      Setattr(n, "enumvalue", val);
+      Delete(val);
     } else {
       String *numval = Getattr(n, "enumnumval");
       if (numval)
@@ -1607,8 +1610,8 @@ public:
       Swig_warning(WARN_CSHARP_TYPEMAP_CSWTYPE_UNDEF, input_file, line_number, "No cstype typemap defined for %s\n", SwigType_str(t, 0));
     }
 
+    char quote = 0;
     if (Getattr(n, "stringval")) {
-      char quote = 0;
       switch (SwigType_type(t)) {
       case T_STRING:
       case T_WSTRING:
@@ -1622,8 +1625,14 @@ public:
       if (quote) {
         // Escape character literal for C#.
         Delete(csvalue);
-        csvalue = NewStringf("%c%(csharpescape)s%c", quote, Getattr(n, "stringval"), quote);
+        if (SwigType_type(t) == T_CHAR)
+          csvalue = NewStringf("%c%(csharpescape)s%c", quote, Getattr(n, "stringval"), quote);
+        else
+          csvalue = NewStringf("%c%(csharpunicodeescape)s%c", quote, Getattr(n, "stringval"), quote);
       }
+      // A literal cannot initialise a constant wrapped as a class, such as a wide string without typemaps for wchar_t *
+      if (classname_substituted_flag)
+        const_feature_flag = 0;
     }
 
     const String *outattributes = Getattr(n, "tmap:cstype:outattributes");
@@ -1673,16 +1682,11 @@ public:
       enum_constant_flag = false;
     } else {
       // Alternative constant handling will use the C syntax to make a true C# constant and hope that it compiles as C# code
-      if (Getattr(n, "wrappedasconstant")) {
-        if (SwigType_type(t) == T_CHAR) {
-          String *stringval = Getattr(n, "stringval");
-          if (stringval)
-            Printf(constants_code, "'%(csharpescape)s';\n", stringval);
-          else
-            Printf(constants_code, "(char)%s;\n", Getattr(n, "staticmembervariableHandler:value"));
-        } else {
+      if (Getattr(n, "wrappedasconstant") && !quote) {
+        if (SwigType_type(t) == T_CHAR)
+          Printf(constants_code, "(char)%s;\n", Getattr(n, "staticmembervariableHandler:value"));
+        else
           Printf(constants_code, "%s;\n", Getattr(n, "staticmembervariableHandler:value"));
-        }
       } else {
         Printf(constants_code, "%s;\n", csvalue);
       }
@@ -4582,7 +4586,7 @@ public:
       } else {
         Replaceall(w->code, "$null", "");
       }
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!ignored_method)
         Printv(director_delegate_callback, "\n", callback_def, callback_code, NIL);
       if (!Getattr(n, "defaultargs")) {

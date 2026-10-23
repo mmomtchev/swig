@@ -405,53 +405,68 @@ if test x"$enable_cpp11_testing" = xyes; then
   CXX_SAVED=$CXX
   CXXCPP_SAVED=$CXXCPP
 
-  # Test for c++20
+  # Test for c++23
   CXXCPP=" "
-  AX_CXX_COMPILE_STDCXX(20, [noext], [optional])
-  AC_MSG_CHECKING([whether C++11 to C++20 testing is enabled])
-  if test "$HAVE_CXX20" = "1"; then
+  AX_CXX_COMPILE_STDCXX(23, [noext], [optional])
+  AC_MSG_CHECKING([whether C++11 to C++23 testing is enabled])
+  if test "$HAVE_CXX23" = "1"; then
     AC_MSG_RESULT([yes])
     PLATCXXFLAGS="$CXXCPP $PLATCXXFLAGS"
+    HAVE_CXX20="1"
     HAVE_CXX17="1"
     HAVE_CXX14="1"
     HAVE_CXX11="1"
   else
     AC_MSG_RESULT([no])
 
-    # Test for c++17
+    # Test for c++20
     CXXCPP=" "
-    AX_CXX_COMPILE_STDCXX(17, [noext], [optional])
-    AC_MSG_CHECKING([whether C++11 to C++17 testing is enabled])
-    if test "$HAVE_CXX17" = "1"; then
+    AX_CXX_COMPILE_STDCXX(20, [noext], [optional])
+    AC_MSG_CHECKING([whether C++11 to C++20 testing is enabled])
+    if test "$HAVE_CXX20" = "1"; then
       AC_MSG_RESULT([yes])
       PLATCXXFLAGS="$CXXCPP $PLATCXXFLAGS"
+      HAVE_CXX17="1"
       HAVE_CXX14="1"
       HAVE_CXX11="1"
     else
       AC_MSG_RESULT([no])
 
-      # Test for c++14
+      # Test for c++17
       CXXCPP=" "
-      CXX=$CXX_SAVED
-      AX_CXX_COMPILE_STDCXX(14, [noext], [optional])
-      AC_MSG_CHECKING([whether C++11 to C++14 testing is enabled])
-      if test "$HAVE_CXX14" = "1"; then
+      AX_CXX_COMPILE_STDCXX(17, [noext], [optional])
+      AC_MSG_CHECKING([whether C++11 to C++17 testing is enabled])
+      if test "$HAVE_CXX17" = "1"; then
         AC_MSG_RESULT([yes])
         PLATCXXFLAGS="$CXXCPP $PLATCXXFLAGS"
+        HAVE_CXX14="1"
         HAVE_CXX11="1"
       else
         AC_MSG_RESULT([no])
 
-        # Test for c++11
+        # Test for c++14
         CXXCPP=" "
         CXX=$CXX_SAVED
-        AX_CXX_COMPILE_STDCXX(11, [noext], [optional])
-        AC_MSG_CHECKING([whether C++11 testing is enabled])
-        if test "$HAVE_CXX11" = "1"; then
+        AX_CXX_COMPILE_STDCXX(14, [noext], [optional])
+        AC_MSG_CHECKING([whether C++11 to C++14 testing is enabled])
+        if test "$HAVE_CXX14" = "1"; then
           AC_MSG_RESULT([yes])
           PLATCXXFLAGS="$CXXCPP $PLATCXXFLAGS"
+          HAVE_CXX11="1"
         else
           AC_MSG_RESULT([no])
+
+          # Test for c++11
+          CXXCPP=" "
+          CXX=$CXX_SAVED
+          AX_CXX_COMPILE_STDCXX(11, [noext], [optional])
+          AC_MSG_CHECKING([whether C++11 testing is enabled])
+          if test "$HAVE_CXX11" = "1"; then
+            AC_MSG_RESULT([yes])
+            PLATCXXFLAGS="$CXXCPP $PLATCXXFLAGS"
+          else
+            AC_MSG_RESULT([no])
+          fi
         fi
       fi
     fi
@@ -460,10 +475,20 @@ if test x"$enable_cpp11_testing" = xyes; then
   CXX=$CXX_SAVED
   CXXCPP=$CXXCPP_SAVED
 fi
+
+# C++26 is still a draft standard, so it is deliberately not detected above and the C++26 test cases
+# are not part of a normal test suite run. Pass HAVE_CXX26=1 to configure to opt in to them when the
+# compiler used for the test suite supports C++26.
+if test -z "$HAVE_CXX26"; then
+  HAVE_CXX26="0"
+fi
+
 AC_SUBST(HAVE_CXX11)
 AC_SUBST(HAVE_CXX14)
 AC_SUBST(HAVE_CXX17)
 AC_SUBST(HAVE_CXX20)
+AC_SUBST(HAVE_CXX23)
+AC_SUBST(HAVE_CXX26)
 
 # On darwin 10.7,10.8,10.9 using clang++, need to ensure using
 # libc++ for tests and examples to run under mono. May affect
@@ -1260,7 +1285,7 @@ fi
 # Allow using 'System.loadLibrary', which is marked restricted!
 # https://docs.oracle.com/en/java/javase/25/core/restricted-methods.html
 # https://bugs.openjdk.org/browse/JDK-8317242
-if test $JAVA_VERSION_MAJOR -gt 21; then
+if test -n "$JAVA_VERSION_MAJOR" && test "$JAVA_VERSION_MAJOR" -gt 21; then
     JAVAC_OPTIONS+=" -Xlint:-restricted"
     JAVAFLAGS+=" --enable-native-access=ALL-UNNAMED"
 fi
@@ -1321,38 +1346,51 @@ else
     fi
     AC_CHECK_PROGS(NODENPM, npm)
     JSNAPIENABLED=
+    AC_MSG_CHECKING([for Node-API (napi) header directory])
+    # First, npm may have installed node-addon-api, use npm to try find headers
     if test -n "$NODENPM"; then
       NODENPM_PREFIX=$($NODENPM config get prefix)
 
-      AC_MSG_CHECKING([for Node-API (napi) header directory])
       if test -n "$NODENPM_PREFIX"; then
         NODENAPI_DIR=$NODENPM_PREFIX/lib/node_modules/node-addon-api
         if test -f "$NODENAPI_DIR/napi.h"; then
           JSNAPIENABLED=1
-          AC_SUBST(NODENAPI_DIR)
         fi
       fi
-      if test -n "$JSNAPIENABLED"; then
-        NODENAPI_VERSION=`node -p "require('$NODENPM_PREFIX/lib/node_modules/node-addon-api/package.json').version"`
-        AC_MSG_RESULT([$NODENAPI_VERSION in $NODENAPI_DIR])
-      else
-        AC_MSG_RESULT([not found])
+    fi
+    # Second, try Debian/Ubuntu node-addon-api package location to find headers
+    if test -z "$JSNAPIENABLED" && which dpkg > /dev/null 2>&1; then
+      napi_dir="$(dpkg -L node-addon-api 2> /dev/null | grep '\/napi.h$' | head -1 | sed 's%/napi.h%%')"
+      if test -n "$napi_dir" && test -f "$napi_dir/napi.h"; then
+        NODENAPI_DIR="$napi_dir"
+        JSNAPIENABLED=1
       fi
+    fi
+    if test -n "$JSNAPIENABLED"; then
+      NAPI_INCLUDE="-I$NODENAPI_DIR"
+      AC_MSG_RESULT([$NODENAPI_DIR])
+
+      AC_MSG_CHECKING([node-addon-api version])
+      NODENAPI_VERSION=`node -p "require('$NODENAPI_DIR/package.json').version"`
+      AC_MSG_RESULT([$NODENAPI_VERSION])
 
       AC_MSG_CHECKING([for TypeScript @types/node])
       if test -n "$NODENPM_PREFIX"; then
         NODETYPES_DIR=$NODENPM_PREFIX/lib/node_modules/@types
-        if test -f "$NODETYPES_DIR/node/index.d.ts"; then
-          true
+        if test -f "$NODETYPES_DIR/node/index.d.ts"; then          
+          AC_MSG_RESULT([found in $NODETYPES_DIR])
           AC_SUBST(NODETYPES_DIR)
+        else
+          AC_MSG_RESULT([not found])
         fi
-      fi
-      if test -n "$JSNAPIENABLED"; then
-        AC_MSG_RESULT([$NODETYPES_DIR])
       else
-        AC_MSG_RESULT([not found])
+        AC_MSG_RESULT([not supported with Debian/Ubuntu node-addon-api installation])
       fi
+    else
+      NAPI_INCLUDE=
+      AC_MSG_RESULT([not found])
     fi
+    AC_SUBST(NAPI_INCLUDE)
     AC_SUBST(JSNAPIENABLED)
     AC_SUBST(NODENPM_PREFIX)
   fi
@@ -1548,14 +1586,14 @@ AC_SUBST(EMNAPI_INC_DIR)
 # Look for Lua
 #----------------------------------------------------------------
 
-LUABIN=
-LUAINCLUDE=
-LUALIB=
-LUADYNAMICLOADLIB=
-LUAFLAGS=
-LUALINK=
 # note: if LUABIN is empty then lua tests will not be done
 # LUABIN will be cleared if certain dependencies cannot be found
+AS_UNSET([LUABIN])
+AS_UNSET([LUAINCLUDE])
+AS_UNSET([LUALIB])
+AS_UNSET([LUADYNAMICLOADLIB])
+AS_UNSET([LUAFLAGS])
+AS_UNSET([LUALINK])
 
 AC_ARG_WITH(lua, AS_HELP_STRING([--without-lua], [Disable Lua])
 AS_HELP_STRING([--with-lua=path], [Set location of Lua executable]),[ LUABIN="$withval"], [LUABIN="$alllang_default"])
@@ -1573,112 +1611,91 @@ else
 if test "x$LUABIN" = xyes; then
    # We look for a versioned Lua binary first, as there can be
    # multiple versions of Lua installed on some systems (like Debian).
-   AC_PATH_PROGS(LUABIN, [lua5.4 lua5.3 lua5.2 lua5.1 lua])
+   AC_PATH_PROGS(LUABIN, [lua5.5 lua5.4 lua5.3 lua5.2 lua5.1 lua])
 fi
 
-# check version: we need Lua 5.x
-if test "$LUABIN"; then
-  AC_MSG_CHECKING(Lua version)
-  [LUA_VERSION=`$LUABIN -e 'print(string.match(_VERSION, "%d+[.]%d+"))'`]
-  # For 5.0 and 5.1 header and libraries may be named using 50 or 51.
-  LUA_VERSION_NO_DOTS=
+# Check version of Lua found and only accept the supported versions - 5.1 and later.
+LUA_MINVER='5.1'
+if test -n "$LUABIN"; then
+  AC_MSG_CHECKING([Lua version])
+  AS_VAR_SET([LUA_VERSION], [`$LUABIN -e 'print(string.match(_VERSION, "%d+[.]%d+"))'`])
   if test -n "$LUA_VERSION" ; then
     AC_MSG_RESULT([Lua $LUA_VERSION.x])
+    AS_VERSION_COMPARE(["$LUA_VERSION"], ["$LUA_MINVER"],
+                   [AC_MSG_WARN([Lua version is below $LUA_MINVER, SWIG does not support this version of Lua])
+                    AS_UNSET([LUABIN])])
   else
     AC_MSG_RESULT([failed])
+    AS_UNSET([LUABIN])
   fi
-  case $LUA_VERSION in
-    5.0) LUA_VERSION_NO_DOTS=50 ;;
-    5.1) LUA_VERSION_NO_DOTS=51 ;;
-    5.*) ;;
-    *)
-      AC_MSG_WARN([Not Lua 5.x, SWIG does not support this version of Lua])
-      LUABIN=""
-      ;;
-  esac
 fi
 
 if test "$LUABIN"; then
-  AC_MSG_CHECKING(whether Lua dynamic loading is enabled)
-  # using Lua to check Lua
-  # lua 5.0 & 5.1 have different fn names
-  if test "$LUA_VERSION" = "5.0"; then
-    LUADYNAMICLOADLIB=`$LUABIN -e '_,_,c=loadlib("no_such_lib","") if c~="absent" then print "1" end'`
-  else
-    LUADYNAMICLOADLIB=`$LUABIN -e '_,_,c=package.loadlib("no_such_lib","") if c~="absent" then print "1" end'`
-  fi
+  AC_MSG_CHECKING([whether Lua dynamic loading is enabled])
+  LUADYNAMICLOADLIB=`$LUABIN -e '_,_,c=package.loadlib("no_such_lib","") if c~="absent" then print "1" end'`
 
   if test -z "$LUADYNAMICLOADLIB"; then
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
   else
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT([yes])
   fi
 
   # look for the header files & set LUAFLAGS accordingly
   # will clear LUABIN if not present
   if test -n "$LUAINCLUDE"; then
-    AC_CHECK_FILE($LUAINCLUDE/lua.h,[LUAFLAGS="-I$LUAINCLUDE"],[LUABIN=])
+    AC_CHECK_FILE([$LUAINCLUDE/lua.h],[LUAFLAGS="-I$LUAINCLUDE"],[AS_UNSET([LUABIN])])
   else
     LUA_OK="1"
-    CFLAGS_SAVED=$CFLAGS
+    CFLAGS_SAVED="$CFLAGS"
     CFLAGS= # Use empty CFLAGS to avoid failure: "present but cannot be compiled"
-    AC_CHECK_HEADER([lua.h],[LUAFLAGS=""],[LUA_OK=""])
-    CFLAGS=$CFLAGS_SAVED
+    AC_CHECK_HEADER([lua.h],[AS_UNSET([LUAFLAGS])],[AS_UNSET([LUA_OK])])
+    CFLAGS="$CFLAGS_SAVED"
     # if we didn't get it, going to have to look elsewhere (the hard way)
     if test -z "$LUA_OK"; then
-      AC_MSG_CHECKING(for lua.h in other locations)
-      # note: Debian/Ubuntu seem to like /usr/include/lua5.1/lua.h
+      AC_MSG_CHECKING([for lua.h in other locations])
+      # note: Debian/Ubuntu seem to like /usr/include/lua5.2/lua.h
       # The ordering of the include directories to search should match
       # the ordering of libraries to search in the library test below.
-      inc=/usr/include
       incloc=/usr/local/include
-      dirs="$inc/lua$LUA_VERSION"
-      test -z "$LUA_VERSION_NO_DOTS" || dirs="$dirs $inc/lua$LUA_VERSION_NO_DOTS"
-      dirs="$dirs $incloc/lua$LUA_VERSION"
-      test -z "$LUA_VERSION_NO_DOTS" || dirs="$dirs $incloc/lua$LUA_VERSION_NO_DOTS"
-      dirs="$dirs $incloc"
+      dirs="/usr/include/lua$LUA_VERSION"
+      dirs="$dirs $incloc/lua$LUA_VERSION $incloc"
       for i in $dirs; do
         #echo "$i"
-        if test -r $i/lua.h; then
-          AC_MSG_RESULT($i/lua.h)
+        if test -r "$i/lua.h"; then
+          AC_MSG_RESULT([$i/lua.h])
           LUAFLAGS="-I$i"
           break
         fi
       done
       if test -z "$LUAFLAGS"; then
-        AC_MSG_RESULT(not found)
-        LUABIN="" # clear the bin
+        AC_MSG_RESULT([not found])
+        AS_UNSET([LUABIN]) # clear the bin
       fi
     fi
   fi
 
   # look for the library files & set LUALINK accordingly
   # will clear LUABIN if not present
-  lua_save_LIBS=$LIBS # the code seems to disrupt LIBS, so saving
 
   if test -n "$LUALIB"; then
-    AC_CHECK_FILE($LUALIB/liblua.a,[LUALINK="-L$LUALIB -llua"],[LUABIN=])
+    AC_CHECK_FILE([$LUALIB/liblua.a],[LUALINK="-L$LUALIB -llua"],[AS_UNSET([LUABIN])])
   else
+    lua_save_LIBS="$LIBS" # `AC_SEARCH_LIBS` Prepend -llibrary to LIBS
     libs="lua lua$LUA_VERSION"
-    test -z "$LUA_VERSION_NO_DOTS" || libs="$libs lua$LUA_VERSION_NO_DOTS"
-    AC_SEARCH_LIBS(lua_close, [$libs], [LUALINK="-l$ac_lib"],[LUABIN=])
+    AC_SEARCH_LIBS([lua_close],[$libs],[LUALINK="-l$ac_lib"],[AS_UNSET([LUABIN])])
+    LIBS="$lua_save_LIBS"	# restore LIBS
   fi
 
-  # adding lualib for lua 5.0
-  if test "$LUA_VERSION" = "5.0"; then
-    LUALINK="$LUALINK -llualib"
-  fi
+  # Add pthread to linking
   LUALINK="$LUALINK -pthread"
-
-  LIBS=$lua_save_LIBS	# restore LIBS
 fi
 
 fi # if not disabled
 
-AC_SUBST(LUADYNAMICLINKING)
-AC_SUBST(LUAFLAGS)
-AC_SUBST(LUALINK)
-AC_SUBST(LUABIN)
+AC_SUBST([LUADYNAMICLINKING])
+AC_SUBST([LUAFLAGS])
+AC_SUBST([LUALINK])
+AC_SUBST([LUABIN])
 
 #----------------------------------------------------------------
 # Look for OCaml
@@ -1754,7 +1771,7 @@ fi
 # Check if Octave works
 if test -n "$OCTAVE"; then
    AC_MSG_CHECKING([if ${OCTAVE} works])
-   AS_IF([test "x`${OCTAVE} --version 2>/dev/null | sed -n -e '1p' | sed -n -e '/Octave, version/p'`" != x],[
+   AS_IF([test "x`${OCTAVE} --version 2>/dev/null | sed -n -e '1p' | sed -n -e '/Octave.*version/p'`" != x],[
       AC_MSG_RESULT([yes])
    ],[
       AC_MSG_RESULT([no])
@@ -1778,8 +1795,13 @@ if test -n "$OCTAVE"; then
   fi
   AC_MSG_RESULT([${mkoctfile}])
   AC_MSG_CHECKING([if ${mkoctfile} works])
-  mkoctfile="env - PATH=$PATH LD_LIBRARY_PATH=$LD_LIBRARY_PATH ${mkoctfile}"
-  AS_IF([test "x`${mkoctfile} --version 2>/dev/null | sed -n -e '1p' | sed -n -e '/mkoctfile, version/p'`" != x],[
+  # Run mkoctfile with a cleared environment so that inherited variables such
+  # as CXXFLAGS do not override mkoctfile's own defaults, but pass through PATH
+  # and LD_LIBRARY_PATH which mkoctfile requires to work (since Octave 5.1.0).
+  # PATH and LD_LIBRARY_PATH are quoted as they may contain directories with
+  # spaces, e.g. Windows paths under WSL.
+  mkoctfile_run () { env - PATH="$PATH" LD_LIBRARY_PATH="$LD_LIBRARY_PATH" "${mkoctfile}" "$@"; }
+  AS_IF([test "x`mkoctfile_run --version 2>/dev/null | sed -n -e '1p' | sed -n -e '/mkoctfile, version/p'`" != x],[
       AC_MSG_RESULT([yes])
     ],[
       AC_MSG_RESULT([no])
@@ -1793,7 +1815,7 @@ if test -n "$OCTAVE"; then
    AC_MSG_CHECKING([for Octave preprocessor flags])
    OCTAVE_CPPFLAGS=
    for var in CPPFLAGS INCFLAGS ALL_CXXFLAGS; do
-      for flag in `${mkoctfile} -p ${var}`; do
+      for flag in `mkoctfile_run -p ${var}`; do
          case ${flag} in
             -D*|-I*) OCTAVE_CPPFLAGS="${OCTAVE_CPPFLAGS} ${flag}";;
             *) ;;
@@ -1805,7 +1827,7 @@ if test -n "$OCTAVE"; then
    AC_MSG_CHECKING([for Octave compiler flags])
    OCTAVE_CXXFLAGS=
    for var in CXX ALL_CXXFLAGS; do
-      for flag in `${mkoctfile} -p ${var}`; do
+      for flag in `mkoctfile_run -p ${var}`; do
          case ${flag} in
             -std=*|-g*|-W*) OCTAVE_CXXFLAGS="${OCTAVE_CXXFLAGS} ${flag}";;
             *) ;;
@@ -1825,10 +1847,10 @@ if test -n "$OCTAVE"; then
    AC_MSG_CHECKING([for Octave linker flags])
    OCTAVE_LDFLAGS=
    for var in OCTLIBDIR; do
-     OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "-L`${mkoctfile} -p ${var}`
+     OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "-L`mkoctfile_run -p ${var}`
    done
    for var in RDYNAMIC_FLAG OCTAVE_LIBS LIBS; do
-     OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "`${mkoctfile} -p ${var}`
+     OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "`mkoctfile_run -p ${var}`
    done
    AC_MSG_RESULT([$OCTAVE_LDFLAGS])
 
@@ -2014,155 +2036,6 @@ AC_SUBST(PHP)
 AC_SUBST(PHPINC)
 
 #----------------------------------------------------------------
-# Look for Python
-#----------------------------------------------------------------
-
-PYINCLUDE=
-PYLIB=
-PYLINK=
-PYPACKAGE=
-
-AC_ARG_WITH(python, AS_HELP_STRING([--without-python], [Don't probe for Python 2.x])
-AS_HELP_STRING([--with-python=path], [Set location of Python 2.x executable]), [PYBIN="$withval"], [PYBIN="$alllang_default"])
-
-# First, check for "--without-python" or "--with-python=no".
-if test x"${PYBIN}" = xno; then
-  AC_MSG_NOTICE([Disabling Python 2.x probe])
-else
-  # First figure out the name of the Python 2.x executable
-  if test "x$PYBIN" = xyes; then
-    AC_CHECK_PROGS(PYTHON, [python python2.7])
-  else
-    PYTHON="$PYBIN"
-  fi
-
-  PYVER=0
-  if test -n "$PYTHON"; then
-    AC_MSG_CHECKING([for $PYTHON major version number])
-    PYVER=`($PYTHON -c "import sys; sys.stdout.write(sys.version[[0]])") 2>/dev/null`
-    AC_MSG_RESULT($PYVER)
-    if test -z "$PYVER"; then
-      PYVER=0
-    else
-      AC_MSG_CHECKING(for Python 2.x os.name)
-      PYOSNAME=`($PYTHON -c "import sys, os; sys.stdout.write(os.name)") 2>/dev/null`
-      AC_MSG_RESULT($PYOSNAME)
-      AC_MSG_CHECKING(for Python 2.x path separator)
-      PYSEPARATOR=`($PYTHON -c "import sys, os; sys.stdout.write(os.sep)") 2>/dev/null`
-      AC_MSG_RESULT($PYSEPARATOR)
-    fi
-  fi
-
-  if test $PYVER -eq 2; then
-    AC_MSG_CHECKING(for Python 2.x prefix)
-    PYPREFIX=`($PYTHON -c "import sys; sys.stdout.write(sys.prefix)") 2>/dev/null`
-    AC_MSG_RESULT($PYPREFIX)
-    AC_MSG_CHECKING(for Python 2.x exec-prefix)
-    PYEPREFIX=`($PYTHON -c "import sys; sys.stdout.write(sys.exec_prefix)") 2>/dev/null`
-    AC_MSG_RESULT($PYEPREFIX)
-
-    if test x"$PYOSNAME" = x"nt" && test x"$PYSEPARATOR" = x"\\"; then
-      # Windows installations are quite different to posix installations (MinGW path separator is a forward slash)
-      PYPREFIX=`echo "$PYPREFIX" | sed -e 's,\\\\,/,g'` # Forward slashes are easier to use and even work on Windows most of the time
-      PYTHON_SO=.pyd
-
-      AC_MSG_CHECKING(for Python 2.x header files)
-      if test -r $PYPREFIX/include/Python.h; then
-        PYINCLUDE="-I$PYPREFIX/include"
-      fi
-      AC_MSG_RESULT($PYINCLUDE)
-
-      AC_MSG_CHECKING(for Python 2.x library directory)
-      if test -d $PYPREFIX/libs; then
-        PYLIB="$PYPREFIX/libs"
-        PYLINKFILE=`ls $PYLIB/python*.lib | grep "python[[0-9]][[0-9]]\+\.lib"`
-        if test -r "$PYLINKFILE"; then
-          PYLINK=-l`basename "$PYLINKFILE" | sed -e 's/\.lib$//'`
-        else
-          PYLIB=
-        fi
-      fi
-    else
-      # Note: I could not think of a standard way to get the version string from different versions.
-      # This trick pulls it out of the file location for a standard library file.
-
-      AC_MSG_CHECKING(for Python 2.x version)
-
-      # Need to do this hack since autoconf replaces __file__ with the name of the configure file
-      filehack="file__"
-      PYVERSION=`($PYTHON -c "import sys,string,operator,os.path; sys.stdout.write(operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1))") 2>/dev/null`
-      AC_MSG_RESULT($PYVERSION)
-
-      # Find the directory for libraries this is necessary to deal with
-      # platforms that can have apps built for multiple archs: e.g. x86_64
-      AC_MSG_CHECKING(for Python 2.x lib dir)
-      PYLIBDIR=`($PYTHON -c "import sys; sys.stdout.write(sys.lib)") 2>/dev/null`
-      if test -z "$PYLIBDIR"; then
-        # Fedora patch Python to add sys.lib, for other distros we assume "lib".
-        PYLIBDIR="lib"
-      fi
-      AC_MSG_RESULT($PYLIBDIR)
-
-      # Set the include directory
-
-      AC_MSG_CHECKING(for Python 2.x header files)
-      if test -r $PYPREFIX/include/$PYVERSION/Python.h; then
-        PYINCLUDE="-I$PYPREFIX/include/$PYVERSION -I$PYEPREFIX/$PYLIBDIR/$PYVERSION/config"
-      fi
-      if test -z "$PYINCLUDE"; then
-        if test -r $PYPREFIX/include/Py/Python.h; then
-          PYINCLUDE="-I$PYPREFIX/include/Py -I$PYEPREFIX/$PYLIBDIR/python/lib"
-        fi
-      fi
-      AC_MSG_RESULT($PYINCLUDE)
-
-      # Set the library directory blindly.   This probably won't work with older versions
-      AC_MSG_CHECKING(for Python 2.x library directory)
-      dirs="$PYVERSION/config $PYVERSION/$PYLIBDIR python/$PYLIBDIR"
-      for i in $dirs; do
-        if test -d "$PYEPREFIX/$PYLIBDIR/$i"; then
-          PYLIB="$PYEPREFIX/$PYLIBDIR/$i"
-          break
-        fi
-      done
-
-      PYLINK="-l$PYVERSION"
-    fi
-
-    if test -z "$PYLIB"; then
-      AC_MSG_RESULT(Not found)
-    else
-      AC_MSG_RESULT($PYLIB)
-      PYLIB="-L$PYLIB"
-    fi
-    AC_MSG_CHECKING(for Python 2.x library)
-    if test -z "$PYLINK"; then
-      AC_MSG_RESULT(Not found)
-    else
-      AC_MSG_RESULT($PYLINK)
-    fi
-  fi
-
-  # Cygwin (Windows) needs the library for dynamic linking
-  case $host in
-  *-*-cygwin* | *-*-mingw* | *-*-msys*)
-    PYTHONDYNAMICLINKING="$PYLIB $PYLINK"
-    DEFS="-DUSE_DL_IMPORT $DEFS"
-    ;;
-  *-*-aix*)
-    PYTHONDYNAMICLINKING="$PYLIB $PYLINK"
-    ;;
-  *)PYTHONDYNAMICLINKING="";;
-  esac
-fi
-
-AC_SUBST(PYINCLUDE)
-AC_SUBST(PYLIB)
-AC_SUBST(PYLINK)
-AC_SUBST(PYTHONDYNAMICLINKING)
-
-
-#----------------------------------------------------------------
 # Look for Python 3.x
 #----------------------------------------------------------------
 
@@ -2171,8 +2044,16 @@ PY3LIB=
 PY3LINK=
 PY3PACKAGE=
 
+AC_ARG_WITH(python, AS_HELP_STRING([--without-python], [Don't probe for Python])
+AS_HELP_STRING([--with-python=path], [Set location of Python executable]), [PYBIN="$withval"])
+
 AC_ARG_WITH(python3, AS_HELP_STRING([--without-python3], [Don't probe for Python 3.x])
 AS_HELP_STRING([--with-python3=path], [Set location of Python 3.x executable]), [PY3BIN="$withval"], [PY3BIN="$alllang_default"])
+
+# --with-python option overrides --with-python3
+if test x"$PYBIN" != x; then
+  PY3BIN="$PYBIN"
+fi
 
 # First, check for "--without-python3" or "--with-python3=no".
 if test x"${PY3BIN}" = xno; then
@@ -2182,7 +2063,7 @@ else
     PYVER=0
   fi
   if test "x$PY3BIN" = xyes; then
-    for py_ver in 3 3.15 3.14 3.13 3.12 3.11 3.10 3.9 3.8 3.7 3.6 3.5 3.4 3.3 ""; do
+    for py_ver in 3 3.15 3.14 3.13 3.12 3.11 3.10 3.9 3.8 3.7 3.6 3.5 ""; do
       AC_CHECK_PROGS(PYTHON3, [python$py_ver])
       if test -n "$PYTHON3"; then
         AC_CHECK_PROGS(PY3CONFIG, [$PYTHON3-config])
@@ -2354,12 +2235,18 @@ if test -n "$PYTHON3"; then
   AC_SUBST(PY_VER_3_DIGIT)
 fi
 
-if test -n "$PYINCLUDE" || test -n "$PY3INCLUDE" ; then
+if test -n "$PY3INCLUDE" ; then
   AC_CHECK_PROGS(PYCODESTYLE, pycodestyle)
   if test -n "$PYCODESTYLE"; then
     AC_MSG_CHECKING(pycodestyle version)
     pycodestyle_version=`$PYCODESTYLE --version 2>/dev/null`
     AC_MSG_RESULT($pycodestyle_version)
+  fi
+  AC_CHECK_PROGS(PYREFLY, pyrefly)
+  if test -n "$PYREFLY"; then
+    AC_MSG_CHECKING(pyrefly version)
+    pyrefly_version=`$PYREFLY --version 2>/dev/null`
+    AC_MSG_RESULT($pyrefly_version)
   fi
   if test -n "$PY3INCLUDE" ; then
     AC_CHECK_PROGS(PYABI3AUDIT, [abi3audit])
@@ -2732,6 +2619,13 @@ else
 AC_MSG_RESULT($TCLLIB)
 fi
 
+AC_MSG_CHECKING(for Tcl interpreter)
+TCLSH=tclsh
+if test -n "$TCL_VERSION"; then
+    TCLSH="tclsh$TCL_VERSION"
+fi
+AC_MSG_RESULT([$TCLSH])
+
 # Cygwin (Windows) needs the library for dynamic linking
 case $host in
 *-*-cygwin* | *-*-mingw*) TCLDYNAMICLINKING="$TCLLIB";;
@@ -2758,6 +2652,7 @@ esac
 
 fi
 
+AC_SUBST(TCLSH)
 AC_SUBST(TCLINCLUDE)
 AC_SUBST(TCLLIB)
 AC_SUBST(TCLDYNAMICLINKING)
@@ -2857,8 +2752,7 @@ AC_SUBST(SKIP_PERL5)
 
 
 SKIP_PYTHON=
-if { test -z "$PYINCLUDE" || test -z "$PYLINK" ; } &&
-   { test -z "$PY3INCLUDE" || test -z "$PY3LINK" ; } ; then
+if { test -z "$PY3INCLUDE" || test -z "$PY3LINK" ; } ; then
     SKIP_PYTHON="1"
 fi
 AC_SUBST(SKIP_PYTHON)
@@ -2958,19 +2852,10 @@ AC_SUBST(SWIG_LIB_INSTALL)
 
 case $build in
   # Windows does not understand unix directories. Convert into a windows directory with drive letter.
-  *-*-mingw*)
-    if test "x${swig_relocatable}" == "xyes"; then
-      swig_lib_win_unix=`${srcdir}/Tools/convertpath -u $swig_lib`
-    else
-      swig_lib_win_unix=`${srcdir}/Tools/convertpath -m $swig_lib`
-    fi
-    ;;
-  *-*-cygwin*) swig_lib_win_unix=`cygpath --mixed "$swig_lib"` ;;
+  *-*-mingw*) SWIG_LIB_WIN_UNIX=`${srcdir}/Tools/convertpath -m $SWIG_LIB`;;
+  *-*-cygwin*) SWIG_LIB_WIN_UNIX=`$CYGPATH --mixed "$SWIG_LIB"`;;
+  *) SWIG_LIB_WIN_UNIX="";;
 esac
-if test "x${swig_lib_win_unix}" != "x"; then
-  AC_MSG_NOTICE([SWIG Windows transformed path: ${wig_lib_win_unix}])
-  swig_lib=${swig_lib_win_unix}
-fi
 AC_DEFINE_DIR(SWIG_LIB, swig_lib, [Directory for SWIG system-independent libraries])
 
 SWIG_LIB_PREINST=$ABS_SRCDIR/Lib

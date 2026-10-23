@@ -248,14 +248,8 @@ List *Swig_overload_rank(Node *n, bool script_lang_wrapping) {
                * it is illegal to overload a function with and without ref-qualifiers. So with
                * all the combinations of ref-qualifiers and cv-qualifiers, we just detect
                * the cv-qualifier (const) overloading. */
-              String *d1 = Copy(decl1);
-              String *d2 = Copy(decl2);
-              if (SwigType_isreference(d1) || SwigType_isrvalue_reference(d1)) {
-                Delete(SwigType_pop(d1));
-              }
-              if (SwigType_isreference(d2) || SwigType_isrvalue_reference(d2)) {
-                Delete(SwigType_pop(d2));
-              }
+              String *d1 = SwigType_remove_reference(Copy(decl1));
+              String *d2 = SwigType_remove_reference(Copy(decl2));
               String *dq1 = Copy(d1);
               String *dq2 = Copy(d2);
               if (SwigType_isconst(d1)) {
@@ -370,10 +364,9 @@ List *Swig_overload_rank(Node *n, bool script_lang_wrapping) {
  * ----------------------------------------------------------------------------- */
 
 static bool print_typecheck(String *f, int j, Parm *pj, bool implicitconvtypecheckoff) {
-  char tmp[256];
-  sprintf(tmp, Char(argv_template_string), j);
   String *tm = Getattr(pj, "tmap:typecheck");
   if (tm) {
+    String *tmp = NewStringf(argv_template_string, j);
     tm = Copy(tm);
     Replaceid(tm, Getattr(pj, "lname"), "_v");
     String *conv = Getattr(pj, "implicitconv");
@@ -385,6 +378,7 @@ static bool print_typecheck(String *f, int j, Parm *pj, bool implicitconvtypeche
     Replaceall(tm, "$input", tmp);
     Printv(f, tm, "\n", NIL);
     Delete(tm);
+    Delete(tmp);
     return true;
   } else
     return false;
@@ -397,7 +391,7 @@ static bool print_typecheck(String *f, int j, Parm *pj, bool implicitconvtypeche
 static String *ReplaceFormat(const_String_or_char_ptr fmt, int j) {
   String *lfmt = NewString(fmt);
   char buf[50];
-  sprintf(buf, "%d", j);
+  snprintf(buf, sizeof(buf), "%d", j);
   Replaceall(lfmt, "$numargs", buf);
   int i;
   String *commaargs = NewString("");

@@ -510,7 +510,7 @@ public:
 
     /* Final substitutions if applicable */
     bool isvoid = !Cmp(functionReturnType, "void");
-    Replaceall(wrapper->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(node, wrapper->code, isvoid);
 
     Replaceall(wrapper->code, "$symname", functionName);
 
@@ -1104,7 +1104,7 @@ public:
     Printf(gatewayHeaderV5, "#endif\n");
 
     Printf(gatewayHeaderV6, "return 1;\n");
-    Printf(gatewayHeaderV6, "};\n");
+    Printf(gatewayHeaderV6, "}\n");
 
     Printf(gatewayHeader, "#if SCI_VERSION_MAJOR < 6\n");
     Printv(gatewayHeader, gatewayHeaderV5, NIL);

@@ -103,6 +103,23 @@ struct DerivedOverloaded : public BaseOverloaded {
 };
 %}
 
+// %interface_impl is a %rename("%sSwigImpl"), so check it also works on an instantiated class template
+#if defined(SWIGJAVA) || defined(SWIGCSHARP)
+%interface_impl(TemplateBase<int>);
+#endif
+%inline %{
+template<typename T> struct TemplateBase {
+  virtual ~TemplateBase() {}
+  virtual T tb(T t) { return t; }
+};
+%}
+
+%template(TemplateBaseInt) TemplateBase<int>;
+
+%inline %{
+struct TemplateDerived : TemplateBase<int> {};
+%}
+
 
 #if defined(SWIGJAVA) || defined(SWIGCSHARP)
 %interface(Space::X)

@@ -47,3 +47,15 @@ check(20, /* await */(o.byval2fwdptr(x)));
 check(21, /* await */(o.byval1fwdref(x)));
 
 check(22, /* await */(o.byval2fwdref(x)));
+
+check(23, /* await */(o.bychar1("a")));
+check(24, /* await */(o.bychar1(null)));
+
+// NULL is a NULL pointer for an array of char too
+check(37, /* await */(o.bychararray(x)));
+// check(-38, o.bychararray(null));
+check(38, /* await */(o.bychararray("ab")));
+
+check(39, /* await */(o.byunsizedchararray(x)));
+// check(-40, o.byunsizedchararray(null));
+check(40, /* await */(o.byunsizedchararray("ab")));

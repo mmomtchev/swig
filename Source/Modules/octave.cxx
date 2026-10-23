@@ -496,6 +496,7 @@ public:
             value = Getattr(lookup, "sym:name");
         }
         Printf(decl_str, " = %s", value);
+        Delete(new_value);
       }
 
       Node *nn = classLookup(Getattr(p, "type"));
@@ -515,19 +516,81 @@ public:
    * convertValue()
    *    Check if string v can be an Octave value literal,
    *    (eg. number or string), or translate it to an Octave literal.
+   *    A null pointer is written as the empty matrix '[]', which is what
+   *    the Octave runtime converts to and from a null pointer.
    * ------------------------------------------------------------ */
-  String *convertValue(String *v, String *numval, String *stringval, SwigType *t) {
+  String *convertValue(String *v, String *numval, String *stringval, SwigType *type) {
     if (stringval) {
-      return stringval;
+      return NewStringf("\"%(escape)s\"", stringval);
+    }
+    SwigType *resolved_type = SwigType_typedef_resolve_all(type);
+    SwigType *unqualified_type = NIL;
+    if (SwigType_isreference(resolved_type)) {
+      SwigType *t = Copy(resolved_type);
+      t = SwigType_del_reference(t);
+      unqualified_type = SwigType_strip_qualifiers(t);
+      Delete(t);
+    } else {
+      unqualified_type = SwigType_strip_qualifiers(resolved_type);
     }
     if (numval) {
-      if (SwigType_type(t) == T_BOOL) {
+      if (SwigType_type(unqualified_type) == T_BOOL) {
+        Delete(resolved_type);
+        Delete(unqualified_type);
         return NewString(*Char(numval) == '0' ? "false" : "true");
       }
-      return numval;
+      if (SwigType_ispointer(unqualified_type) && Equal(numval, "0")) {
+        Delete(resolved_type);
+        Delete(unqualified_type);
+        return NewString("[]");
+      }
+      Delete(resolved_type);
+      Delete(unqualified_type);
+      return Copy(numval);
     }
-    if (Equal(v, "0") || Equal(v, "NULL") || Equal(v, "nullptr"))
-      return SwigType_ispointer(t) ? NewString("None") : NewString("0");
+    if (Equal(v, "nullptr")) {
+      // nullptr is type nullptr_t which doesn't implicitly convert to 0.
+      Delete(resolved_type);
+      Delete(unqualified_type);
+      return NewString("[]");
+    }
+    if (Equal(v, "NULL")) {
+      // The C and C++ standards both allow the implementation to define NULL
+      // to `0`, and the inadvertent use of NULL as an integer zero is
+      // sometimes seen in code.
+      //
+      // However this use is semantically wrong, and GCC and clang both
+      // define NULL to a magic value which warns if implicitly converted
+      // to an integer, so we only implicitly convert to zero if the type
+      // resolves to a built-in arithmetic type.
+      switch (SwigType_type(unqualified_type)) {
+      case T_INT:
+      case T_LONG:
+      case T_SHORT:
+      case T_UINT:
+      case T_USHORT:
+      case T_ULONG:
+      case T_CHAR:
+      case T_SCHAR:
+      case T_UCHAR:
+      case T_WCHAR:
+      case T_FLOAT:
+      case T_DOUBLE:
+      case T_LONGDOUBLE:
+      case T_BOOL:
+      case T_LONGLONG:
+      case T_ULONGLONG:
+        Delete(resolved_type);
+        Delete(unqualified_type);
+        return NewString("0");
+      default:
+        Delete(resolved_type);
+        Delete(unqualified_type);
+        return NewString("[]");
+      }
+    }
+    Delete(resolved_type);
+    Delete(unqualified_type);
     return 0;
   }
 
@@ -607,7 +670,7 @@ public:
           continue;
         }
 
-        sprintf(source, "args(%d)", j);
+        snprintf(source, sizeof(source), "args(%d)", j);
         Setattr(p, "emit:input", source);
 
         Replaceall(tm, "$input", Getattr(p, "emit:input"));
@@ -774,7 +837,7 @@ public:
     Replaceall(f->code, "$cleanup", cleanup);
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     Replaceall(f->code, "$symname", iname);
     Wrapper_print(f, f_wrappers);
@@ -1496,7 +1559,7 @@ public:
         tm = Swig_typemap_lookup("directorout", n, Swig_cresult_name(), w);
         if (tm != 0) {
           char temp[24];
-          sprintf(temp, "out(%d)", idx);
+          snprintf(temp, sizeof(temp), "out(%d)", idx);
           Replaceall(tm, "$input", temp);
           //    Replaceall(tm, "$argnum", temp);
           Replaceall(tm, "$disown", Getattr(n, "wrap:disown") ? "SWIG_POINTER_DISOWN" : "0");
@@ -1523,7 +1586,7 @@ public:
       for (p = l; p;) {
         if ((tm = Getattr(p, "tmap:directorargout")) != 0) {
           char temp[24];
-          sprintf(temp, "out(%d)", idx);
+          snprintf(temp, sizeof(temp), "out(%d)", idx);
           Replaceall(tm, "$result", temp);
           Replaceall(tm, "$input", Getattr(p, "emit:directorinput"));
           Printv(w->code, tm, "\n", NIL);
@@ -1568,7 +1631,7 @@ public:
     }
     // emit the director method
     if (status == SWIG_OK) {
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!Getattr(n, "defaultargs")) {
         Replaceall(w->code, "$symname", symname);
         Wrapper_print(w, f_directors);

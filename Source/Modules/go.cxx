@@ -624,7 +624,8 @@ private:
 
     Printv(f_go_wrappers, "\n", NULL);
     for (Iterator p = First(undefined_types); p.key; p = Next(p)) {
-      String *ty = goType(NULL, p.key);
+      /* The module node stands in for the undefined type, the top node having no file or line. */
+      String *ty = goType(Getattr(n, "module"), p.key);
       if (!Getattr(defined_types, ty)) {
         String *cp = goCPointerType(p.key, false);
         if (!Getattr(defined_types, cp)) {
@@ -646,6 +647,8 @@ private:
 
     /* Write and cleanup */
 
+    // _swig_gopanic is inserted before the header code, which may use it, and after SWIGUNUSED is defined
+    int c_header_start = Len(f_c_runtime);
     Dump(f_c_header, f_c_runtime);
 
     if (Swig_directors_enabled()) {
@@ -685,14 +688,18 @@ private:
       Printv(f_go_header, "\tpanic(string(s))\n", NULL);
       Printv(f_go_header, "}\n\n", NULL);
 
-      Printv(f_c_begin, "\nextern\n", NULL);
-      Printv(f_c_begin, "#ifdef __cplusplus\n", NULL);
-      Printv(f_c_begin, "  \"C\"\n", NULL);
-      Printv(f_c_begin, "#endif\n", NULL);
-      Printv(f_c_begin, "  void cgo_panic_", unique_id, "(const char*);\n", NULL);
-      Printv(f_c_begin, "static void _swig_gopanic(const char *p) {\n", NULL);
-      Printv(f_c_begin, "  cgo_panic_", unique_id, "(p);\n", NULL);
-      Printv(f_c_begin, "}\n\n", NULL);
+      String *panic_code = NewString("");
+      Printv(panic_code, "\nextern\n", NULL);
+      Printv(panic_code, "#ifdef __cplusplus\n", NULL);
+      Printv(panic_code, "  \"C\"\n", NULL);
+      Printv(panic_code, "#endif\n", NULL);
+      Printv(panic_code, "  void cgo_panic_", unique_id, "(const char*);\n", NULL);
+      // Unused unless SWIG_exception or a throws typemap is used, but the SWIG_exception macro is always defined
+      Printv(panic_code, "static SWIGUNUSED void _swig_gopanic(const char *p) {\n", NULL);
+      Printv(panic_code, "  cgo_panic_", unique_id, "(p);\n", NULL);
+      Printv(panic_code, "}\n\n", NULL);
+      Insert(f_c_runtime, c_header_start, panic_code);
+      Delete(panic_code);
     }
 
     Dump(f_c_runtime, f_c_begin);
@@ -1812,7 +1819,7 @@ private:
     }
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     Replaceall(f->code, "$symname", Getattr(n, "sym:name"));
   }
@@ -2024,6 +2031,8 @@ private:
 
       if (SwigType_type(type) == T_STRING) {
         Printv(get, "(char *)", NULL);
+      } else if (SwigType_type(type) == T_WSTRING) {
+        Printv(get, "(wchar_t *)", NULL);
       }
 
       Printv(get, Getattr(n, "value"), NULL);
@@ -2371,12 +2380,7 @@ private:
     }
     Append(wname, unique_id);
 
-    String *result = NewString(Getattr(method, "type"));
-    SwigType_push(result, Getattr(method, "decl"));
-    if (SwigType_isqualifier(result)) {
-      Delete(SwigType_pop(result));
-    }
-    Delete(SwigType_pop_function(result));
+    String *result = Swig_function_return_type(method);
 
     // If the base method is imported, wrap:action may not be set.
     Swig_save("goBaseMethod", method, "wrap:name", "wrap:action", "parms", NULL);
@@ -3882,7 +3886,7 @@ private:
         bool result_is_interface = false;
         String *goout = NULL;
         if (!is_void) {
-          result_is_interface = goTypeIsInterface(NULL, returntype);
+          result_is_interface = goTypeIsInterface(n, returntype);
           Printv(f_go_wrappers, "\tvar swig_r ", NULL);
           if (!result_is_interface) {
             Printv(f_go_wrappers, goType(n, returntype), NULL);
@@ -4047,7 +4051,7 @@ private:
 
       Printv(w->code, "}", NULL);
 
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       Replaceall(w->code, "$symname", symname);
       Wrapper_print(w, f_c_directors);
     }
@@ -4932,7 +4936,7 @@ private:
     String *ret = NULL;
     if (use_imtype) {
       if (n && Cmp(type, Getattr(n, "type")) == 0) {
-        if (Strcmp(Getattr(n, "nodeType"), "parm") == 0) {
+        if (Equal(Getattr(n, "nodeType"), "parm")) {
           ret = Getattr(n, "tmap:imtype");
         }
         if (!ret) {
@@ -4946,7 +4950,7 @@ private:
     }
     if (!ret) {
       if (n && Cmp(type, Getattr(n, "type")) == 0) {
-        if (Strcmp(Getattr(n, "nodeType"), "parm") == 0) {
+        if (Equal(Getattr(n, "nodeType"), "parm")) {
           ret = Getattr(n, "tmap:gotype");
         }
         if (!ret) {
@@ -5126,7 +5130,7 @@ private:
     Delete(t);
 
     if (!ret) {
-      Swig_warning(WARN_LANG_NATIVE_UNIMPL, input_file, line_number, "No Go typemap defined for %s\n", SwigType_str(type, 0));
+      Swig_warning(WARN_TYPEMAP_UNDEF, input_file, line_number, "No Go typemap defined for %s\n", SwigType_str(type, 0));
       ret = NewString("uintptr");
     }
 
@@ -5611,8 +5615,14 @@ private:
 
     SwigType *type = Getattr(n, "enumtype");
     assert(type);
-    char *p = Char(type);
-    int len = Len(type);
+
+    String *symname = Getattr(n, "sym:name");
+    String *scope = Swig_scopename_prefix(type);
+    SwigType *symtype = scope ? NewStringf("%s::%s", scope, symname) : Copy(symname);
+    Delete(scope);
+
+    char *p = Char(symtype);
+    int len = Len(symtype);
     SwigType *s = NewString("");
     bool capitalize = true;
     for (int i = 0; i < len; ++i, ++p) {
@@ -5631,6 +5641,7 @@ private:
 
     ret = Swig_name_mangle_type(s);
     Delete(s);
+    Delete(symtype);
     return ret;
   }
 

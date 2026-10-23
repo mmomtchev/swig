@@ -1,4 +1,13 @@
+"use strict";
+// With Node-API, constants do not have getters, they are
+// converted only once when the module is loaded and
+// in JavaScript setting a read-only variable throws
+// only with "use strict"
+
 var char_strings = require("char_strings");
+
+var CPLUSPLUS_MSG = "A message from the deep dark world of C++, where anything is possible.";
+var OTHERLAND_MSG = "Little message from the safe world.";
 
 var assertIsEqual = function(expected, actual) {
   if (expected !== actual) {
@@ -6,7 +15,89 @@ var assertIsEqual = function(expected, actual) {
   }
 };
 
-var assertThrows = /* async */ function(fn) {
+var count = 10;
+var i;
+
+// get functions
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetCharHeapString()));
+  /* await */(char_strings.DeleteCharHeapString());
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetConstCharProgramCodeString()));
+  /* await */(char_strings.DeleteCharHeapString());
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetCharStaticString()));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetCharStaticStringFixed()));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetConstCharStaticStringFixed()));
+}
+
+// set functions
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetCharHeapString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetCharStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetCharArrayStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharHeapString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharArrayStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetCharConstStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharConstStaticString(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharTypedefString(OTHERLAND_MSG + i, i)));
+}
+
+// get set function
+for (i = 0; i < count; i++) {
+  var ping1 = OTHERLAND_MSG + i;
+  assertIsEqual(ping1, /* await */(char_strings.CharPingPong(ping1)));
+}
+
+for (i = 0; i < count; i++) {
+  var ping2 = OTHERLAND_MSG + i;
+  assertIsEqual(ping2, /* await */(char_strings.CharArrayPingPong(ping2)));
+}
+
+// CharArrayDimsPingPong takes a fixed size char[16] parameter. The JavaScript
+// char[N] typemap (SWIG_AsCharArray) enforces the buffer size, so the 35 byte
+// OTHERLAND_MSG used elsewhere does not fit. A short (< 16 byte) value is used.
+for (i = 0; i < count; i++) {
+  var ping3 = "pingpong" + i;
+  assertIsEqual(ping3, /* await */(char_strings.CharArrayDimsPingPong(ping3)));
+}
+
+var assertThrows = /* async */ function (fn) {
   var pass = false;
 
   try {
@@ -18,13 +109,88 @@ var assertThrows = /* async */ function(fn) {
   if (!pass) throw new Error('did not throw');
 }
 
-assertIsEqual("hi there", /* await */(char_strings.CharPingPong("hi there")));
-assertIsEqual("hi there", /* await */(char_strings.CharArrayPingPong("hi there")));
-assertIsEqual("hi there", /* await */(char_strings.CharArrayDimsPingPong("hi there")));
+assertIsEqual(4, /* await */(char_strings.CharArrayDimsLength("Ping")));
+assertIsEqual(15, /* await */(char_strings.CharArrayDimsLength("0123456789abcde")));
+assertThrows(function () { char_strings.CharArrayDimsLength("0123456789abcdef"); });
 
-// @ts-expect-error
-assertThrows(() => (char_strings.CharPingPong(42)));
-// @ts-expect-error
-assertThrows(() => (char_strings.CharArrayPingPong(42)));
-// @ts-expect-error
-assertThrows(() => (char_strings.CharArrayDimsPingPong(42)));
+// variables
+for (i = 0; i < count; i++) {
+  var expected1 = OTHERLAND_MSG + i;
+  char_strings.global_char = expected1;
+  assertIsEqual(expected1, char_strings.global_char);
+}
+
+// global_char_array1 (char[]) has no setter in the JavaScript module: it is
+// exposed read-only (SWIGWARN_TYPEMAP_VARIN_UNDEF), so assigning to it throws
+// "Tried to write read-only variable". Only the read is exercised here.
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, char_strings.global_char_array1);
+}
+var array1SetVetoed = false;
+try {
+  char_strings.global_char_array1 = OTHERLAND_MSG + "0";
+} catch (e) {
+  array1SetVetoed = true;
+}
+assertIsEqual(true, array1SetVetoed);
+
+for (i = 0; i < count; i++) {
+  var expected3 = OTHERLAND_MSG + i;
+  char_strings.global_char_array2 = expected3;
+  assertIsEqual(expected3, char_strings.global_char_array2);
+}
+char_strings.global_char_array2 = CPLUSPLUS_MSG + "!";
+assertIsEqual(CPLUSPLUS_MSG + "!", char_strings.global_char_array2);
+var assertThrows = /* async */ function(fn) {
+  var pass = false;
+
+  try {
+    /* await */ (fn());
+  } catch {
+    pass = true;
+  }
+
+  if (!pass) throw new Error('did not throw');
+}
+assertThrows(function() { char_strings.global_char_array2 = CPLUSPLUS_MSG + "!!"; });
+assertThrows(function() { char_strings.global_char_array2 = CPLUSPLUS_MSG + CPLUSPLUS_MSG; });
+
+if (/* await */(char_strings.CharArrayPingPong(null)) != null || /* await */(char_strings.CharArrayDimsPingPong(null)) != null)
+  throw new Error("Test char array null failed");
+assertThrows(function() { char_strings.PlainCharPingPong(null); });
+assertThrows(function() { char_strings.char_array_null.four = null; });
+assertThrows(function() { char_strings.global_char_array_null = null; });
+assertIsEqual("qqq", char_strings.char_array_null.four);
+assertIsEqual("qqq", char_strings.global_char_array_null);
+
+assertIsEqual("abcd", char_strings.char_array_no_nul.full);
+assertIsEqual("XYZ", char_strings.char_array_no_nul.after);
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, char_strings.global_const_char);
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, char_strings.global_const_char_array1);
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, char_strings.global_const_char_array2);
+}
+
+// char *& tests
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetCharPointerRef()));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetCharPointerRef(OTHERLAND_MSG + i, i)));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(CPLUSPLUS_MSG, /* await */(char_strings.GetConstCharPointerRef()));
+}
+
+for (i = 0; i < count; i++) {
+  assertIsEqual(true, /* await */(char_strings.SetConstCharPointerRef(OTHERLAND_MSG + i, i)));
+}

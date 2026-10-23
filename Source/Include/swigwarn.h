@@ -56,6 +56,7 @@
 /* Unused since 4.2.0: #define WARN_DEPRECATED_INPUT_FILE    125 */
 /* Unused since 4.3.0: #define WARN_DEPRECATED_NESTED_WORKAROUND 126 */
 #define WARN_DEPRECATED_TYPEDEF                      127
+#define WARN_DEPRECATED_TYPEMAP_PASS                 128
 
 /* -- Preprocessor -- */
 
@@ -99,7 +100,7 @@
 #define WARN_PARSE_USING_CONSTRUCTOR                 329
 #define WARN_PARSE_TEMPLATE_FORWARD                  330
 #define WARN_PARSE_TEMPLATE_NESTED                   331
-#define WARN_PARSE_TEMPLATE_TYPE_CONSTRAINT_UNDEF    332
+#define WARN_PARSE_CONSTRAINED_REDECLARATION         333
 
 #define WARN_CPP11_LAMBDA                            340
 /* Unused since 3.0.11: #define WARN_CPP11_ALIAS_DECLARATION  341 */
@@ -108,6 +109,9 @@
 #define WARN_CPP11_DECLTYPE                          344
 #define WARN_CPP14_AUTO                              345
 #define WARN_CPP11_AUTO                              346
+#define WARN_CPP17_CLASS_TEMPLATE_ARGUMENT_DEDUCTION 347
+#define WARN_CPP11_AUTO_INCONSISTENT_DEDUCTION       348
+#define WARN_CPP17_STRUCTURED_BINDING                349
 
 #define WARN_IGNORE_OPERATOR_NEW                     350 /* new */
 #define WARN_IGNORE_OPERATOR_DELETE                  351 /* delete */
@@ -156,7 +160,7 @@
 #define WARN_IGNORE_OPERATOR_NEWARR                  394 /* new [] */
 #define WARN_IGNORE_OPERATOR_DELARR                  395 /* delete [] */
 #define WARN_IGNORE_OPERATOR_REF                     396 /* operator *() */
-#define WARN_IGNORE_OPERATOR_LTEQUALGT               397 /* <=> */
+/* Unused since 4.1.0: #define WARN_IGNORE_OPERATOR_LTEQUALGT 397 */
 
 /* please leave 350-399 free for WARN_IGNORE_OPERATOR_* */
 
@@ -182,7 +186,7 @@
 #define WARN_TYPEMAP_VAROUT_UNDEF                    463
 #define WARN_TYPEMAP_CONST_UNDEF                     464
 #define WARN_TYPEMAP_UNDEF                           465
-#define WARN_TYPEMAP_VAR_UNDEF                       466
+/* Unused since 4.4.0: #define WARN_TYPEMAP_VAR_UNDEF        466 */
 #define WARN_TYPEMAP_TYPECHECK                       467
 #define WARN_TYPEMAP_THROW                           468
 #define WARN_TYPEMAP_DIRECTORIN_UNDEF                469
@@ -194,6 +198,7 @@
 #define WARN_TYPEMAP_OUT_OPTIMAL_MULTIPLE            475
 #define WARN_TYPEMAP_INITIALIZER_LIST                476
 #define WARN_TYPEMAP_DIRECTORTHROWS_UNDEF            477
+#define WARN_TYPEMAP_ARGOUT_CONTAINER_MISMATCH       478
 
 /* -- Fragments -- */
 #define WARN_FRAGMENT_NOT_FOUND                      490
@@ -209,7 +214,7 @@
 #define WARN_LANG_NATIVE_UNIMPL                      507
 #define WARN_LANG_DEREF_SHADOW                       508
 #define WARN_LANG_OVERLOAD_SHADOW                    509
-#define WARN_LANG_FRIEND_IGNORE                      510 /* No longer issued */
+/* Unused since 1.3.32: #define WARN_LANG_FRIEND_IGNORE       510 */
 #define WARN_LANG_OVERLOAD_KEYWORD                   511
 #define WARN_LANG_OVERLOAD_CONST                     512
 #define WARN_LANG_CLASS_UNNAMED                      513
@@ -237,6 +242,7 @@
 #define WARN_DOXYGEN_COMMAND_ERROR                   564
 #define WARN_DOXYGEN_UNKNOWN_CHARACTER               565
 #define WARN_DOXYGEN_UNEXPECTED_ITERATOR_VALUE       566
+#define WARN_DOXYGEN_IGNORE_VALUE                    567
 
 /* -- Reserved (600-699) -- */
 
@@ -262,7 +268,7 @@
 
 /* please leave 700-719 free for D */
 
-#define WARN_SCILAB_TRUNCATED_NAME                   720
+/* Unused since 4.1.0: #define WARN_SCILAB_TRUNCATED_NAME    720 */
 
 /* please leave 720-739 free for Scilab */
 
@@ -290,13 +296,13 @@
 #define WARN_JAVA_TYPEMAP_JTYPE_UNDEF                811
 #define WARN_JAVA_TYPEMAP_JSTYPE_UNDEF               812
 #define WARN_JAVA_MULTIPLE_INHERITANCE               813
-#define WARN_JAVA_TYPEMAP_GETCPTR_UNDEF              814
+/* Unused since 1.3.32: #define WARN_JAVA_TYPEMAP_GETCPTR_UNDEF 814 */
 #define WARN_JAVA_TYPEMAP_CLASSMOD_UNDEF             815
 #define WARN_JAVA_TYPEMAP_JAVABODY_UNDEF             816
 #define WARN_JAVA_TYPEMAP_JAVAOUT_UNDEF              817
 #define WARN_JAVA_TYPEMAP_JAVAIN_UNDEF               818
 #define WARN_JAVA_TYPEMAP_JAVADIRECTORIN_UNDEF       819
-#define WARN_JAVA_TYPEMAP_JAVADIRECTOROUT_UNDEF      820
+/* Unused since 1.3.32: #define WARN_JAVA_TYPEMAP_JAVADIRECTOROUT_UNDEF 820 */
 #define WARN_JAVA_TYPEMAP_INTERFACECODE_UNDEF        821
 #define WARN_JAVA_COVARIANT_RET                      822
 #define WARN_JAVA_TYPEMAP_JAVACONSTRUCT_UNDEF        823
@@ -311,13 +317,13 @@
 #define WARN_CSHARP_TYPEMAP_CSTYPE_UNDEF             831
 #define WARN_CSHARP_TYPEMAP_CSWTYPE_UNDEF            832
 #define WARN_CSHARP_MULTIPLE_INHERITANCE             833
-#define WARN_CSHARP_TYPEMAP_GETCPTR_UNDEF            834
+/* Unused since 1.3.32: #define WARN_CSHARP_TYPEMAP_GETCPTR_UNDEF 834 */
 #define WARN_CSHARP_TYPEMAP_CLASSMOD_UNDEF           835
 #define WARN_CSHARP_TYPEMAP_CSBODY_UNDEF             836
 #define WARN_CSHARP_TYPEMAP_CSOUT_UNDEF              837
 #define WARN_CSHARP_TYPEMAP_CSIN_UNDEF               838
 #define WARN_CSHARP_TYPEMAP_CSDIRECTORIN_UNDEF       839
-#define WARN_CSHARP_TYPEMAP_CSDIRECTOROUT_UNDEF      840
+/* Unused since 1.3.32: #define WARN_CSHARP_TYPEMAP_CSDIRECTOROUT_UNDEF 840 */
 #define WARN_CSHARP_TYPEMAP_INTERFACECODE_UNDEF      841
 #define WARN_CSHARP_COVARIANT_RET                    842
 #define WARN_CSHARP_TYPEMAP_CSCONSTRUCT_UNDEF        843

@@ -98,8 +98,6 @@ ALL_TMAPS(double)
   (int LENGTH, Char *STRING), (int SIZE, Char *STRING)
   = (char *STRING, size_t LENGTH);
 
-%typemap(ts) (const void *indata, size_t inlen) = (Char *STRING, size_t LENGTH);
-
 %typemap(ts) (char [ANY]) "string";
 
 

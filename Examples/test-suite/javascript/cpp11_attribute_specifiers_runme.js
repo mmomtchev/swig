@@ -35,3 +35,22 @@ if (typeof s.hiddenWithString !== 'undefined') {
 if (typeof s.visible !== 'function') {
   throw new Error('S.visible ignored');
 }
+
+if (/* await */(s.overloaded()) !== 4) {
+  throw new Error('overloaded() not present');
+}
+
+if (/* await */(s.overloaded(true)) !== 1) {
+  throw new Error('overloaded(bool) not present');
+}
+
+var overloadedIgnored = false;
+try {
+  // @ts-expect-error this is the test
+  /* await */(s.overloaded(2));
+} catch {
+  overloadedIgnored = true;
+}
+if (!overloadedIgnored) {
+  throw new Error('overloaded(int) not ignored');
+}

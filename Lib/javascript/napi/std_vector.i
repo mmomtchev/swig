@@ -6,7 +6,6 @@
 
 %insert(header) %{
 #include <vector>
-#include <stdexcept>
 %}
 
 namespace std {

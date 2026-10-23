@@ -60,8 +60,6 @@ SWIGRUNTIME void *SWIG_NAPI_GetInstanceData(Napi::Env env);
 
 void JS_veto_set_variable(const Napi::CallbackInfo &info);
 
-#define SWIG_exception(code, msg)               SWIG_NAPI_Raise(env, code, msg)
-
 // Used instead of SWIG_NAPI_Raise when rejecting a Promise
 // in the main thread (during initialization/parsing)
 #define SWIG_NAPI_Reject(env, code, msg)        do {                          \

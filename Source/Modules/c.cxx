@@ -2177,6 +2177,17 @@ public:
       Printf(wrapper->code, "return result;\n");
     Printf(wrapper->code, "}");
 
+    SwigType *resolved_type = SwigType_typedef_resolve_all(type);
+    if (!is_void_return && SwigType_type(resolved_type) == T_USER && Strstr(wrapper->code, "$null")) {
+      // A struct returned by value cannot be 0, so a zero initialised one is returned
+      String *null_result = NewStringf("static %s swig_null_result;\n", return_type);
+      Insert(wrapper->code, 0, null_result);
+      Replaceall(wrapper->code, "$null", "swig_null_result");
+      Delete(null_result);
+    }
+    Delete(resolved_type);
+    Replaceall(wrapper->code, "$null", is_void_return ? "" : "0");
+
     Wrapper_print(wrapper, sect_wrappers);
 
     emit_wrapper_func_decl(n, wname);
@@ -2491,12 +2502,12 @@ public:
       }
     }
 
+    emit_isvoid_special_variables(n, wrapper->code, is_void_return);
+
     if (is_void_return) {
       Replaceall(wrapper->code, "$null", "");
-      Replaceall(wrapper->code, "$isvoid", "1");
     } else {
       Replaceall(wrapper->code, "$null", "0");
-      Replaceall(wrapper->code, "$isvoid", "0");
 
       Append(wrapper->code, "return result;\n");
     }
@@ -2560,6 +2571,8 @@ public:
     Setattr(new_node, "parms", Copy(Getattr(node, "parms")));
     Setattr(new_node, "type", Copy(Getattr(node, "type")));
     Setattr(new_node, "decl", Copy(Getattr(node, "decl")));
+    if (GetFlag(node, "feature:immutable"))
+      SetFlag(new_node, "feature:immutable");
 
     Node *const parent = parentNode(node);
     Setattr(new_node, "c:inherited_from", Getattr(parent, "name"));
@@ -2629,7 +2642,7 @@ public:
       } else {
         // Don't bother with checking if type is representable in C if we're wrapping C and not C++ anyhow: of course it is.
         if (CPlusPlus) {
-          if (SwigType_isreference(type))
+          if (SwigType_isanyreference(type))
             return NIL;
 
           if (!SwigType_isbuiltin(btype))

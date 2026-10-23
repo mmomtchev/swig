@@ -28,14 +28,14 @@ public:
   String *cname; /* original C class/struct name */
   String *mname; /* Mangled name */
 
-  /**
+  /*
    * The C variable name used in the SWIG-generated wrapper code to refer to
    * this class; usually it is of the form "SwigClassXXX.klass", where SwigClassXXX
    * is a swig_class struct instance and klass is a member of that struct.
    */
   String *vname;
 
-  /**
+  /*
    * The C variable name used in the SWIG-generated wrapper code to refer to
    * the module that implements this class's methods (when we're trying to
    * support C++ multiple inheritance). Usually it is of the form
@@ -744,17 +744,17 @@ private:
     if (stringval) {
       return NewStringf("\"%(escape)s\"", stringval);
     }
+    SwigType *resolved_type = SwigType_typedef_resolve_all(type);
+    SwigType *unqualified_type = NIL;
+    if (SwigType_isreference(resolved_type)) {
+      SwigType *t = Copy(resolved_type);
+      t = SwigType_del_reference(t);
+      unqualified_type = SwigType_strip_qualifiers(t);
+      Delete(t);
+    } else {
+      unqualified_type = SwigType_strip_qualifiers(resolved_type);
+    }
     if (numval) {
-      SwigType *resolved_type = SwigType_typedef_resolve_all(type);
-      SwigType *unqualified_type = NIL;
-      if (SwigType_isreference(resolved_type)) {
-        SwigType *t = Copy(resolved_type);
-        t = SwigType_del_reference(t);
-        unqualified_type = SwigType_strip_qualifiers(t);
-        Delete(t);
-      } else {
-        unqualified_type = SwigType_strip_qualifiers(resolved_type);
-      }
       if (Equal(unqualified_type, "bool")) {
         Delete(resolved_type);
         Delete(unqualified_type);
@@ -762,14 +762,55 @@ private:
       }
       Delete(resolved_type);
       Delete(unqualified_type);
-      if (SwigType_ispointer(type) && Equal(v, "0"))
-        return NewString("None");
+      if (SwigType_ispointer(type) && Equal(numval, "0"))
+        return NewString("nil");
       return Copy(v);
     }
     if (v && Len(v) > 0) {
-      if (Equal(v, "NULL") || Equal(v, "nullptr"))
-        return SwigType_ispointer(type) ? NewString("nil") : NewString("0");
+      if (Equal(v, "nullptr")) {
+        // nullptr is type nullptr_t which doesn't implicitly convert to 0.
+        Delete(resolved_type);
+        Delete(unqualified_type);
+        return NewString("nil");
+      }
+      if (Equal(v, "NULL")) {
+        // The C and C++ standards both allow the implementation to define NULL
+        // to `0`, and the inadvertent use of NULL as an integer zero is
+        // sometimes seen in code.
+        //
+        // However this use is semantically wrong, and GCC and clang both
+        // define NULL to a magic value which warns if implicitly converted
+        // to an integer, so we only implicitly convert to zero if the type
+        // resolves to a built-in arithmetic type.
+        switch (SwigType_type(unqualified_type)) {
+        case T_INT:
+        case T_LONG:
+        case T_SHORT:
+        case T_UINT:
+        case T_USHORT:
+        case T_ULONG:
+        case T_CHAR:
+        case T_SCHAR:
+        case T_UCHAR:
+        case T_WCHAR:
+        case T_FLOAT:
+        case T_DOUBLE:
+        case T_LONGDOUBLE:
+        case T_BOOL:
+        case T_LONGLONG:
+        case T_ULONGLONG:
+          Delete(resolved_type);
+          Delete(unqualified_type);
+          return NewString("0");
+        default:
+          Delete(resolved_type);
+          Delete(unqualified_type);
+          return NewString("nil");
+        }
+      }
     }
+    Delete(resolved_type);
+    Delete(unqualified_type);
     return 0;
   }
 
@@ -890,7 +931,7 @@ public:
     allow_overloading();
   }
 
-  /**
+  /*
    * Generate initialization code to define the Ruby module(s),
    * accounting for nested modules as necessary.
    */
@@ -973,7 +1014,7 @@ public:
 
     String *mod_docstring = NULL;
 
-    /**
+    /*
      * See if any Ruby module options have been specified as options
      * to the %module directive.
      */
@@ -1266,7 +1307,7 @@ public:
     return SWIG_NOWRAP;
   }
 
-  /**
+  /*
    * Process the comma-separated list of aliases (if any).
    */
   void defineAliases(Node *n, const_String_or_char_ptr iname) {
@@ -1454,7 +1495,7 @@ public:
 
     bool ctor_director = (current == CONSTRUCTOR_INITIALIZE && Swig_directorclass(n));
 
-    /**
+    /*
      * The 'start' value indicates which of the C/C++ function arguments
      * produced here corresponds to the first value in Ruby's argv[] array.
      * The value of start is either zero or one. If start is zero, then
@@ -1803,7 +1844,7 @@ public:
             Wrapper_add_local(f, result_name, result_var);
             Printf(action, "\n%s = new %s(%s);", result_name, SwigType_namestr(smart), Swig_cresult_name());
           }
-          Printf(action, "\nDATA_PTR(self) = %s;", result_name);
+          Printf(action, "\n((struct swig_ruby_wrapped_object *)RTYPEDDATA_GET_DATA(self))->data = %s;", result_name);
           if (GetFlag(pn, "feature:trackobjects")) {
             Printf(action, "\nSWIG_RubyAddTracking(%s, self);", result_name);
           }
@@ -1969,7 +2010,7 @@ public:
     Replaceall(f->code, "$cleanup", cleanup);
 
     bool isvoid = !Cmp(returntype, "void");
-    Replaceall(f->code, "$isvoid", isvoid ? "1" : "0");
+    emit_isvoid_special_variables(n, f->code, isvoid);
 
     /* Substitute the function name */
     Replaceall(f->code, "$symname", symname);
@@ -2345,7 +2386,7 @@ public:
     return Language::classDeclaration(n);
   }
 
-  /**
+  /*
    * Process the comma-separated list of mixed-in module names (if any).
    */
   void includeRubyModules(Node *n) {
@@ -2427,7 +2468,20 @@ public:
     }
   }
 
-  /**
+  /* Set up the per-class TypedData descriptor: named after the C++ class (so it is
+     recognisable in Ruby heap dumps and ObjectSpace statistics) with the shared mark
+     and free callbacks. The flags enable embedding of the wrapper on Ruby 3.3+, the
+     same as the anonymous swig_type_data_type descriptor. */
+  void handleClassName(Node *) {
+    Printf(klass->init, "SwigClass%s.cext_type.wrap_struct_name = \"C++ class %s\";\n", klass->name, klass->cname);
+    Printf(klass->init, "SwigClass%s.cext_type.function.dmark = SWIG_Ruby_mark_swig_type;\n", klass->name);
+    Printf(klass->init, "SwigClass%s.cext_type.function.dfree = SWIG_Ruby_free_swig_type;\n", klass->name);
+    Printf(klass->init, "#ifdef RUBY_TYPED_FREE_IMMEDIATELY\n");
+    Printf(klass->init, "SwigClass%s.cext_type.flags = SWIG_RUBY_TYPED_DATA_FLAGS;\n", klass->name);
+    Printf(klass->init, "#endif\n");
+  }
+
+  /*
    * Check to see if a %markfunc was specified.
    */
   void handleMarkFuncDirective(Node *n) {
@@ -2439,7 +2493,7 @@ public:
     }
   }
 
-  /**
+  /*
    * Check to see if a %freefunc was specified.
    */
   void handleFreeFuncDirective(Node *n) {
@@ -2453,7 +2507,7 @@ public:
     }
   }
 
-  /**
+  /*
    * Check to see if tracking is enabled for this class.
    */
   void handleTrackDirective(Node *n) {
@@ -2523,6 +2577,7 @@ public:
     Language::classHandler(n);
 
     handleBaseClasses(n);
+    handleClassName(n);
     handleMarkFuncDirective(n);
     handleFreeFuncDirective(n);
     handleTrackDirective(n);
@@ -3153,7 +3208,7 @@ public:
 
         Putc(',', arglist);
         if ((tm = Getattr(p, "tmap:directorin")) != 0) {
-          sprintf(source, "obj%d", idx++);
+          snprintf(source, sizeof(source), "obj%d", idx++);
           String *input = NewString(source);
           Setattr(p, "emit:directorinput", input);
           Replaceall(tm, "$input", input);
@@ -3165,7 +3220,7 @@ public:
           p = Getattr(p, "tmap:directorin:next");
           continue;
         } else if (Cmp(parameterType, "void")) {
-          /**
+          /*
            * Special handling for pointers to other C++ director classes.
            * Ideally this would be left to a typemap, but there is currently no
            * way to selectively apply the dynamic_cast<> to classes that have
@@ -3178,7 +3233,7 @@ public:
           if (SwigType_ispointer(parameterType) || SwigType_isreference(parameterType)) {
             Node *modname = Getattr(parent, "module");
             Node *target = Swig_directormap(modname, parameterType);
-            sprintf(source, "obj%d", idx++);
+            snprintf(source, sizeof(source), "obj%d", idx++);
             String *nonconst = 0;
             /* strip pointer/reference --- should move to Swig/stype.c */
             String *nptype = NewString(Char(parameterType) + 2);
@@ -3357,7 +3412,7 @@ public:
 
     /* emit the director method */
     if (status == SWIG_OK) {
-      Replaceall(w->code, "$isvoid", is_void ? "1" : "0");
+      emit_isvoid_special_variables(0, w->code, is_void);
       if (!Getattr(n, "defaultargs")) {
         Replaceall(w->code, "$symname", symname);
         Wrapper_print(w, f_directors);

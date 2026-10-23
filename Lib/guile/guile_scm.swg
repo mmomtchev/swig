@@ -12,6 +12,8 @@
 %runtime "swigerrors.swg"    // SWIG errors
 
 %runtime "guile_scm_run.swg"
+
+%include <swigcommon.swg>
 %include <guile.i>
 
 %runtime %{
